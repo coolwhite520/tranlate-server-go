@@ -15,4 +15,5 @@ func StartIntServer() {
 	app.Use(authentication)
 	app.Post("/uploads", uploadFile)
 	app.Run(iris.Addr(fmt.Sprintf("%s:%d", "127.0.0.1", 3333)))
+
 }
