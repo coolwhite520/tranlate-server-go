@@ -13,7 +13,7 @@ type FileController struct {
 
 const maxSize = 80 * iris.MB
 
-func (c *FileController) BeforeActivation(b mvc.BeforeActivation) {
+func (f *FileController) BeforeActivation(b mvc.BeforeActivation) {
 	// b.Dependencies().Add/Remove
 	// b.Router().Use/UseGlobal/Done // 和你已知的任何标准 API  调用
 
@@ -24,11 +24,11 @@ func (c *FileController) BeforeActivation(b mvc.BeforeActivation) {
 	//b.Handle("Post", "/{id:int64}", "MyPost")
 }
 
-func (c *FileController) Post() mvc.Result {
-	c.Ctx.SetMaxRequestBodySize(maxSize)
-	_, fileHeader, err := c.Ctx.FormFile("file")
+func (f *FileController) Post() mvc.Result {
+	f.Ctx.SetMaxRequestBodySize(maxSize)
+	_, fileHeader, err := f.Ctx.FormFile("file")
 	if err != nil {
-		c.Ctx.StopWithError(iris.StatusBadRequest, err)
+		f.Ctx.StopWithError(iris.StatusBadRequest, err)
 		return mvc.Response{
 			ContentType: "application/json",
 			Text:        err.Error(),
@@ -37,16 +37,16 @@ func (c *FileController) Post() mvc.Result {
 	}
 	os.MkdirAll("./uploads", 0777)
 	dest := filepath.Join("./uploads", fileHeader.Filename)
-	_, err = c.Ctx.SaveFormFile(fileHeader, dest)
+	_, err = f.Ctx.SaveFormFile(fileHeader, dest)
 	if err != nil {
-		c.Ctx.StopWithError(iris.StatusBadRequest, err)
+		f.Ctx.StopWithError(iris.StatusBadRequest, err)
 		return mvc.Response{
 			ContentType: "application/json",
 			Text:        err.Error(),
 			Code:        -1,
 		}
 	}
-	c.Ctx.Writef("File: %s uploaded!", fileHeader.Filename)
+	f.Ctx.Writef("File: %s uploaded!", fileHeader.Filename)
 	return mvc.Response{
 		ContentType: "application/json",
 		Text:        "success",

@@ -6,13 +6,15 @@ type UserController struct {
 
 }
 
-func (c *UserController) Get() mvc.Result  {
-	obj := make(map[string]interface{})
-	obj["name"] = "panda"
-	obj["sex"] = "man"
-	obj["age"] = 10
+func (u *UserController) Get() mvc.Result  {
+	var v struct{
+		Name string `json:"name"`
+		Age int `json:"age"`
+	}
+	v.Name = "panda"
+	v.Age = 10
 	return mvc.Response{
 		ContentType: "application/json",
-		Object: obj,
+		Object: v,
 	}
 }

@@ -9,6 +9,7 @@ type TextController struct {
 	Ctx iris.Context
 }
 
-func (c *TextController) Post() mvc.Result {
+func (t *TextController) Post() mvc.Result {
+	
 	return mvc.Response{}
 }
