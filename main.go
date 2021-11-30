@@ -1,8 +1,8 @@
 package main
 
-import "translate-server/server"
+import "translate-server/http"
 
 func main()  {
-	server.StartIntServer()
+	http.StartIntServer()
 
 }
