@@ -17,4 +17,6 @@
 bin
 *.log
 uploads
+go_build_translate_server
+logs
 
