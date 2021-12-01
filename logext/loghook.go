@@ -1,4 +1,4 @@
-package loghook
+package logext
 
 import (
 	"fmt"

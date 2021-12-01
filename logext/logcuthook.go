@@ -1,4 +1,4 @@
-package logcuthook
+package logext
 
 import (
 	"github.com/lestrrat-go/file-rotatelogs"
