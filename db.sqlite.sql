@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS "tbl_user" (
    "Id"	INTEGER PRIMARY KEY AUTOINCREMENT,
-   "Name"	TEXT NOT NULL UNIQUE,
-   "Password"	TEXT NOT NULL,
-   "IsSuper" TINYINT
+   "Username"	TEXT NOT NULL UNIQUE,
+   "HashedPassword"	BLOB NOT NULL,
+   "IsSuper" TINYINT,
+   "CreatedAt" DATETIME
 );

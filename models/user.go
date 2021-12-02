@@ -1,46 +1,29 @@
 package models
 
 import (
-	"fmt"
-	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/bcrypt"
+	"time"
 )
 
-const (
-	TableName = "tbl_user"
-)
-
-
-func InsertUser(user User) error {
-	tx, _ := db.Begin()
-	sql := fmt.Sprintf("INSERT OR REPLACE INTO %s('Name', 'Password', 'IsSuper') VALUES(?,?,?);", TableName)
-	stmt, err := tx.Prepare(sql)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	_, err = stmt.Exec(user.Name, user.Password, user.IsSuper)
-	tx.Commit()
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	return nil
+type User struct {
+	ID             int64     `json:"id" form:"id"`
+	Username       string    `json:"username" form:"username"`
+	HashedPassword []byte    `json:"-" form:"-"`
+	IsSuper		   bool     `json:"is_super"`
+	CreatedAt      time.Time `json:"created_at" form:"created_at"`
 }
 
-func QueryAllUsers() ([]User, error) {
-	sql := fmt.Sprintf("SELECT * FROM %s", TableName)
-	rows, err := db.Query(sql)
-	if err != nil {
-		log.Error(err)
+func (u User) IsValid() bool {
+	return u.ID > 0
+}
+
+func GeneratePassword(userPassword string) ([]byte, error) {
+	return bcrypt.GenerateFromPassword([]byte(userPassword), bcrypt.DefaultCost)
+}
+
+func ValidatePassword(userPassword string, hashed []byte) (bool, error) {
+	if err := bcrypt.CompareHashAndPassword(hashed, []byte(userPassword)); err != nil {
+		return false, err
 	}
-	var users []User
-	for rows.Next() {
-		user := User{}
-		err := rows.Scan(&user.Id, &user.Name, &user.Password, &user.IsSuper)
-		if err != nil {
-			log.Fatal(err)
-		}
-		users = append(users, user)
-	}
-	return users, nil
+	return true, nil
 }

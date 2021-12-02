@@ -5,12 +5,12 @@ import (
 	"github.com/kataras/iris/v12/middleware/basicauth"
 	"github.com/kataras/iris/v12/mvc"
 	"translate-server/controller"
-	"translate-server/models"
+	"translate-server/repositories"
 )
 
 func StartIntServer() {
 	app := iris.New()
-	users, _ := models.QueryAllUsers()
+	users, _ := repositories.QueryAllUsers()
 	m := make(map[string]string)
 	for _, v := range users {
 		m[v.Name] = v.Password

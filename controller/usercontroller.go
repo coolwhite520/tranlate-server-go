@@ -3,6 +3,7 @@ package controller
 import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
+	"translate-server/repositories"
 	"translate-server/models"
 )
 
@@ -10,16 +11,27 @@ type UserController struct {
 	Ctx iris.Context
 }
 
+func (u *UserController) BeforeActivation(a mvc.BeforeActivation)  {
+	a.Handle("GET", "/info", "GetSomeThing")
+}
+
+
+func (u *UserController) PostLogin() mvc.Result {
+
+	return mvc.Response{}
+}
+
 func (u *UserController) Get() mvc.Result{
-	users, err := models.QueryAllUsers()
+	users, err := repositories.QueryAllUsers()
 	if err != nil {
 		return mvc.Response{
-			ContentType: "application/json",
-			Err: err,
+			Object: map[string]interface{}{
+				"code" : -100,
+				"error": err.Error(),
+			},
 		}
 	}
 	return mvc.Response{
-		ContentType: "application/json",
 		Object: users,
 	}
 }
@@ -29,19 +41,22 @@ func (u *UserController) Post() mvc.Result {
 	err := u.Ctx.ReadJSON(&newUser)
 	if err != nil {
 		return mvc.Response{
-			ContentType: "application/json",
-			Err: err,
+			Object: map[string]interface{}{
+				"code" : -100,
+				"error": err.Error(),
+			},
 		}
 	}
-	err = models.InsertUser(newUser)
+	err = repositories.InsertUser(newUser)
 	if err != nil {
 		return mvc.Response{
-			ContentType: "application/json",
-			Err: err,
+			Object: map[string]interface{}{
+				"code" : -100,
+				"error": err.Error(),
+			},
 		}
 	}
 	return mvc.Response{
-		ContentType: "application/json",
 		Code: 200,
 	}
 }
