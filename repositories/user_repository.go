@@ -13,7 +13,7 @@ const (
 
 func InsertUser(user models.User) error {
 	tx, _ := db.Begin()
-	sql := fmt.Sprintf("INSERT OR REPLACE INTO %s('Name', 'Password', 'IsSuper') VALUES(?,?,?);", TableName)
+	sql := fmt.Sprintf("INSERT OR REPLACE INTO %s('Username', 'HashedPassword', 'IsSuper') VALUES(?,?,?);", TableName)
 	stmt, err := tx.Prepare(sql)
 	if err != nil {
 		log.Error(err)
@@ -29,7 +29,7 @@ func InsertUser(user models.User) error {
 }
 
 func QueryAllUsers() ([]models.User, error) {
-	sql := fmt.Sprintf("SELECT * FROM %s", TableName)
+	sql := fmt.Sprintf("SELECT ID, Username,IsSuper FROM %s", TableName)
 	rows, err := db.Query(sql)
 	if err != nil {
 		log.Error(err)
@@ -37,7 +37,7 @@ func QueryAllUsers() ([]models.User, error) {
 	var users []models.User
 	for rows.Next() {
 		user := models.User{}
-		err := rows.Scan(&user.ID, &user.Username, &user.HashedPassword, &user.IsSuper)
+		err := rows.Scan(&user.ID, &user.Username, &user.IsSuper)
 		if err != nil {
 			log.Fatal(err)
 		}

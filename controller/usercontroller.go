@@ -3,8 +3,8 @@ package controller
 import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
-	"translate-server/repositories"
 	"translate-server/models"
+	"translate-server/repositories"
 )
 
 type UserController struct {
@@ -12,7 +12,7 @@ type UserController struct {
 }
 
 func (u *UserController) BeforeActivation(a mvc.BeforeActivation)  {
-	a.Handle("GET", "/info", "GetSomeThing")
+	//a.Handle("GET", "/info", "GetSomeThing")
 }
 
 
