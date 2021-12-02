@@ -10,18 +10,21 @@ const (
 )
 
 
-func InsertUser(user User) {
+func InsertUser(user User) error {
 	tx, _ := db.Begin()
 	sql := fmt.Sprintf("INSERT OR REPLACE INTO %s('Name', 'Password', 'IsSuper') VALUES(?,?,?);", TableName)
 	stmt, err := tx.Prepare(sql)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		return err
 	}
 	_, err = stmt.Exec(user.Name, user.Password, user.IsSuper)
 	tx.Commit()
 	if err != nil {
-		log.Printf("ERROR: %s", err)
+		log.Error(err)
+		return err
 	}
+	return nil
 }
 
 func QueryAllUsers() ([]User, error) {

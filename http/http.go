@@ -1,9 +1,10 @@
 package http
 
 import (
-	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/basicauth"
+	"github.com/kataras/iris/v12/mvc"
+	"translate-server/controller"
 	"translate-server/models"
 )
 
@@ -19,6 +20,31 @@ func StartIntServer() {
 	}
 	authentication := basicauth.New(authConfig)
 	app.Use(authentication)
-	url := fmt.Sprintf("%s:%d", "127.0.0.1", 3333)
-	app.Run(iris.Addr(url))
+	mvc.Configure(app.Party("/api"), fileMVC, textMVC, userMVC)
+	app.Run(iris.Addr(":8080"))
 }
+
+func userMVC(app *mvc.Application) {
+	app.Router.Use(func(ctx iris.Context) {
+		ctx.Application().Logger().Infof("Path: %s", ctx.Path())
+		ctx.Next()
+	})
+	app.Party("/user").Handle(new(controller.UserController))
+}
+
+func fileMVC(app *mvc.Application) {
+	app.Router.Use(func(ctx iris.Context) {
+		ctx.Application().Logger().Infof("Path: %s", ctx.Path())
+		ctx.Next()
+	})
+	app.Party("/file").Handle(new(controller.FileController))
+}
+
+func textMVC(app *mvc.Application) {
+	app.Router.Use(func(ctx iris.Context) {
+		ctx.Application().Logger().Infof("Path: %s", ctx.Path())
+		ctx.Next()
+	})
+	app.Party("/text").Handle(new(controller.TextController))
+}
+
