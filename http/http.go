@@ -3,6 +3,7 @@ package http
 import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
+	"translate-server/activation"
 	"translate-server/controller"
 	"translate-server/datamodels"
 	"translate-server/services"
@@ -15,14 +16,10 @@ func StartIntServer() {
 		Layout("shared/layout.html").
 		Reload(true)
 	app.RegisterView(tmpl)
-
 	app.HandleDir("/public", iris.Dir("./web/public"))
 
-	app.OnAnyErrorCode(func(ctx iris.Context) {
-		ctx.ViewData("Message", ctx.Values().
-			GetStringDefault("message", "The page you're looking for doesn't exist"))
-		ctx.View("shared/error.html")
-	})
+	// 验证用户的授权密钥是否正确
+	app.Use(activation.CheckSerialMiddleware)
 
 	mvc.Configure(app.Party("/api"), userMVC, usersMVC, fileMVC, textMVC)
 
