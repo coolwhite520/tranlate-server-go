@@ -1,9 +1,9 @@
 package main
 
 import (
+	_ "translate-server/datamodels"
 	"translate-server/http"
 	_ "translate-server/logext"
-	_ "translate-server/datamodels"
 )
 
 func main()  {
