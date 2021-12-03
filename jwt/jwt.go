@@ -1,7 +1,6 @@
 package jwt
 
 import (
-	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/jwt"
 	"strings"
@@ -18,20 +17,17 @@ Documentation:
 // The "signatureSharedKey" is used for the HMAC(HS256) signature algorithm.
 var signatureSharedKey = []byte("sercrethatmaycontainch@r32length")
 
-func GenerateToken(ctx iris.Context, user datamodels.User) {
+func GenerateToken( user datamodels.User) (string, error){
 	// Sign and generate compact form token.
 	token, err := jwt.Sign(jwt.HS256, signatureSharedKey, user, jwt.MaxAge(10*time.Minute))
 	if err != nil {
-		ctx.StopWithStatus(iris.StatusInternalServerError)
-		return
+		return "", err
 	}
 	tokenString := string(token) // or jwt.BytesToString
-	ctx.Header("Authorization", fmt.Sprintf("Bearer %s", tokenString))
+	return tokenString, nil
 }
 
-func ParseToken(ctx iris.Context) {
-	// Extract the token, e.g. cookie, Authorization: Bearer $token
-	// or URL query.
+func CheckTokenMiddleware(ctx iris.Context) {
 	token := ctx.GetHeader("Authorization")
 	split := strings.Split(token, " ")
 	if len(split) < 2 {
@@ -43,22 +39,23 @@ func ParseToken(ctx iris.Context) {
 		return
 	}
 	// Verify the token.
+	token = split[1]
 	verifiedToken, err := jwt.Verify(jwt.HS256, signatureSharedKey, []byte(token))
 	if err != nil {
 		ctx.JSON(
 			map[string]interface{}{
 			"code": -100,
-			"err": "账户未登录",
+			"err": "账户未登录或登录信息已失效",
 		})
 		return
 	}
-	// Decode the custom claims.
-	var claims datamodels.User
-	verifiedToken.Claims(&claims)
-	//// Just an example on how you can retrieve all the standard claims (set by jwt.MaxAge, "exp").
+
+	var user datamodels.User
+	verifiedToken.Claims(&user)
 	//standardClaims := jwt.GetVerifiedToken(ctx).StandardClaims
 	//expiresAtString := standardClaims.ExpiresAt().Format(ctx.Application().ConfigurationReadOnly().GetTimeFormat())
 	//timeLeft := standardClaims.Timeleft()
+	ctx.Values().Set("User", user)
 	ctx.Next()
 
 }

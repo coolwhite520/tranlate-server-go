@@ -3,6 +3,7 @@ package controller
 import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
+	log "github.com/sirupsen/logrus"
 	"translate-server/datamodels"
 	"translate-server/jwt"
 	"translate-server/services"
@@ -16,12 +17,12 @@ type UsersController struct {
 
 
 func (u *UsersController) BeforeActivation(a mvc.BeforeActivation) {
-	//a.Handle("GET", "/info", "GetSomeThing")
-	a.Router().Use(jwt.ParseToken)
+	a.Router().Use(jwt.CheckTokenMiddleware)
 }
 
-
 func (u *UsersController) Get() mvc.Result {
+	a:= u.Ctx.Values().Get("User")
+	log.Info(a)
 	users, err := u.UserService.QueryAllUsers()
 	if err != nil {
 		return mvc.Response{

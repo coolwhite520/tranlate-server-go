@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"translate-server/jwt"
@@ -10,11 +11,6 @@ import (
 type UserController struct {
 	Ctx         iris.Context
 	UserService services.UserService
-}
-
-
-func (u *UserController) BeforeActivation(a mvc.BeforeActivation) {
-	//a.Handle("GET", "/info", "GetSomeThing")
 }
 
 func (u *UserController) GetLogin() mvc.Result {
@@ -29,7 +25,17 @@ func (u *UserController) PostLogin() mvc.Result {
 	password := u.Ctx.FormValue("password")
 	user, b := u.UserService.CheckUser(username, password)
 	if b {
-		jwt.GenerateToken(u.Ctx, user)
+		token, err := jwt.GenerateToken(user)
+		if err != nil {
+			return mvc.Response{
+				Object: map[string]interface{}{
+					"code": 500,
+					"msg":  "服务器错误",
+				},
+			}
+		}
+		//Authorization: Bearer $token
+		u.Ctx.Header("Authorization", fmt.Sprintf("Bearer %s", token))
 		return mvc.Response{
 			Object: map[string]interface{}{
 				"code": 200,
