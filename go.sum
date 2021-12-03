@@ -126,6 +126,8 @@ github.com/kataras/iris/v12 v12.1.8 h1:O3gJasjm7ZxpxwTH8tApZsvf274scSGQAUpNe47c3
 github.com/kataras/iris/v12 v12.1.8/go.mod h1:LMYy4VlP67TQ3Zgriz8RE2h2kMZV2SgMYbq3UhfoFmE=
 github.com/kataras/iris/v12 v12.2.0-alpha4.0.20211119121342-226a4cb06497 h1:Zwjt3O+UgmZdREPR3TT6EV7FJ4J3tyVc5bRpPJLQ5qk=
 github.com/kataras/iris/v12 v12.2.0-alpha4.0.20211119121342-226a4cb06497/go.mod h1:GQ1nY5d4pyQYMvYCteMUYUKeGqkWN221pZkTCKxN1A4=
+github.com/kataras/jwt v0.1.2 h1:827BBMK2/PQc1Y209cPKeAChyx1mvfW9I3LE0GJ5V8A=
+github.com/kataras/jwt v0.1.2/go.mod h1:4ss3aGJi58q3YGmhLUiOvNJnL7UlTXD7+Wf+skgsTmQ=
 github.com/kataras/neffos v0.0.14/go.mod h1:8lqADm8PnbeFfL7CLXh1WHw53dG27MC3pgi2R1rmoTE=
 github.com/kataras/neffos v0.0.18 h1:pIxrjV05Q7u6ViFH8eXoOJ53sMARviKz6Vfu5cd9Pb4=
 github.com/kataras/neffos v0.0.18/go.mod h1:PZxHcNLbmOcBN4ypym1jTsmmphaMTkcu7VwfnlEA47o=

@@ -1,4 +1,4 @@
-package repositories
+package services
 
 import (
 	"database/sql"
@@ -6,7 +6,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
-	"translate-server/models"
 )
 
 var db *sql.DB
@@ -25,14 +24,5 @@ func init() {
 	if err != nil {
 		log.Errorln(err)
 		return
-	}
-	users, err := QueryAllUsers()
-	if users == nil {
-		password, _ := models.GeneratePassword("admin")
-		InsertUser(models.User{
-			Username:     "admin",
-			HashedPassword: password,
-			IsSuper:  true,
-		})
 	}
 }

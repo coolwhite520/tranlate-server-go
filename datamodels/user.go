@@ -1,4 +1,4 @@
-package models
+package datamodels
 
 import (
 	"golang.org/x/crypto/bcrypt"

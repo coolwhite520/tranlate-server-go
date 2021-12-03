@@ -4,21 +4,28 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"translate-server/controller"
+	"translate-server/datamodels"
+	"translate-server/services"
 )
 
 func StartIntServer() {
 	app := iris.New()
-	//users, _ := repositories.QueryAllUsers()
-	//m := make(map[string]string)
-	//for _, v := range users {
-	//	m[v.Username] = v.Password
-	//}
-	//authConfig := basicauth.Options{
-	//	Allow: basicauth.AllowUsers(m),
-	//}
-	//authentication := basicauth.New(authConfig)
-	//app.Use(authentication)
-	mvc.Configure(app.Party("/api"), fileMVC, textMVC, userMVC)
+	// Load the template files.
+	tmpl := iris.HTML("./web/views", ".html").
+		Layout("shared/layout.html").
+		Reload(true)
+	app.RegisterView(tmpl)
+
+	app.HandleDir("/public", iris.Dir("./web/public"))
+
+	app.OnAnyErrorCode(func(ctx iris.Context) {
+		ctx.ViewData("Message", ctx.Values().
+			GetStringDefault("message", "The page you're looking for doesn't exist"))
+		ctx.View("shared/error.html")
+	})
+
+	mvc.Configure(app.Party("/api"), userMVC, usersMVC, fileMVC, textMVC)
+
 	app.Run(iris.Addr(":8080"))
 }
 
@@ -27,7 +34,31 @@ func userMVC(app *mvc.Application) {
 		ctx.Application().Logger().Infof("Path: %s", ctx.Path())
 		ctx.Next()
 	})
-	app.Party("/user").Handle(new(controller.UserController))
+	party := app.Party("/user")
+	service := services.NewUserService()
+	users, _ := service.QueryAllUsers()
+	if users == nil {
+		password, _ := datamodels.GeneratePassword("admin")
+		service.InsertUser(datamodels.User{
+			Username:     "admin",
+			HashedPassword: password,
+			IsSuper:  true,
+		})
+	}
+	party.Register(service)
+	party.Handle(new(controller.UserController))
+}
+
+
+func usersMVC(app *mvc.Application) {
+	app.Router.Use(func(ctx iris.Context) {
+		ctx.Application().Logger().Infof("Path: %s", ctx.Path())
+		ctx.Next()
+	})
+	party := app.Party("/users")
+	service := services.NewUserService()
+	party.Register(service)
+	party.Handle(new(controller.UsersController))
 }
 
 func fileMVC(app *mvc.Application) {
