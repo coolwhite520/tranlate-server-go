@@ -11,16 +11,15 @@ import (
 
 func StartIntServer() {
 	app := iris.New()
-	// Load the template files.
-	tmpl := iris.HTML("./web/views", ".html").
-		Layout("shared/layout.html").
-		Reload(true)
-	app.RegisterView(tmpl)
-	app.HandleDir("/public", iris.Dir("./web/public"))
+	//// Load the template files.
+	//tmpl := iris.HTML("./web/views", ".html").
+	//	Layout("shared/layout.html").
+	//	Reload(true)
+	//app.RegisterView(tmpl)
+	//app.HandleDir("/public", iris.Dir("./web/public"))
 
 	// 验证用户的授权密钥是否正确
 	app.Use(activation.CheckSerialMiddleware)
-
 	mvc.Configure(app.Party("/api"), userMVC, usersMVC, fileMVC, textMVC)
 
 	app.Run(iris.Addr(":8080"))
