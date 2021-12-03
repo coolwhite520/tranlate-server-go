@@ -17,13 +17,12 @@ func StartIntServer() {
 	//	Reload(true)
 	//app.RegisterView(tmpl)
 	//app.HandleDir("/public", iris.Dir("./web/public"))
-
-	// 验证用户的授权密钥是否正确
-	app.Use(activation.CheckSerialMiddleware)
-	mvc.Configure(app.Party("/api"), userMVC, usersMVC, fileMVC, textMVC)
-
+	party := app.Party("/api")
+	party.Use(activation.CheckSerialMiddleware)
+	mvc.Configure(party, userMVC, usersMVC, fileMVC, textMVC)
 	app.Run(iris.Addr(":8080"))
 }
+
 
 func userMVC(app *mvc.Application) {
 	app.Router.Use(func(ctx iris.Context) {
