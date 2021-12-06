@@ -14,5 +14,5 @@ type FileController struct {
 
 func (f *FileController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Router().Use(activation.CheckActivationMiddleware)
-	b.Router().Use(jwt.CheckTokenMiddleware)
+	b.Router().Use(jwt.CheckLoginMiddleware)
 }

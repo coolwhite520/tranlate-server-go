@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"time"
 	"translate-server/datamodels"
 )
 
@@ -11,6 +12,8 @@ type UserService interface {
 	CheckUser(username, userPassword string) (datamodels.User, bool)
 	InsertUser(user datamodels.User) error
 	QueryAllUsers() ([]datamodels.User, error)
+	DeleteUserById(id int64) error
+	UpdateUserPassword(user datamodels.User) error
 }
 
 func NewUserService() UserService  {
@@ -35,12 +38,45 @@ func (u *userService) CheckUser(username, userPassword string) (datamodels.User,
 		return user, true
 	}
 	return datamodels.User{}, false
-
+}
+func (u *userService) DeleteUserById(Id int64) error {
+	tx, _ := db.Begin()
+	sql := fmt.Sprintf("Delete From tbl_user where Id=?;")
+	stmt, err := tx.Prepare(sql)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	_, err = stmt.Exec(Id)
+	tx.Commit()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
 }
 
-func (u *userService)InsertUser(user datamodels.User) error {
+func (u *userService) UpdateUserPassword(user datamodels.User) error {
 	tx, _ := db.Begin()
-	sql := fmt.Sprintf("INSERT OR REPLACE INTO tbl_user('Username', 'HashedPassword', 'IsSuper') VALUES(?,?,?);")
+	sql := fmt.Sprintf("UPDATE tbl_user set HashedPassword=? where Id=?;")
+	stmt, err := tx.Prepare(sql)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	_, err = stmt.Exec(user.HashedPassword, user.ID)
+	tx.Commit()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
+}
+
+
+func (u *userService) InsertUser(user datamodels.User) error {
+	tx, _ := db.Begin()
+	sql := fmt.Sprintf("INSERT INTO tbl_user('Username', 'HashedPassword', 'IsSuper') VALUES(?,?,?);")
 	stmt, err := tx.Prepare(sql)
 	if err != nil {
 		log.Error(err)
@@ -55,8 +91,8 @@ func (u *userService)InsertUser(user datamodels.User) error {
 	return nil
 }
 
-func (u *userService)QueryAllUsers() ([]datamodels.User, error) {
-	sql := fmt.Sprintf("SELECT ID, Username,IsSuper FROM tbl_user")
+func (u *userService) QueryAllUsers() ([]datamodels.User, error) {
+	sql := fmt.Sprintf("SELECT ID, Username, IsSuper, CreatedAt FROM tbl_user where IsSuper=0")
 	rows, err := db.Query(sql)
 	if err != nil {
 		log.Error(err)
@@ -64,7 +100,9 @@ func (u *userService)QueryAllUsers() ([]datamodels.User, error) {
 	var users []datamodels.User
 	for rows.Next() {
 		user := datamodels.User{}
-		err := rows.Scan(&user.ID, &user.Username, &user.IsSuper)
+		var t time.Time
+		err := rows.Scan(&user.ID, &user.Username, &user.IsSuper, &t)
+		user.CreatedAt = t.Local().Format("2006-01-02 15:04:05")
 		if err != nil {
 			log.Fatal(err)
 		}

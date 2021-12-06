@@ -1,11 +1,10 @@
 package datamodels
 
-import "time"
-
 type ActivationInfo struct {
-	UserName string
-	SupportLangList []string
-	CreatedDate time.Time
-	ExpiredDate time.Time
-	MachineId string
+	UserName        string   `json:"user_name"`
+	SupportLangList []string `json:"support_lang_list"`
+	CreatedAt       string   `json:"created_at"`
+	ExpiredAt       string   `json:"expired_at"`
+	MachineId       string   `json:"machine_id"`
+	Mark            string   `json:"mark"`
 }

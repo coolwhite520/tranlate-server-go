@@ -3,6 +3,7 @@ package controller
 import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
+	"strings"
 	"translate-server/activation"
 )
 
@@ -22,24 +23,38 @@ func (a *ActivationController) Post() mvc.Result {
 	err := a.Ctx.ReadJSON(&jsonObj)
 	if err  != nil{
 		return mvc.Response{
-			Err: err,
+			Object: map[string]interface{} {
+				"code": -100,
+				"msg": err.Error(),
+			},
 		}
 	}
+	jsonObj.Keystore = strings.Trim(jsonObj.Keystore, " ")
 	newActivation := activation.NewActivation()
-	aInfo, state := newActivation.ParseKeystoreContent(jsonObj.Keystore)
+
+	_, state := newActivation.ParseKeystoreContent(jsonObj.Keystore)
 	if state != activation.Success {
 		return mvc.Response{
-			Text: state.String(),
+			Object: map[string]interface{} {
+				"code": -100,
+				"msg": state.String(),
+			},
 		}
 	}
-	state = newActivation.GenerateKeystoreFile(*aInfo)
+	state = newActivation.GenerateKeystoreFileByContent(jsonObj.Keystore)
 	if state != activation.Success {
 		return mvc.Response{
-			Text: state.String(),
+			Object: map[string]interface{} {
+				"code": -100,
+				"msg": state.String(),
+			},
 		}
 	}
 	return mvc.Response{
-		Text: state.String(),
+		Object: map[string]interface{} {
+			"code": 200,
+			"msg": state.String(),
+		},
 	}
 }
 

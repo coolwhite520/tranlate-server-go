@@ -2,15 +2,14 @@ package datamodels
 
 import (
 	"golang.org/x/crypto/bcrypt"
-	"time"
 )
 
 type User struct {
 	ID             int64     `json:"id" form:"id"`
-	Username       string    `json:"username" form:"username"`
+	Username       string    `json:"username"`
 	HashedPassword []byte    `json:"-" form:"-"`
-	IsSuper		   bool     `json:"is_super"`
-	CreatedAt      time.Time `json:"created_at" form:"created_at"`
+	IsSuper        bool      `json:"is_super"`
+	CreatedAt      string    `json:"created_at"`
 }
 
 func (u User) IsValid() bool {

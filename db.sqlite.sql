@@ -3,5 +3,5 @@ CREATE TABLE IF NOT EXISTS "tbl_user" (
    "Username"	TEXT NOT NULL UNIQUE,
    "HashedPassword"	BLOB NOT NULL,
    "IsSuper" TINYINT,
-   "CreatedAt" TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP,'localtime'))
+   "CreatedAt" DATETIME DEFAULT CURRENT_TIMESTAMP
 );

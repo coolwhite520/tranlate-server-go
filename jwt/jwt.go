@@ -27,14 +27,14 @@ func GenerateToken( user datamodels.User) (string, error){
 	return tokenString, nil
 }
 
-func CheckTokenMiddleware(ctx iris.Context) {
+func CheckLoginMiddleware(ctx iris.Context) {
 	token := ctx.GetHeader("Authorization")
 	split := strings.Split(token, " ")
 	if len(split) < 2 {
 		ctx.JSON(
 			map[string]interface{}{
 				"code": -100,
-				"err": "账户未登录",
+				"msg": "账户未登录",
 			})
 		return
 	}
@@ -45,7 +45,7 @@ func CheckTokenMiddleware(ctx iris.Context) {
 		ctx.JSON(
 			map[string]interface{}{
 			"code": -100,
-			"err": "账户未登录或登录信息已失效",
+			"msg": "账户未登录或登录信息已失效",
 		})
 		return
 	}

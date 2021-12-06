@@ -14,8 +14,10 @@ type Activation interface {
 	GenerateMachineId() (string, State)
 	GenerateKeystoreContent(activationInfo datamodels.ActivationInfo) (string, State)
 	GenerateKeystoreFile(datamodels.ActivationInfo) State
+	GenerateKeystoreFileByContent(string) State
 	ParseKeystoreContent(content string) (*datamodels.ActivationInfo, State)
 	ParseKeystoreFile() (*datamodels.ActivationInfo, State)
+
 }
 
 func NewActivation() Activation {
@@ -78,11 +80,16 @@ func (a activation) GenerateKeystoreContent(activationInfo datamodels.Activation
 }
 
 
-func (a activation) GenerateKeystoreFile(activationInfo datamodels.ActivationInfo) State {
+func (a *activation) GenerateKeystoreFile(activationInfo datamodels.ActivationInfo) State {
 	content, state := a.GenerateKeystoreContent(activationInfo)
 	if state != Success {
 		return state
 	}
+	ioutil.WriteFile(KeyStorePath, []byte(content), 0777)
+	return Success
+}
+
+func (a *activation) GenerateKeystoreFileByContent(content string) State {
 	ioutil.WriteFile(KeyStorePath, []byte(content), 0777)
 	return Success
 }
@@ -127,8 +134,8 @@ func (a *activation) ParseKeystoreFile() (*datamodels.ActivationInfo, State) {
 }
 
 func (a *activation) isExpired(activationInfo *datamodels.ActivationInfo) bool {
-	currentTime := time.Now().Unix()
-	return activationInfo.ExpiredDate.Unix() < currentTime
+	currentTime := time.Now().Format("2006-01-02 15:04:05")
+	return activationInfo.ExpiredAt < currentTime
 }
 
 

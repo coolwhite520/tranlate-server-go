@@ -15,7 +15,7 @@ type TextController struct {
 
 func (t *TextController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Router().Use(activation.CheckActivationMiddleware)
-	b.Router().Use(jwt.CheckTokenMiddleware)
+	b.Router().Use(jwt.CheckLoginMiddleware)
 }
 
 func (t *TextController) Get() mvc.Result {
