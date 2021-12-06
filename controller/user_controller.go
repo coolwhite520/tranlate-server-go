@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
+	"translate-server/activation"
 	"translate-server/jwt"
 	"translate-server/services"
 )
@@ -11,6 +12,12 @@ import (
 type UserController struct {
 	Ctx         iris.Context
 	UserService services.UserService
+}
+
+
+
+func (u *UserController) BeforeActivation(b mvc.BeforeActivation) {
+	b.Router().Use(activation.CheckActivationMiddleware)
 }
 
 func (u *UserController) GetLogin() mvc.Result {

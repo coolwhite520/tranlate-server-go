@@ -3,7 +3,6 @@ package http
 import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
-	"translate-server/activation"
 	"translate-server/controller"
 	"translate-server/datamodels"
 	"translate-server/services"
@@ -11,16 +10,17 @@ import (
 
 func StartIntServer() {
 	app := iris.New()
-	//// Load the template files.
-	//tmpl := iris.HTML("./web/views", ".html").
-	//	Layout("shared/layout.html").
-	//	Reload(true)
-	//app.RegisterView(tmpl)
-	//app.HandleDir("/public", iris.Dir("./web/public"))
-	party := app.Party("/api")
-	party.Use(activation.CheckSerialMiddleware)
-	mvc.Configure(party, userMVC, usersMVC, fileMVC, textMVC)
+	mvc.Configure(app.Party("/api"), activationMVC, userMVC, usersMVC, fileMVC, textMVC)
 	app.Run(iris.Addr(":8080"))
+}
+
+func activationMVC(app *mvc.Application)  {
+	app.Router.Use(func(ctx iris.Context) {
+		ctx.Application().Logger().Infof("Path: %s", ctx.Path())
+		ctx.Next()
+	})
+	party := app.Party("/activation")
+	party.Handle(new(controller.ActivationController))
 }
 
 

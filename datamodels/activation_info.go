@@ -1,5 +1,11 @@
 package datamodels
 
-type ActivationInfo struct {
+import "time"
 
+type ActivationInfo struct {
+	UserName string
+	SupportLangList []string
+	CreatedDate time.Time
+	ExpiredDate time.Time
+	MachineId string
 }
