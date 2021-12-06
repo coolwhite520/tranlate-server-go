@@ -17,7 +17,6 @@ type Activation interface {
 	GenerateKeystoreFileByContent(string) State
 	ParseKeystoreContent(content string) (*datamodels.ActivationInfo, State)
 	ParseKeystoreFile() (*datamodels.ActivationInfo, State)
-
 }
 
 func NewActivation() Activation {
