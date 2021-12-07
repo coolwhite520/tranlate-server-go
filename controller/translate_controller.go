@@ -16,12 +16,13 @@ type TranslateController struct {
 func (t *TranslateController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Router().Use(middleware.CheckActivationMiddleware,
 		middleware.CheckLoginMiddleware,
-		middleware.FileLimiterMiddleware,
-		middleware.SupportLangMiddleware)
+		middleware.FileLimiterMiddleware)
+	b.Handle("POST", "/upload", "PostUpload",middleware.SupportLangMiddleware)
+	b.Handle("GET", "/lang", "GetLangList")
 }
 
-// GetSupportLangList 获取支持的语言
-func (t *TranslateController) GetSupportLangList() mvc.Result {
+// GetLangList 获取支持的语言
+func (t *TranslateController) GetLangList() mvc.Result {
 	file, state := t.ActivationService.ParseKeystoreFile()
 	if state != services.Success {
 		return mvc.Response{
@@ -34,11 +35,11 @@ func (t *TranslateController) GetSupportLangList() mvc.Result {
 	return mvc.Response{
 		Object: map[string]interface{}{
 			"code": 200,
-			"msg": file.SupportLangList,
+			"msg": "success",
+			"data":file.SupportLangList,
 		},
 	}
 }
-
 
 
 func (t *TranslateController) PostUpload() mvc.Result {

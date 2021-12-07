@@ -46,8 +46,9 @@ func usersMVC(app *mvc.Application) {
 
 func translateMVC(app *mvc.Application) {
 	service := services.NewTranslateService()
+	activationService := services.NewActivationService()
 	party := app.Party("/translate")
-	party.Register(service)
+	party.Register(service, activationService)
 	party.Handle(new(controller.TranslateController))
 }
 
