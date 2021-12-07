@@ -1,6 +1,6 @@
 package datamodels
 
-type ActivationInfo struct {
+type Activation struct {
 	UserName        string   `json:"user_name"`
 	SupportLangList []string `json:"support_lang_list"`
 	CreatedAt       string   `json:"created_at"`

@@ -30,7 +30,7 @@ func (a *ActivationController) Post() mvc.Result {
 		}
 	}
 	jsonObj.Keystore = strings.Trim(jsonObj.Keystore, " ")
-	newActivation := services.NewActivation()
+	newActivation := services.NewActivationService()
 
 	_, state := newActivation.ParseKeystoreContent(jsonObj.Keystore)
 	if state != services.Success {

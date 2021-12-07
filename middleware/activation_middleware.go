@@ -8,9 +8,9 @@ import (
 )
 
 func CheckActivationMiddleware(ctx iris.Context) {
-	newActivation := services.NewActivation()
+	newActivation := services.NewActivationService()
 	id, _ := newActivation.GenerateMachineId()
-	activationInfo := datamodels.ActivationInfo{
+	activationInfo := datamodels.Activation{
 		UserName:        "panda",
 		SupportLangList: []string{"zh", "en", "ur"},
 		CreatedAt:       time.Now().Format("2006-01-02 15:04:05"),

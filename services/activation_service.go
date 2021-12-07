@@ -11,16 +11,16 @@ import (
 	"translate-server/utils"
 )
 
-type Activation interface {
+type ActivationService interface {
 	GenerateMachineId() (string, State)
-	GenerateKeystoreContent(activationInfo datamodels.ActivationInfo) (string, State)
-	GenerateKeystoreFile(datamodels.ActivationInfo) State
+	GenerateKeystoreContent(activationInfo datamodels.Activation) (string, State)
+	GenerateKeystoreFile(datamodels.Activation) State
 	GenerateKeystoreFileByContent(string) State
-	ParseKeystoreContent(content string) (*datamodels.ActivationInfo, State)
-	ParseKeystoreFile() (*datamodels.ActivationInfo, State)
+	ParseKeystoreContent(content string) (*datamodels.Activation, State)
+	ParseKeystoreFile() (*datamodels.Activation, State)
 }
 
-func NewActivation() Activation {
+func NewActivationService() ActivationService {
 	return &activation{}
 }
 
@@ -65,7 +65,7 @@ func (a *activation) GenerateMachineId() (string, State) {
 	return id, Success
 }
 
-func (a activation) GenerateKeystoreContent(activationInfo datamodels.ActivationInfo) (string, State) {
+func (a activation) GenerateKeystoreContent(activationInfo datamodels.Activation) (string, State) {
 	data, err := json.Marshal(activationInfo)
 	if err != nil {
 		return "", GenerateError
@@ -80,7 +80,7 @@ func (a activation) GenerateKeystoreContent(activationInfo datamodels.Activation
 }
 
 
-func (a *activation) GenerateKeystoreFile(activationInfo datamodels.ActivationInfo) State {
+func (a *activation) GenerateKeystoreFile(activationInfo datamodels.Activation) State {
 	content, state := a.GenerateKeystoreContent(activationInfo)
 	if state != Success {
 		return state
@@ -94,7 +94,7 @@ func (a *activation) GenerateKeystoreFileByContent(content string) State {
 	return Success
 }
 
-func (a *activation) ParseKeystoreContent(content string) (*datamodels.ActivationInfo, State) {
+func (a *activation) ParseKeystoreContent(content string) (*datamodels.Activation, State) {
 	id, state := a.GenerateMachineId()
 	if state != Success {
 		return nil, GenerateError
@@ -108,7 +108,7 @@ func (a *activation) ParseKeystoreContent(content string) (*datamodels.Activatio
 	if err != nil {
 		return nil, ParseError
 	}
-	var activationInfo datamodels.ActivationInfo
+	var activationInfo datamodels.Activation
 	err = json.Unmarshal(decrypt, &activationInfo)
 	if err != nil {
 		return nil, ParseError
@@ -122,7 +122,7 @@ func (a *activation) ParseKeystoreContent(content string) (*datamodels.Activatio
 	return &activationInfo, Success
 }
 
-func (a *activation) ParseKeystoreFile() (*datamodels.ActivationInfo, State) {
+func (a *activation) ParseKeystoreFile() (*datamodels.Activation, State) {
 	if ok, err := a.pathExists(KeyStorePath); ok && err == nil{
 		data, err := ioutil.ReadFile(KeyStorePath)
 		if err != nil {
@@ -133,7 +133,7 @@ func (a *activation) ParseKeystoreFile() (*datamodels.ActivationInfo, State) {
 	return nil, NotFound
 }
 
-func (a *activation) isExpired(activationInfo *datamodels.ActivationInfo) bool {
+func (a *activation) isExpired(activationInfo *datamodels.Activation) bool {
 	currentTime := time.Now().Format("2006-01-02 15:04:05")
 	return activationInfo.ExpiredAt < currentTime
 }
