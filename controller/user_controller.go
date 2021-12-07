@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
-	"translate-server/activation"
 	"translate-server/datamodels"
-	"translate-server/jwt"
+	"translate-server/middleware"
 	"translate-server/services"
 )
 
@@ -16,9 +15,9 @@ type UserController struct {
 }
 
 func (u *UserController) BeforeActivation(b mvc.BeforeActivation) {
-	b.Router().Use(activation.CheckActivationMiddleware)
+	b.Router().Use(middleware.CheckActivationMiddleware)
 	// 只有登录以后，才可以进行密码修改
-	b.Handle("POST", "/password", "PostPassword", jwt.CheckLoginMiddleware)
+	b.Handle("POST", "/password", "PostPassword", middleware.CheckLoginMiddleware)
 }
 
 // PostPassword /api/user/password
@@ -99,7 +98,7 @@ func (u *UserController) PostLogin() mvc.Result {
 	}
 	user, b := u.UserService.CheckUser(newUserReq.Username, newUserReq.Password)
 	if b {
-		token, err := jwt.GenerateToken(user)
+		token, err := middleware.GenerateToken(user)
 		if err != nil {
 			return mvc.Response{
 				Object: map[string]interface{}{

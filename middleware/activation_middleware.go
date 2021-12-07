@@ -1,13 +1,14 @@
-package activation
+package middleware
 
 import (
 	"github.com/kataras/iris/v12"
 	"time"
 	"translate-server/datamodels"
+	"translate-server/services"
 )
 
 func CheckActivationMiddleware(ctx iris.Context) {
-	newActivation := NewActivation()
+	newActivation := services.NewActivation()
 	id, _ := newActivation.GenerateMachineId()
 	activationInfo := datamodels.ActivationInfo{
 		UserName:        "panda",
@@ -17,11 +18,11 @@ func CheckActivationMiddleware(ctx iris.Context) {
 		MachineId:       id,
 	}
 	content, state := newActivation.GenerateKeystoreContent(activationInfo)
-	if state != Success {
+	if state != services.Success {
 
 	}
 	_, state = newActivation.ParseKeystoreFile()
-	if state != Success {
+	if state != services.Success {
 		ctx.JSON(
 			map[string]interface{}{
 				"code":      -100,

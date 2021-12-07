@@ -1,4 +1,4 @@
-package activation
+package services
 
 import (
 	"encoding/base64"
@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 	"translate-server/datamodels"
+	"translate-server/utils"
 )
 
 type Activation interface {
@@ -69,10 +70,10 @@ func (a activation) GenerateKeystoreContent(activationInfo datamodels.Activation
 	if err != nil {
 		return "", GenerateError
 	}
-	v := md5V(activationInfo.MachineId + AppID)
-	encrypt, err := AesEncrypt(data, []byte(v))
+	v := utils.Md5V(activationInfo.MachineId + AppID)
+	encrypt, err := utils.AesEncrypt(data, []byte(v))
 	if err != nil {
-		return "",AESError
+		return "", AESError
 	}
 	toString := base64.StdEncoding.EncodeToString(encrypt)
 	return toString, Success
@@ -98,12 +99,12 @@ func (a *activation) ParseKeystoreContent(content string) (*datamodels.Activatio
 	if state != Success {
 		return nil, GenerateError
 	}
-	v := md5V(id + AppID)
+	v := utils.Md5V(id + AppID)
 	base64Decode, err := base64.StdEncoding.DecodeString(content)
 	if err != nil {
 		return nil, ParseError
 	}
-	decrypt, err := AesDecrypt(base64Decode, []byte(v))
+	decrypt, err := utils.AesDecrypt(base64Decode, []byte(v))
 	if err != nil {
 		return nil, ParseError
 	}

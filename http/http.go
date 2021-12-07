@@ -10,25 +10,16 @@ import (
 
 func StartIntServer() {
 	app := iris.New()
-	mvc.Configure(app.Party("/api"), activationMVC, userMVC, usersMVC, fileMVC, textMVC)
+	mvc.Configure(app.Party("/api"), activationMVC, userMVC, usersMVC, translateMVC)
 	app.Run(iris.Addr(":8080"))
 }
 
 func activationMVC(app *mvc.Application)  {
-	app.Router.Use(func(ctx iris.Context) {
-		ctx.Application().Logger().Infof("Path: %s", ctx.Path())
-		ctx.Next()
-	})
-	party := app.Party("/activation")
+	party := app.Party("/middleware")
 	party.Handle(new(controller.ActivationController))
 }
 
-
 func userMVC(app *mvc.Application) {
-	app.Router.Use(func(ctx iris.Context) {
-		ctx.Application().Logger().Infof("Path: %s", ctx.Path())
-		ctx.Next()
-	})
 	party := app.Party("/user")
 	service := services.NewUserService()
 	users, _ := service.QueryAllUsers()
@@ -46,29 +37,14 @@ func userMVC(app *mvc.Application) {
 
 
 func usersMVC(app *mvc.Application) {
-	app.Router.Use(func(ctx iris.Context) {
-		ctx.Application().Logger().Infof("Path: %s", ctx.Path())
-		ctx.Next()
-	})
 	party := app.Party("/users")
 	service := services.NewUserService()
 	party.Register(service)
 	party.Handle(new(controller.UsersController))
 }
 
-func fileMVC(app *mvc.Application) {
-	app.Router.Use(func(ctx iris.Context) {
-		ctx.Application().Logger().Infof("Path: %s", ctx.Path())
-		ctx.Next()
-	})
-	app.Party("/file").Handle(new(controller.FileController))
+func translateMVC(app *mvc.Application) {
+	app.Party("/translate").Handle(new(controller.TranslateController))
 }
 
-func textMVC(app *mvc.Application) {
-	app.Router.Use(func(ctx iris.Context) {
-		ctx.Application().Logger().Infof("Path: %s", ctx.Path())
-		ctx.Next()
-	})
-	app.Party("/text").Handle(new(controller.TextController))
-}
 

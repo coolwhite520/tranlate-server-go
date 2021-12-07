@@ -1,4 +1,4 @@
-package jwt
+package middleware
 
 import (
 	"github.com/kataras/iris/v12"

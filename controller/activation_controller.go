@@ -4,7 +4,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"strings"
-	"translate-server/activation"
+	"translate-server/services"
 )
 
 type ActivationController struct {
@@ -30,10 +30,10 @@ func (a *ActivationController) Post() mvc.Result {
 		}
 	}
 	jsonObj.Keystore = strings.Trim(jsonObj.Keystore, " ")
-	newActivation := activation.NewActivation()
+	newActivation := services.NewActivation()
 
 	_, state := newActivation.ParseKeystoreContent(jsonObj.Keystore)
-	if state != activation.Success {
+	if state != services.Success {
 		return mvc.Response{
 			Object: map[string]interface{} {
 				"code": -100,
@@ -42,7 +42,7 @@ func (a *ActivationController) Post() mvc.Result {
 		}
 	}
 	state = newActivation.GenerateKeystoreFileByContent(jsonObj.Keystore)
-	if state != activation.Success {
+	if state != services.Success {
 		return mvc.Response{
 			Object: map[string]interface{} {
 				"code": -100,
