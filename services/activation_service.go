@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"github.com/denisbrodbeck/machineid"
 	"io/ioutil"
-	"os"
 	"time"
 	"translate-server/datamodels"
 	"translate-server/utils"
@@ -123,7 +122,7 @@ func (a *activation) ParseKeystoreContent(content string) (*datamodels.Activatio
 }
 
 func (a *activation) ParseKeystoreFile() (*datamodels.Activation, State) {
-	if ok, err := a.pathExists(KeyStorePath); ok && err == nil{
+	if utils.PathExists(KeyStorePath){
 		data, err := ioutil.ReadFile(KeyStorePath)
 		if err != nil {
 			return nil, ReadFileError
@@ -139,15 +138,5 @@ func (a *activation) isExpired(activationInfo *datamodels.Activation) bool {
 }
 
 
-// PathExists 判断文件是否存在
-func (a *activation) pathExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
-}
+
 

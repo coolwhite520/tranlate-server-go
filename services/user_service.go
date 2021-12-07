@@ -11,6 +11,7 @@ import (
 type UserService interface {
 	CheckUser(username, userPassword string) (datamodels.User, bool)
 	InsertUser(user datamodels.User) error
+    QueryAdminUsers() ([]datamodels.User, error)
 	QueryAllUsers() ([]datamodels.User, error)
 	DeleteUserById(id int64) error
 	UpdateUserPassword(user datamodels.User) error
@@ -89,6 +90,25 @@ func (u *userService) InsertUser(user datamodels.User) error {
 		return err
 	}
 	return nil
+}
+func (u *userService) QueryAdminUsers() ([]datamodels.User, error) {
+	sql := fmt.Sprintf("SELECT ID, Username, IsSuper, CreatedAt FROM tbl_user where IsSuper=1")
+	rows, err := db.Query(sql)
+	if err != nil {
+		log.Error(err)
+	}
+	var users []datamodels.User
+	for rows.Next() {
+		user := datamodels.User{}
+		var t time.Time
+		err := rows.Scan(&user.ID, &user.Username, &user.IsSuper, &t)
+		user.CreatedAt = t.Local().Format("2006-01-02 15:04:05")
+		if err != nil {
+			log.Fatal(err)
+		}
+		users = append(users, user)
+	}
+	return users, nil
 }
 
 func (u *userService) QueryAllUsers() ([]datamodels.User, error) {

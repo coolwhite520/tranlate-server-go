@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"translate-server/controller"
@@ -15,18 +16,18 @@ func StartIntServer() {
 }
 
 func activationMVC(app *mvc.Application)  {
-	party := app.Party("/middleware")
+	party := app.Party("/activation")
 	party.Handle(new(controller.ActivationController))
 }
 
 func userMVC(app *mvc.Application) {
 	party := app.Party("/user")
 	service := services.NewUserService()
-	users, _ := service.QueryAllUsers()
+	users, _ := service.QueryAdminUsers()
 	if users == nil {
 		password, _ := datamodels.GeneratePassword("admin")
 		service.InsertUser(datamodels.User{
-			Username:     "admin",
+			Username:     fmt.Sprintf("admin"),
 			HashedPassword: password,
 			IsSuper:  true,
 		})
@@ -44,7 +45,10 @@ func usersMVC(app *mvc.Application) {
 }
 
 func translateMVC(app *mvc.Application) {
-	app.Party("/translate").Handle(new(controller.TranslateController))
+	service := services.NewTranslateService()
+	party := app.Party("/translate")
+	party.Register(service)
+	party.Handle(new(controller.TranslateController))
 }
 
 

@@ -19,7 +19,7 @@ var signatureSharedKey = []byte("sercrethatmaycontainch@r32length")
 
 func GenerateToken( user datamodels.User) (string, error){
 	// Sign and generate compact form token.
-	token, err := jwt.Sign(jwt.HS256, signatureSharedKey, user, jwt.MaxAge(10*time.Minute))
+	token, err := jwt.Sign(jwt.HS256, signatureSharedKey, user, jwt.MaxAge(24 * time.Hour))
 	if err != nil {
 		return "", err
 	}
@@ -27,6 +27,7 @@ func GenerateToken( user datamodels.User) (string, error){
 	return tokenString, nil
 }
 
+// CheckLoginMiddleware 检测是否成功登录的中间件
 func CheckLoginMiddleware(ctx iris.Context) {
 	token := ctx.GetHeader("Authorization")
 	split := strings.Split(token, " ")
