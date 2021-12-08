@@ -97,7 +97,9 @@ func (t *TranslateController) PostTranslateFile() mvc.Result {
 	}
 	a:= t.Ctx.Values().Get("User")
 	user, _ := (a).(datamodels.User)
-	go t.TranslateService.TranslateFile(req.SrcLang, req.DesLang, req.RecordId, user.Id)
+	go func() {
+		t.TranslateService.TranslateFile(req.SrcLang, req.DesLang, req.RecordId, user.Id)
+	}()
 	return mvc.Response{
 		Object: map[string]interface{}{
 			"code": 200,

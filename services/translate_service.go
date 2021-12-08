@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/kataras/iris/v12"
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
 	"os"
+	"path"
 	"strings"
 	"time"
 	"translate-server/datamodels"
@@ -13,6 +15,22 @@ import (
 
 const UploadDir = "./uploads"
 const OutputDir = "./outputs"
+
+var RecordTableFieldList = []string{
+	"Md5",
+	"Content",
+	"ContentType",
+	"OutputContent",
+	"SrcLang",
+	"DesLang",
+	"FileName",
+	"FileSrcDir",
+	"FileDesDir",
+	"State",
+	"StateDescribe",
+	"Error",
+	"UserId",
+}
 
 type TranslateService interface {
 	ReceiveFiles(Ctx iris.Context) ([]datamodels.Record, error)
@@ -30,7 +48,7 @@ func NewTranslateService() TranslateService {
 type translateService struct {
 }
 
-func (t *translateService) ReceiveFiles(Ctx iris.Context) ([]datamodels.Record,error) {
+func (t *translateService) ReceiveFiles(Ctx iris.Context) ([]datamodels.Record, error) {
 	var records []datamodels.Record
 	u := Ctx.Values().Get("User")
 	user, _ := (u).(datamodels.User)
@@ -61,10 +79,10 @@ func (t *translateService) ReceiveFiles(Ctx iris.Context) ([]datamodels.Record,e
 			StateDescribe: datamodels.TransNoRun.String(),
 			UserId:        user.Id,
 		}
-		//err := t.insertTranslateRecord(record)
-		//if err == nil {
-		//	records = append(records, record)
-		//}
+		err = t.InsertRecord(&record)
+		if err != nil {
+			continue
+		}
 		records = append(records, record)
 	}
 	return records, nil
@@ -72,7 +90,7 @@ func (t *translateService) ReceiveFiles(Ctx iris.Context) ([]datamodels.Record,e
 
 // TranslateContent 同步翻译，用户界面卡住，直接返回翻译结果
 func (t *translateService) TranslateContent(srcLang string, desLang string, content string, userId int64) (string, error) {
-	outputContent, _ :=  t.translate(srcLang, desLang, content)
+	outputContent, _ := t.translate(srcLang, desLang, content)
 	var record datamodels.Record
 	record.SrcLang = srcLang
 	record.DesLang = desLang
@@ -84,7 +102,7 @@ func (t *translateService) TranslateContent(srcLang string, desLang string, cont
 	record.OutputContent = outputContent
 	record.UserId = userId
 	// 记录到数据库中
-	err := t.InsertTranslateRecord(&record)
+	err := t.InsertRecord(&record)
 	if err != nil {
 		return outputContent, err
 	}
@@ -92,28 +110,66 @@ func (t *translateService) TranslateContent(srcLang string, desLang string, cont
 }
 
 // TranslateFile 异步翻译，将结果写入到数据库中
-func (t *translateService) TranslateFile(srcLang string, desLang string, recordId int64, userId int64)  {
+func (t *translateService) TranslateFile(srcLang string, desLang string, recordId int64, userId int64) {
 	record, _ := t.QueryTranslateRecordById(recordId)
-	content, err := t.extractContent(record.FileSrcDir)
+	srcFilePathName := path.Join(record.FileSrcDir, record.FileName)
+	content, err := t.extractContent(srcFilePathName)
 	if err != nil {
+		record.State = datamodels.TransError
+		record.StateDescribe = datamodels.TransError.String()
+		record.Error = err.Error()
+		t.UpdateRecord(record)
 		return
 	}
-	_, err = t.translate(srcLang, desLang, content)
+	transContent, err := t.translate(srcLang, desLang, content)
 	if err != nil {
+		record.State = datamodels.TransError
+		record.StateDescribe = datamodels.TransError.String()
+		record.Error = err.Error()
+		t.UpdateRecord(record)
 		return
 	}
 	if !utils.PathExists(record.FileDesDir) {
 		os.MkdirAll(record.FileDesDir, 0777)
 	}
-
+	desFile := fmt.Sprintf("%s/%s.txt", record.FileDesDir, record.FileName)
+	ioutil.WriteFile(desFile, []byte(transContent), 0777)
+	record.State = datamodels.TransSuccess
+	record.StateDescribe = datamodels.TransSuccess.String()
+	record.Error = ""
+	t.UpdateRecord(record)
 }
 
 func (t *translateService) DeleteTranslateRecordById(id int64, bDelFile bool) error {
 	return nil
 }
 
-func (t *translateService) QueryTranslateRecordById(int64) (*datamodels.Record, error) {
-	return nil, nil
+func (t *translateService) QueryTranslateRecordById(id int64) (*datamodels.Record, error) {
+	sql := fmt.Sprintf("SELECT * FROM tbl_record where Id=?")
+	row:= db.QueryRow(sql, id)
+	record := new(datamodels.Record)
+	var tt time.Time
+	err := row.Scan(
+		&record.Id,
+		&record.Md5,
+		&record.Content,
+		&record.ContentType,
+		&record.OutputContent,
+		&record.SrcLang,
+		&record.DesLang,
+		&record.FileName,
+		&record.FileSrcDir,
+		&record.FileDesDir,
+		&record.State,
+		&record.StateDescribe,
+		&record.Error,
+		&record.UserId,
+		&tt)
+	if err != nil {
+		return nil, err
+	}
+	record.CreateAt = tt.Local().Format("2006-01-02 15:04:05")
+	return record, nil
 }
 
 func (t *translateService) QueryTranslateRecordsById(int64) ([]datamodels.Record, error) {
@@ -121,24 +177,79 @@ func (t *translateService) QueryTranslateRecordsById(int64) ([]datamodels.Record
 	return nil, nil
 }
 
-func (t *translateService) UpdateTranslateRecord(record * datamodels.Record) error {
-	return nil
-}
-
-func (t *translateService) InsertTranslateRecord(record *datamodels.Record) error {
+func (t *translateService) UpdateRecord(record *datamodels.Record) error {
+	var q []string
+	for _, _ = range RecordTableFieldList {
+		q = append(q, "?")
+	}
+	allFields := strings.Join(RecordTableFieldList, ",")
+	allQs := strings.Join(q, ",")
 	tx, _ := db.Begin()
-	sql := fmt.Sprintf("INSERT INTO tbl_user('Username', 'HashedPassword', 'IsSuper') VALUES(?,?,?);")
+	sql := fmt.Sprintf("REPLACE INTO tbl_record(Id,%s) VALUES(?,%s);", allFields, allQs)
 	stmt, err := tx.Prepare(sql)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
-	_, err = stmt.Exec()
+	_, err = stmt.Exec(
+		record.Id,
+		record.Md5,
+		record.Content,
+		record.ContentType,
+		record.OutputContent,
+		record.SrcLang,
+		record.DesLang,
+		record.FileName,
+		record.FileSrcDir,
+		record.FileDesDir,
+		record.State,
+		record.StateDescribe,
+		record.Error,
+		record.UserId,
+	)
 	tx.Commit()
 	if err != nil {
 		log.Error(err)
 		return err
 	}
+	return nil
+}
+
+func (t *translateService) InsertRecord(record *datamodels.Record) error {
+	var q []string
+	for _, _ = range RecordTableFieldList {
+		q = append(q, "?")
+	}
+	allFields := strings.Join(RecordTableFieldList, ",")
+	allQs := strings.Join(q, ",")
+	tx, _ := db.Begin()
+	sql := fmt.Sprintf("INSERT INTO tbl_record(%s) VALUES(%s);", allFields, allQs)
+	stmt, err := tx.Prepare(sql)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	result, err := stmt.Exec(
+		record.Md5,
+		record.Content,
+		record.ContentType,
+		record.OutputContent,
+		record.SrcLang,
+		record.DesLang,
+		record.FileName,
+		record.FileSrcDir,
+		record.FileDesDir,
+		record.State,
+		record.StateDescribe,
+		record.Error,
+		record.UserId,
+	)
+	tx.Commit()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	record.Id, _ = result.LastInsertId()
 	return nil
 }
 

@@ -3,11 +3,11 @@ package datamodels
 type TransStatus int64
 
 const (
-	TransNoRun TransStatus = iota
+	TransSuccess TransStatus = iota
+	TransNoRun
 	TransBegin
 	TransRunning
 	TransError
-	TransSuccess
 )
 
 func (t TransStatus) String() string {
@@ -19,9 +19,9 @@ func (t TransStatus) String() string {
 	case TransRunning:
 		return "正在对文件进行翻译"
 	case TransError:
-		return "文件翻译失败"
+		return "翻译失败"
 	case TransSuccess:
-		return "文件翻译成功过"
+		return "翻译成功"
 	default:
 		return ""
 	}
@@ -36,10 +36,11 @@ type Record struct {
 	SrcLang       string      `json:"src_lang"`
 	DesLang       string      `json:"des_lang"`
 	FileName      string      `json:"file_name"`
-	FileSrcDir    string      `json:"file_src_dir"`      // 文件的原始路径，也就是上传后的路径
-	FileDesDir    string      `json:"file_des_dir"`      // 文件的目标路径，也就是翻译后的输入文档路径
-	CreateAt      string      `json:"create_at"`
+	FileSrcDir    string      `json:"file_src_dir"` // 文件的原始路径，也就是上传后的路径
+	FileDesDir    string      `json:"file_des_dir"` // 文件的目标路径，也就是翻译后的输入文档路径
 	State         TransStatus `json:"state"`
 	StateDescribe string      `json:"state_describe"`
+	Error         string      `json:"error"`
 	UserId        int64       `json:"user_id"`
+	CreateAt      string      `json:"create_at"`
 }

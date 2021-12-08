@@ -20,3 +20,5 @@ uploads
 go_build_translate_server
 logs
 db.sqlite
+outputs
+.idea
