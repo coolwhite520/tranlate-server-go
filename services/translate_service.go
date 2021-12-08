@@ -112,6 +112,10 @@ func (t *translateService) TranslateContent(srcLang string, desLang string, cont
 // TranslateFile 异步翻译，将结果写入到数据库中
 func (t *translateService) TranslateFile(srcLang string, desLang string, recordId int64, userId int64) {
 	record, _ := t.QueryTranslateRecordById(recordId)
+	if  record == nil {
+		log.Error("查询不到RecordId为", recordId, "的记录")
+		return
+	}
 	srcFilePathName := path.Join(record.FileSrcDir, record.FileName)
 	content, err := t.extractContent(srcFilePathName)
 	if err != nil {
