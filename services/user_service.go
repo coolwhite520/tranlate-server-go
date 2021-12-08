@@ -31,7 +31,7 @@ func (u *userService) CheckUser(username, userPassword string) (datamodels.User,
 	}
 	row := db.QueryRow("select * from tbl_user where Username = ?", username)
 	var user datamodels.User
-	err := row.Scan(&user.ID, &user.Username, &user.HashedPassword, &user.IsSuper, &user.CreatedAt)
+	err := row.Scan(&user.Id, &user.Username, &user.HashedPassword, &user.IsSuper, &user.CreatedAt)
 	if err != nil {
 		return datamodels.User{}, false
 	}
@@ -65,7 +65,7 @@ func (u *userService) UpdateUserPassword(user datamodels.User) error {
 		log.Error(err)
 		return err
 	}
-	_, err = stmt.Exec(user.HashedPassword, user.ID)
+	_, err = stmt.Exec(user.HashedPassword, user.Id)
 	tx.Commit()
 	if err != nil {
 		log.Error(err)
@@ -92,7 +92,7 @@ func (u *userService) InsertUser(user datamodels.User) error {
 	return nil
 }
 func (u *userService) QueryAdminUsers() ([]datamodels.User, error) {
-	sql := fmt.Sprintf("SELECT ID, Username, IsSuper, CreatedAt FROM tbl_user where IsSuper=1")
+	sql := fmt.Sprintf("SELECT Id, Username, IsSuper, CreatedAt FROM tbl_user where IsSuper=1")
 	rows, err := db.Query(sql)
 	if err != nil {
 		log.Error(err)
@@ -101,7 +101,7 @@ func (u *userService) QueryAdminUsers() ([]datamodels.User, error) {
 	for rows.Next() {
 		user := datamodels.User{}
 		var t time.Time
-		err := rows.Scan(&user.ID, &user.Username, &user.IsSuper, &t)
+		err := rows.Scan(&user.Id, &user.Username, &user.IsSuper, &t)
 		user.CreatedAt = t.Local().Format("2006-01-02 15:04:05")
 		if err != nil {
 			log.Fatal(err)
@@ -112,7 +112,7 @@ func (u *userService) QueryAdminUsers() ([]datamodels.User, error) {
 }
 
 func (u *userService) QueryAllUsers() ([]datamodels.User, error) {
-	sql := fmt.Sprintf("SELECT ID, Username, IsSuper, CreatedAt FROM tbl_user where IsSuper=0")
+	sql := fmt.Sprintf("SELECT Id, Username, IsSuper, CreatedAt FROM tbl_user where IsSuper=0")
 	rows, err := db.Query(sql)
 	if err != nil {
 		log.Error(err)
@@ -121,7 +121,7 @@ func (u *userService) QueryAllUsers() ([]datamodels.User, error) {
 	for rows.Next() {
 		user := datamodels.User{}
 		var t time.Time
-		err := rows.Scan(&user.ID, &user.Username, &user.IsSuper, &t)
+		err := rows.Scan(&user.Id, &user.Username, &user.IsSuper, &t)
 		user.CreatedAt = t.Local().Format("2006-01-02 15:04:05")
 		if err != nil {
 			log.Fatal(err)
