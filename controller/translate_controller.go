@@ -45,12 +45,12 @@ func (t *TranslateController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Router().Use(middleware.CheckActivationMiddleware,
 		middleware.CheckLoginMiddleware,
 		middleware.FileLimiterMiddleware)
-	b.Handle("GET", "/lang", "GetLangList")
-	b.Handle("GET", "/records", "GetAllRecords")
-	b.Handle("POST", "/upload", "PostUpload")
-	b.Handle("POST", "/content", "PostTranslateContent")
-	b.Handle("POST", "/file", "PostTranslateFile")
-	b.Handle("POST", "/delete", "PostDeleteRecord")
+	b.Handle("GET", "/lang", "GetLangList") // 获取支持的语言列表
+	b.Handle("GET", "/records", "GetAllRecords") // 获取所有的翻译记录
+	b.Handle("POST", "/upload", "PostUpload") // 文件上传
+	b.Handle("POST", "/content", "PostTranslateContent") // 文本翻译
+	b.Handle("POST", "/file", "PostTranslateFile") // 执行文件翻译
+	b.Handle("POST", "/delete", "PostDeleteRecord") // 删除某一条记录
 }
 
 // GetLangList 获取支持的语言
