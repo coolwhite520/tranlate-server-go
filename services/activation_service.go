@@ -31,7 +31,6 @@ type State int
 const (
 	NotFound State = iota // value --> 0
 	ReadFileError
-	ParseError
 	ExpiredError
 	GenerateError
 	AESError
@@ -43,9 +42,8 @@ func (s State) String() string {
 	switch s {
 	case NotFound: return "未找到激活文件"
 	case ReadFileError: return "读取文件失败"
-	case ParseError: return "解析文件失败"
 	case ExpiredError: return "授权已经过期"
-	case GenerateError: return "生成错误"
+	case GenerateError: return "生成机器码错误，请联系管理员"
 	case AESError: return "Aes加解密错误"
 	case InvalidateError: return "无效的激活文件"
 	default:         return "成功"
@@ -101,16 +99,16 @@ func (a *activation) ParseKeystoreContent(content string) (*datamodels.Activatio
 	v := utils.Md5V(id + AppID)
 	base64Decode, err := base64.StdEncoding.DecodeString(content)
 	if err != nil {
-		return nil, ParseError
+		return nil, InvalidateError
 	}
 	decrypt, err := utils.AesDecrypt(base64Decode, []byte(v))
 	if err != nil {
-		return nil, ParseError
+		return nil, InvalidateError
 	}
 	var activationInfo datamodels.Activation
 	err = json.Unmarshal(decrypt, &activationInfo)
 	if err != nil {
-		return nil, ParseError
+		return nil, InvalidateError
 	}
 	if activationInfo.MachineId != id {
 		return nil, InvalidateError

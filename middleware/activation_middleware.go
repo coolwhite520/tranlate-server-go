@@ -19,11 +19,11 @@ func CheckActivationMiddleware(ctx iris.Context) {
 		CnName: "中文",
 	})
 	activationInfo := datamodels.Activation{
-		UserName:          "panda",
-		SupportLangList:   langList,
-		CreatedAt:         time.Now().Format("2006-01-02 15:04:05"),
-		ExpiredAt:         time.Date(2099, 1, 1, 1, 1, 1, 1, time.Local).Format("2006-01-02 15:04:05"),
-		MachineId:         id,
+		UserName:        "panda",
+		SupportLangList: langList,
+		CreatedAt:       time.Now().Format("2006-01-02 15:04:05"),
+		ExpiredAt:       time.Date(2099, 1, 1, 1, 1, 1, 1, time.Local).Format("2006-01-02 15:04:05"),
+		MachineId:       id,
 	}
 	content, state := newActivation.GenerateKeystoreContent(activationInfo)
 	if state != services.Success {
@@ -42,4 +42,3 @@ func CheckActivationMiddleware(ctx iris.Context) {
 	}
 	ctx.Next()
 }
-
