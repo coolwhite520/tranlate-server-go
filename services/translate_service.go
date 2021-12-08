@@ -36,9 +36,9 @@ type TranslateService interface {
 	ReceiveFiles(Ctx iris.Context) ([]datamodels.Record, error)
 	TranslateContent(srcLang string, desLang string, content string, userId int64) (string, error)
 	TranslateFile(srcLang string, desLang string, recordId int64, userId int64)
-	DeleteTranslateRecordById(int64, bool) error
-	QueryTranslateRecordById(int64) (*datamodels.Record, error)
-	QueryTranslateRecordsById(int64) ([]datamodels.Record, error)
+	DeleteTranslateRecordById(id int64, userId int64, bDel bool) error
+	QueryTranslateRecordById(id int64, userId int64) (*datamodels.Record, error) // user自己只能看见自己的文件
+	QueryTranslateRecordsByUserId(userId int64) ([]datamodels.Record, error)
 }
 
 func NewTranslateService() TranslateService {
@@ -111,7 +111,7 @@ func (t *translateService) TranslateContent(srcLang string, desLang string, cont
 
 // TranslateFile 异步翻译，将结果写入到数据库中
 func (t *translateService) TranslateFile(srcLang string, desLang string, recordId int64, userId int64) {
-	record, _ := t.QueryTranslateRecordById(recordId)
+	record, _ := t.QueryTranslateRecordById(recordId, userId)
 	if  record == nil {
 		log.Error("查询不到RecordId为", recordId, "的记录")
 		return
@@ -144,13 +144,38 @@ func (t *translateService) TranslateFile(srcLang string, desLang string, recordI
 	t.UpdateRecord(record)
 }
 
-func (t *translateService) DeleteTranslateRecordById(id int64, bDelFile bool) error {
+func (t *translateService) DeleteTranslateRecordById(id int64, userId int64, bDelFile bool) error {
+	tx, _ := db.Begin()
+	byId, err2 := t.QueryTranslateRecordById(id, userId)
+	if err2 != nil {
+		return err2
+	}
+
+	if bDelFile && byId.ContentType != ""{
+		srcFilePathName := path.Join(byId.FileSrcDir, byId.FileName)
+		desFilePathName := path.Join(byId.FileDesDir, byId.FileName)
+		os.Remove(srcFilePathName)
+		os.Remove(desFilePathName)
+	}
+
+	sql := fmt.Sprintf("DELETE FROM tbl_record where Id=? and UserId=?")
+	stmt, err := tx.Prepare(sql)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	_, err = stmt.Exec(id, userId)
+	tx.Commit()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
 	return nil
 }
 
-func (t *translateService) QueryTranslateRecordById(id int64) (*datamodels.Record, error) {
-	sql := fmt.Sprintf("SELECT * FROM tbl_record where Id=?")
-	row:= db.QueryRow(sql, id)
+func (t *translateService) QueryTranslateRecordById(id int64, userId int64) (*datamodels.Record, error) {
+	sql := fmt.Sprintf("SELECT * FROM tbl_record where Id=? and UserId=?;")
+	row:= db.QueryRow(sql, id, userId)
 	record := new(datamodels.Record)
 	var tt time.Time
 	err := row.Scan(
@@ -176,9 +201,40 @@ func (t *translateService) QueryTranslateRecordById(id int64) (*datamodels.Recor
 	return record, nil
 }
 
-func (t *translateService) QueryTranslateRecordsById(int64) ([]datamodels.Record, error) {
-
-	return nil, nil
+func (t *translateService) QueryTranslateRecordsByUserId(userId int64) ([]datamodels.Record, error) {
+	sql := fmt.Sprintf("SELECT * FROM tbl_record where UserId=?")
+	rows, err := db.Query(sql, userId)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	var records []datamodels.Record
+	for rows.Next() {
+		record := datamodels.Record{}
+		var tt time.Time
+		err = rows.Scan(
+			&record.Id,
+			&record.Md5,
+			&record.Content,
+			&record.ContentType,
+			&record.OutputContent,
+			&record.SrcLang,
+			&record.DesLang,
+			&record.FileName,
+			&record.FileSrcDir,
+			&record.FileDesDir,
+			&record.State,
+			&record.StateDescribe,
+			&record.Error,
+			&record.UserId,
+			&tt)
+		if err != nil {
+			return nil, err
+		}
+		record.CreateAt = tt.Local().Format("2006-01-02 15:04:05")
+		records = append(records, record)
+	}
+	return records, nil
 }
 
 func (t *translateService) UpdateRecord(record *datamodels.Record) error {

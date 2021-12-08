@@ -46,9 +46,11 @@ func (t *TranslateController) BeforeActivation(b mvc.BeforeActivation) {
 		middleware.CheckLoginMiddleware,
 		middleware.FileLimiterMiddleware)
 	b.Handle("GET", "/lang", "GetLangList")
+	b.Handle("GET", "/records", "GetAllRecords")
 	b.Handle("POST", "/upload", "PostUpload")
 	b.Handle("POST", "/content", "PostTranslateContent")
 	b.Handle("POST", "/file", "PostTranslateFile")
+	b.Handle("POST", "/delete", "PostDeleteRecord")
 }
 
 // GetLangList 获取支持的语言
@@ -166,6 +168,59 @@ func (t *TranslateController) PostUpload() mvc.Result {
 			"code": 200,
 			"msg": "success",
 			"data": list,
+		},
+	}
+}
+
+func (t TranslateController) GetAllRecords() mvc.Result {
+	a:= t.Ctx.Values().Get("User")
+	user, _ := (a).(datamodels.User)
+	records, err := t.TranslateService.QueryTranslateRecordsByUserId(user.Id)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": -100,
+				"msg": err.Error(),
+			},
+		}
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": 200,
+			"msg": "success",
+			"data": records,
+		},
+	}
+}
+
+func (t *TranslateController) PostDeleteRecord() mvc.Result {
+	var req struct{
+		RecordId int64 `json:"record_id"`
+	}
+	err := t.Ctx.ReadJSON(&req)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": -100,
+				"msg": err.Error(),
+			},
+		}
+	}
+	a:= t.Ctx.Values().Get("User")
+	user, _ := (a).(datamodels.User)
+	err = t.TranslateService.DeleteTranslateRecordById(req.RecordId, user.Id, true)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": -100,
+				"msg": err.Error(),
+			},
+		}
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": 200,
+			"msg": "success",
 		},
 	}
 }
