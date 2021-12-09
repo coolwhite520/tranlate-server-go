@@ -4,8 +4,11 @@ import (
 	_ "translate-server/datamodels"
 	"translate-server/http"
 	_ "translate-server/logext"
+	"translate-server/rpc"
 )
 
 func main()  {
-	http.StartIntServer()
+	rpc.StopAllServer()
+	rpc.StartTikaServer()
+	http.StartMainServer()
 }

@@ -9,7 +9,7 @@ import (
 	"translate-server/services"
 )
 
-func StartIntServer() {
+func StartMainServer() {
 	app := iris.New()
 	mvc.Configure(app.Party("/api"), activationMVC, userMVC, usersMVC, translateMVC)
 	app.Run(iris.Addr(":8080"))
