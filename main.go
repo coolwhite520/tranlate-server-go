@@ -8,7 +8,8 @@ import (
 )
 
 func main()  {
-	rpc.StopAllServer()
-	rpc.StartTikaServer()
+	rpc.ImportAllImages()
+	rpc.StopAllRunningDockers()
+	// qidong
 	http.StartMainServer()
 }
