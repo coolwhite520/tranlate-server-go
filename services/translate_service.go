@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 	"translate-server/datamodels"
+	"translate-server/rpc"
 	"translate-server/utils"
 )
 
@@ -314,15 +315,15 @@ func (t *translateService) InsertRecord(record *datamodels.Record) error {
 }
 
 func (t *translateService) translate(srcLang string, desLang string, content string) (string, error) {
-	return "", nil
+	return content, nil
 }
 
 func (t translateService) ocrDetectedImage(filePath string) (string, error) {
-	return "", nil
+	return rpc.OcrParseFile(filePath)
 }
 
 func (t translateService) tikaDetectedText(filePath string) (string, error) {
-	return "", nil
+	return rpc.TikaParseFile(filePath)
 }
 
 func (t *translateService) extractContent(filePath string) (string, error) {
