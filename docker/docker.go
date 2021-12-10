@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
@@ -69,13 +70,13 @@ type Operator struct {
 	cli *client.Client
 }
 
-func (d *Operator) StartDockers() error {
+func (o *Operator) StartDockers() error {
 	for _,v := range ContainerList {
-		err := d.loadImage(v)
+		err := o.loadImage(v)
 		if err != nil {
 			return err
 		}
-		err = d.startContainer(v)
+		err = o.startContainer(v)
 		if err != nil {
 			return err
 		}
@@ -83,8 +84,8 @@ func (d *Operator) StartDockers() error {
 	return nil
 }
 // LoadImage 从文件加载镜像
-func (d *Operator) loadImage(info ContainerInfo) error {
-	b, err := d.existImage(info)
+func (o *Operator) loadImage(info ContainerInfo) error {
+	b, err := o.existImage(info)
 	if err != nil {
 		return err
 	}
@@ -95,25 +96,47 @@ func (d *Operator) loadImage(info ContainerInfo) error {
 	if err != nil {
 		return err
 	}
-	_, err = d.cli.ImageLoad(context.Background(), f, true)
+	_, err = o.cli.ImageLoad(context.Background(), f, true)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func ReadBigFile(fileName string, handle func([]byte)) error {
+	f, err := os.Open(fileName)
+	if err != nil {
+		fmt.Println("can't opened this file")
+		return err
+	}
+	defer f.Close()
+	s := make([]byte, 4096)
+	for {
+		switch nr, err := f.Read(s[:]); true {
+		case nr < 0:
+			fmt.Fprintf(os.Stderr, "cat: error reading: %s\n", err.Error())
+			os.Exit(1)
+		case nr == 0: // EOF
+			return nil
+		case nr > 0:
+			handle(s[0:nr])
+		}
 	}
 	return nil
 }
 
 // RemoveAllContainer 移除所有容器 包括运行的和没有运行的
-func (d *Operator) RemoveAllContainer() error {
-	containers, err := d.cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+func (o *Operator) RemoveAllContainer() error {
+	containers, err := o.cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
 	if err != nil {
 		return err
 	}
 	for _, v := range containers {
-		err = d.cli.ContainerStop(context.Background(), v.ID, nil)
+		err = o.cli.ContainerStop(context.Background(), v.ID, nil)
 		if err != nil {
 			return err
 		}
-		err = d.cli.ContainerRemove(context.Background(), v.ID, types.ContainerRemoveOptions{})
+		err = o.cli.ContainerRemove(context.Background(), v.ID, types.ContainerRemoveOptions{})
 		if err != nil {
 			return err
 		}
@@ -121,34 +144,42 @@ func (d *Operator) RemoveAllContainer() error {
 	return nil
 }
 
+func (o *Operator) RemoveImage(id string) error {
+	_, err := o.cli.ImageRemove(context.Background(), id, types.ImageRemoveOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // StartContainer 启动容器
-func (d *Operator) startContainer(info ContainerInfo) error {
-	hasContainer, id, err := d.hasContainer(info.ContainerName)
+func (o *Operator) startContainer(info ContainerInfo) error {
+	hasContainer, id, err := o.hasContainer(info.ContainerName)
 	if err != nil {
 		return err
 	}
 	if hasContainer {
-		running, err := d.isContainerRunning(info.ContainerName, "")
+		running, err := o.isContainerRunning(info.ContainerName, "")
 		if err != nil {
 			return err
 		}
 		if running {
-			return d.cli.ContainerRestart(context.Background(), id, nil)
+			return o.cli.ContainerRestart(context.Background(), id, nil)
 		} else {
-			return d.cli.ContainerStart(context.Background(), id, types.ContainerStartOptions{})
+			return o.cli.ContainerStart(context.Background(), id, types.ContainerStartOptions{})
 		}
 	} else {
-		create, err := d.cli.ContainerCreate(context.Background(), info.Config, info.HostConfig, &network.NetworkingConfig{}, nil, "")
+		create, err := o.cli.ContainerCreate(context.Background(), info.Config, info.HostConfig, &network.NetworkingConfig{}, nil, "")
 		if err != nil {
 			return err
 		}
-		return d.cli.ContainerStart(context.Background(), create.ID, types.ContainerStartOptions{})
+		return o.cli.ContainerStart(context.Background(), create.ID, types.ContainerStartOptions{})
 	}
 }
 
 // ExistImage 镜像是否存在
-func (d *Operator) existImage(info ContainerInfo) (bool, error) {
-	images, err := d.cli.ImageList(context.Background(), types.ImageListOptions{})
+func (o *Operator) existImage(info ContainerInfo) (bool, error) {
+	images, err := o.cli.ImageList(context.Background(), types.ImageListOptions{})
 	if err != nil {
 		return false, err
 	}
@@ -163,8 +194,8 @@ func (d *Operator) existImage(info ContainerInfo) (bool, error) {
 }
 
 // HasContainer 是否存在某个容器
-func (d *Operator) hasContainer(name string) (bool, string, error) {
-	containers, err := d.cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+func (o *Operator) hasContainer(name string) (bool, string, error) {
+	containers, err := o.cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
 	if err != nil {
 		return false, "", err
 	}
@@ -177,8 +208,8 @@ func (d *Operator) hasContainer(name string) (bool, string, error) {
 }
 
 // IsContainerRunning 某个容器是否正在运行
-func (d *Operator) isContainerRunning(name string, id string) (bool, error) {
-	containers, err := d.cli.ContainerList(context.Background(), types.ContainerListOptions{})
+func (o *Operator) isContainerRunning(name string, id string) (bool, error) {
+	containers, err := o.cli.ContainerList(context.Background(), types.ContainerListOptions{})
 	if err != nil {
 		return false, err
 	}
