@@ -10,7 +10,6 @@ import (
 
 const TikaExternalPort = "9998"
 
-
 // TikaParseFile 根据文件路径进行文本提取
 func TikaParseFile(filePath string) (string, error) {
 	f, err := os.Open(filePath)
