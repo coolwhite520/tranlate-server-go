@@ -26,8 +26,8 @@ var ContainerList []ContainerInfo
 func init()  {
 	// tika 配置
 	tika := ContainerInfo{
-		ImageName:     "apache/tika",
-		ContainerName: "apache/tika",
+		ImageName:     "tika",
+		ContainerName: "tika",
 		LoadFilePath:  "./tika.tar",
 	}
 	config := &container.Config{
@@ -51,8 +51,38 @@ func init()  {
 	ContainerList = append(ContainerList, tika)
 }
 
+func init()  {
+	// tika 配置
+	translate := ContainerInfo{
+		ImageName:     "translate",
+		ContainerName: "translate",
+		LoadFilePath:  "./translate.tar",
+	}
+	config := &container.Config{
+		Image: translate.ImageName,
+		ExposedPorts: nat.PortSet{
+			"5000/tcp": {},
+		}}
+	hostConfig := &container.HostConfig{
+		PortBindings: nat.PortMap{
+			"5000/tcp": []nat.PortBinding{
+				{
+					HostIP:   "0.0.0.0",
+					HostPort: "5000",
+				},
+			},
+		},
+	}
+	translate.Config = config
+	translate.HostConfig = hostConfig
+
+	ContainerList = append(ContainerList, translate)
+}
+
 var instance *Operator
 var once sync.Once
+
+
 
 func GetInstance() *Operator {
 	once.Do(func() {
@@ -62,12 +92,20 @@ func GetInstance() *Operator {
 			panic(err)
 		}
 		instance.cli = cli
+		instance.status = Normal
 	})
 	return instance
 }
+type Status int
+
+const (
+	Initializing Status = iota // 激活后第一次的初始化
+	Normal
+)
 
 type Operator struct {
 	cli *client.Client
+	status Status   // 是否正在初始化
 }
 
 func (o *Operator) StartDockers() error {
@@ -83,6 +121,27 @@ func (o *Operator) StartDockers() error {
 	}
 	return nil
 }
+
+func (o *Operator) SetStatus(status Status)  {
+	o.status = status
+}
+func (o *Operator) GetStatus() Status {
+	return o.status
+}
+
+func (o *Operator) IsALlRunningStatus() (bool, error) {
+	for _,v := range ContainerList {
+		running, err := o.isContainerRunning(v.ContainerName)
+		if err != nil {
+			return false, err
+		}
+		if !running {
+			return false, nil
+		}
+	}
+	return true,nil
+}
+
 // LoadImage 从文件加载镜像
 func (o *Operator) loadImage(info ContainerInfo) error {
 	b, err := o.existImage(info)
@@ -159,7 +218,7 @@ func (o *Operator) startContainer(info ContainerInfo) error {
 		return err
 	}
 	if hasContainer {
-		running, err := o.isContainerRunning(info.ContainerName, "")
+		running, err := o.isContainerRunning(info.ContainerName)
 		if err != nil {
 			return err
 		}
@@ -208,13 +267,13 @@ func (o *Operator) hasContainer(name string) (bool, string, error) {
 }
 
 // IsContainerRunning 某个容器是否正在运行
-func (o *Operator) isContainerRunning(name string, id string) (bool, error) {
+func (o *Operator) isContainerRunning(name string) (bool, error) {
 	containers, err := o.cli.ContainerList(context.Background(), types.ContainerListOptions{})
 	if err != nil {
 		return false, err
 	}
 	for _, v := range containers {
-		if strings.Contains(v.Image, name) || strings.Contains(v.ID, id) {
+		if strings.Contains(v.Image, name) {
 			return true, nil
 		}
 	}

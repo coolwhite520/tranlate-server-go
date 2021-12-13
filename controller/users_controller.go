@@ -16,7 +16,7 @@ type UsersController struct {
 
 
 func (u *UsersController) BeforeActivation(b mvc.BeforeActivation) {
-	b.Router().Use(middleware.CheckActivationMiddleware, middleware.CheckLoginMiddleware, middleware.CheckSuperMiddleware)
+	b.Router().Use(middleware.CheckActivationMiddleware, middleware.IsSystemAvailable, middleware.CheckLoginMiddleware, middleware.CheckSuperMiddleware)
 	b.Handle("DELETE","/{id: int64}", "DeleteById")
 }
 

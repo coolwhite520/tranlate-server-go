@@ -12,10 +12,10 @@ func CheckActivationMiddleware(ctx iris.Context) {
 	id, _ := newActivation.GenerateMachineId()
 	var langList []datamodels.SupportLang
 	langList = append(langList, datamodels.SupportLang{
-		EnName: "en",
+		EnName: "English",
 		CnName: "英语",
 	}, datamodels.SupportLang{
-		EnName: "cn",
+		EnName: "Chinese",
 		CnName: "中文",
 	})
 	activationInfo := datamodels.Activation{

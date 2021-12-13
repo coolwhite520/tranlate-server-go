@@ -13,8 +13,8 @@ func main()  {
 	service := services.NewActivationService()
 	_, state := service.ParseKeystoreFile()
 	if state == services.Success {
-		docker.GetInstance().RemoveAllContainer()
-		docker.GetInstance().RemoveImage("48616f72e41a")
+		//docker.GetInstance().RemoveAllContainer()
+		//docker.GetInstance().RemoveImage("48616f72e41a")
 		err := docker.GetInstance().StartDockers()
 		if err != nil {
 			panic(err)

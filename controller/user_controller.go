@@ -15,7 +15,7 @@ type UserController struct {
 }
 
 func (u *UserController) BeforeActivation(b mvc.BeforeActivation) {
-	b.Router().Use(middleware.CheckActivationMiddleware)
+	b.Router().Use(middleware.CheckActivationMiddleware, middleware.IsSystemAvailable)
 	// 只有登录以后，才可以进行密码修改
 	b.Handle("POST", "/password", "PostPassword", middleware.CheckLoginMiddleware)
 }

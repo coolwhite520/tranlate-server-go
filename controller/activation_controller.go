@@ -3,7 +3,9 @@ package controller
 import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
+	log "github.com/sirupsen/logrus"
 	"strings"
+	"translate-server/docker"
 	"translate-server/services"
 )
 
@@ -50,6 +52,15 @@ func (a *ActivationController) Post() mvc.Result {
 			},
 		}
 	}
+	go func() {
+		docker.GetInstance().SetStatus(docker.Initializing)
+		err = docker.GetInstance().StartDockers()
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		docker.GetInstance().SetStatus(docker.Normal)
+	}()
 	return mvc.Response{
 		Object: map[string]interface{} {
 			"code": 200,
@@ -57,4 +68,5 @@ func (a *ActivationController) Post() mvc.Result {
 		},
 	}
 }
+
 
