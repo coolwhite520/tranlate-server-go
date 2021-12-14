@@ -5,6 +5,7 @@ type HttpStatusCode int64
 const (
 	HttpSuccess HttpStatusCode =  200
 	HttpDockerInitializing HttpStatusCode = -1000 - iota
+	HttpDockerRepairing
 	HttpDockerServiceException
 
 	HttpActivationNotFound
@@ -48,8 +49,10 @@ func (h HttpStatusCode) String() string {
 		return "成功"
 	case HttpDockerInitializing:
 		return "当前系统正在进行初始化,大约需要几分钟，请稍后..."
+	case HttpDockerRepairing:
+		return  "当前系统服务异常，正在尝试自动修复，请稍后..."
 	case HttpDockerServiceException:
-		return "当前系统服务异常，正在尝试自动修复，如需帮助请联系系统管理员..."
+		return "当前系统服务异常，请联系管理员，重新启动服务..."
 	case HttpActivationNotFound:
 		return "未找到激活文件"
 	case HttpActivationReadFileError:

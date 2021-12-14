@@ -20,6 +20,14 @@ func IsSystemAvailable(ctx iris.Context) {
 					"percent": docker.GetInstance().GetPercent(),
 				})
 			return
+		} else if docker.GetInstance().GetStatus() == docker.RepairingStatus{
+			ctx.JSON(
+				map[string]interface{}{
+					"code": datamodels.HttpDockerRepairing,
+					"msg": datamodels.HttpDockerRepairing.String(),
+					"percent": docker.GetInstance().GetPercent(),
+				})
+			return
 		} else {
 			ctx.JSON(
 				map[string]interface{}{

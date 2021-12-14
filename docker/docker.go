@@ -129,6 +129,7 @@ type Percent int
 
 const (
 	InitializingStatus Status = iota // 激活后第一次的初始化
+	RepairingStatus
 	NormalStatus
 	ErrorStatus
 )

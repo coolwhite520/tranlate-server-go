@@ -15,10 +15,12 @@ func main()  {
 		service := services.NewActivationService()
 		_, state := service.ParseKeystoreFile()
 		if state == datamodels.HttpSuccess {
+			docker.GetInstance().SetStatus(docker.RepairingStatus)
 			err := docker.GetInstance().StartDockers()
 			if err != nil {
 				panic(err)
 			}
+			docker.GetInstance().SetStatus(docker.NormalStatus)
 		}
 	}()
 	// 启动主要服务
