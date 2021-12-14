@@ -107,7 +107,7 @@ func (t *translateService) TranslateContent(srcLang string, desLang string, cont
 	if err != nil {
 		return outputContent, err
 	}
-	return "", nil
+	return outputContent, nil
 }
 
 // TranslateFile 异步翻译，将结果写入到数据库中
@@ -315,7 +315,7 @@ func (t *translateService) InsertRecord(record *datamodels.Record) error {
 }
 
 func (t *translateService) translate(srcLang string, desLang string, content string) (string, error) {
-	return content, nil
+	return rpc.PyTranslate(srcLang, desLang, content)
 }
 
 func (t translateService) ocrDetectedImage(filePath string) (string, error) {
