@@ -20,35 +20,35 @@ func OcrParseFile(filePathName string) (string, error) {
 	w := multipart.NewWriter(buf)
 	fw, err := w.CreateFormFile("image", base)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return "", err
 	}
 	f, err := os.Open(filePathName)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return "", err
 	}
 	bin, err := ioutil.ReadAll(f)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return "", err
 	}
 	_, err = fw.Write(bin)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return "", err
 	}
 	w.Close()
 
 	req, err := http.NewRequest("POST", "http://localhost:9090/upload", buf)
 	if err != nil {
-		fmt.Println("req err: ", err)
+		log.Error("req err: ", err)
 		return "", err
 	}
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Println("resp err: ", err)
+		log.Error("resp err: ", err)
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -59,7 +59,7 @@ func OcrParseFile(filePathName string) (string, error) {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println(err.Error())
+		log.Error(err.Error())
 		return "", err
 	}
 

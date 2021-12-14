@@ -50,6 +50,33 @@ func init()  {
 
 	ContainerList = append(ContainerList, tika)
 }
+func init()  {
+	// tesseract 配置
+	tesseract := ContainerInfo{
+		ImageName:     "tesseract:latest",
+		ContainerName: "tesseract:latest",
+		LoadFilePath:  "./tesseract.tar",
+	}
+	config := &container.Config{
+		Image: tesseract.ImageName,
+		ExposedPorts: nat.PortSet{
+			"9090/tcp": {},
+		}}
+	hostConfig := &container.HostConfig{
+		PortBindings: nat.PortMap{
+			"9090/tcp": []nat.PortBinding{
+				{
+					HostIP:   "0.0.0.0",
+					HostPort: "9090",
+				},
+			},
+		},
+	}
+	tesseract.Config = config
+	tesseract.HostConfig = hostConfig
+
+	ContainerList = append(ContainerList, tesseract)
+}
 
 func init()  {
 	// tika 配置

@@ -15,8 +15,6 @@ func main()  {
 		service := services.NewActivationService()
 		_, state := service.ParseKeystoreFile()
 		if state == datamodels.HttpSuccess {
-			//docker.GetInstance().RemoveAllContainer()
-			//docker.GetInstance().RemoveImage("48616f72e41a")
 			err := docker.GetInstance().StartDockers()
 			if err != nil {
 				panic(err)
