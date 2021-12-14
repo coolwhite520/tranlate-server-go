@@ -3,8 +3,8 @@ package datamodels
 type HttpStatusCode int64
 
 const (
-	HttpSuccess HttpStatusCode = iota + 200
-	HttpDockerInitializing
+	HttpSuccess HttpStatusCode =  200
+	HttpDockerInitializing HttpStatusCode = -1000 - iota
 	HttpDockerServiceException
 
 	HttpActivationNotFound
