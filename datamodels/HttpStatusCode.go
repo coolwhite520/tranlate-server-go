@@ -37,6 +37,9 @@ const (
 	HttpUsersDeleteError
 	HttpUsersAddError
 	HttpUsersExistSameUserNameError
+
+	HttpFileNotFoundError
+	HttpFileOpenError
 )
 
 func (h HttpStatusCode) String() string {
@@ -46,7 +49,7 @@ func (h HttpStatusCode) String() string {
 	case HttpDockerInitializing:
 		return "当前系统正在进行初始化,大约需要几分钟，请稍后..."
 	case HttpDockerServiceException:
-		return "当前系统服务异常，请联系管理员..."
+		return "当前系统服务异常，正在尝试自动修复，如需帮助请联系系统管理员..."
 	case HttpActivationNotFound:
 		return "未找到激活文件"
 	case HttpActivationReadFileError:
