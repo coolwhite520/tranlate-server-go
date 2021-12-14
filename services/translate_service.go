@@ -15,6 +15,7 @@ import (
 )
 
 const UploadDir = "./uploads"
+const ExtractDir = "./extracts"
 const OutputDir = "./outputs"
 
 var RecordTableFieldList = []string{
@@ -26,6 +27,7 @@ var RecordTableFieldList = []string{
 	"DesLang",
 	"FileName",
 	"FileSrcDir",
+	"FileMiddleDir",
 	"FileDesDir",
 	"State",
 	"StateDescribe",
@@ -59,6 +61,7 @@ func (t *translateService) ReceiveFiles(Ctx iris.Context) ([]datamodels.Record, 
 	if !utils.PathExists(userUploadDir) {
 		os.MkdirAll(userUploadDir, 0777)
 	}
+	MiddleDir := fmt.Sprintf("%s/%d/%d", ExtractDir, user.Id, nowUnixMicro)
 	userOutputDir := fmt.Sprintf("%s/%d/%d", OutputDir, user.Id, nowUnixMicro)
 
 	files, _, err := Ctx.UploadFormFiles(userUploadDir)
@@ -74,6 +77,7 @@ func (t *translateService) ReceiveFiles(Ctx iris.Context) ([]datamodels.Record, 
 			Md5:           md5,
 			FileName:      v.Filename,
 			FileSrcDir:    userUploadDir,
+			FileMiddleDir: MiddleDir,
 			FileDesDir:    userOutputDir,
 			CreateAt:      time.Now().Format("2006-01-02 15:04:05"),
 			State:         datamodels.TransNoRun,
@@ -126,6 +130,12 @@ func (t *translateService) TranslateFile(srcLang string, desLang string, recordI
 		t.UpdateRecord(record)
 		return
 	}
+	if !utils.PathExists(record.FileMiddleDir) {
+		os.MkdirAll(record.FileMiddleDir, 0777)
+	}
+	desFile := fmt.Sprintf("%s/%s.txt", record.FileMiddleDir, record.FileName)
+	ioutil.WriteFile(desFile, []byte(content), 0777)
+
 	transContent, err := t.translate(srcLang, desLang, content)
 	if err != nil {
 		record.State = datamodels.TransError
@@ -137,7 +147,7 @@ func (t *translateService) TranslateFile(srcLang string, desLang string, recordI
 	if !utils.PathExists(record.FileDesDir) {
 		os.MkdirAll(record.FileDesDir, 0777)
 	}
-	desFile := fmt.Sprintf("%s/%s.txt", record.FileDesDir, record.FileName)
+	desFile = fmt.Sprintf("%s/%s.txt", record.FileDesDir, record.FileName)
 	ioutil.WriteFile(desFile, []byte(transContent), 0777)
 	record.State = datamodels.TransSuccess
 	record.StateDescribe = datamodels.TransSuccess.String()
@@ -154,8 +164,10 @@ func (t *translateService) DeleteTranslateRecordById(id int64, userId int64, bDe
 
 	if bDelFile && byId.ContentType != ""{
 		srcFilePathName := path.Join(byId.FileSrcDir, byId.FileName)
+		middleFilePathName := path.Join(byId.FileMiddleDir, byId.FileName)
 		desFilePathName := path.Join(byId.FileDesDir, byId.FileName)
 		os.Remove(srcFilePathName)
+		os.Remove(middleFilePathName)
 		os.Remove(desFilePathName)
 	}
 
@@ -189,6 +201,7 @@ func (t *translateService) QueryTranslateRecordById(id int64, userId int64) (*da
 		&record.DesLang,
 		&record.FileName,
 		&record.FileSrcDir,
+		&record.FileMiddleDir,
 		&record.FileDesDir,
 		&record.State,
 		&record.StateDescribe,
@@ -223,6 +236,7 @@ func (t *translateService) QueryTranslateRecordsByUserId(userId int64) ([]datamo
 			&record.DesLang,
 			&record.FileName,
 			&record.FileSrcDir,
+			&record.FileMiddleDir,
 			&record.FileDesDir,
 			&record.State,
 			&record.StateDescribe,
@@ -262,6 +276,7 @@ func (t *translateService) UpdateRecord(record *datamodels.Record) error {
 		record.DesLang,
 		record.FileName,
 		record.FileSrcDir,
+		record.FileMiddleDir,
 		record.FileDesDir,
 		record.State,
 		record.StateDescribe,
@@ -299,6 +314,7 @@ func (t *translateService) InsertRecord(record *datamodels.Record) error {
 		record.DesLang,
 		record.FileName,
 		record.FileSrcDir,
+		record.FileMiddleDir,
 		record.FileDesDir,
 		record.State,
 		record.StateDescribe,

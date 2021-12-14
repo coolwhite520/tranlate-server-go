@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS "tbl_record" (
   "DesLang" TEXT,
   "FileName" TEXT,
   "FileSrcDir" TEXT,
+  "FileMiddleDir" TEXT,
   "FileDesDir" TEXT,
   "State" INTEGER,
   "StateDescribe" TEXT,

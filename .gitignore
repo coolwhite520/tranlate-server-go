@@ -17,6 +17,7 @@
 bin
 *.log
 uploads
+extracts
 go_build_translate_server
 logs
 db.sqlite

@@ -36,8 +36,9 @@ type Record struct {
 	SrcLang       string      `json:"src_lang"`
 	DesLang       string      `json:"des_lang"`
 	FileName      string      `json:"file_name"`
-	FileSrcDir    string      `json:"file_src_dir"` // 文件的原始路径，也就是上传后的路径
-	FileDesDir    string      `json:"file_des_dir"` // 文件的目标路径，也就是翻译后的输入文档路径
+	FileSrcDir    string      `json:"file_src_dir"`    // 文件的原始路径，也就是上传后的路径
+	FileMiddleDir string      `json:"file_middle_dir"` // 抽取的文本存储的路径
+	FileDesDir    string      `json:"file_des_dir"`    // 文件的目标路径，也就是翻译后的输入文档路径
 	State         TransStatus `json:"state"`
 	StateDescribe string      `json:"state_describe"`
 	Error         string      `json:"error"`

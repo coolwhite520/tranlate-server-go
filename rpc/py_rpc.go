@@ -3,9 +3,9 @@ package rpc
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/errgo.v2/errors"
 	"io/ioutil"
 	"net/http"
 	"time"
