@@ -12,7 +12,16 @@ import (
 	"os"
 	"path"
 	"strings"
+	"unicode"
 )
+func IsChineseChar(str string) bool {
+	for _, r := range str {
+		if unicode.Is(unicode.Scripts["Han"], r) {
+			return true
+		}
+	}
+	return false
+}
 
 func OcrParseFile(filePathName string) (string, error) {
 	base := path.Base(filePathName)
@@ -75,7 +84,13 @@ func OcrParseFile(filePathName string) (string, error) {
 	if a.Code != 200 {
 		return "", errors.New(a.Msg)
 	}
-	all := strings.ReplaceAll(a.Content, " ", "")
+	var all string
+	if IsChineseChar(a.Content) {
+		all = strings.ReplaceAll(a.Content, " ", "")
+	} else {
+		all = a.Content
+	}
+
 	return all, nil
 }
 
