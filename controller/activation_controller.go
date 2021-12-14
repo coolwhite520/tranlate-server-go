@@ -39,7 +39,7 @@ func (a *ActivationController) Post() mvc.Result {
 	if state != datamodels.HttpSuccess {
 		return mvc.Response{
 			Object: map[string]interface{} {
-				"code": -100,
+				"code": state,
 				"msg": state.String(),
 			},
 		}
