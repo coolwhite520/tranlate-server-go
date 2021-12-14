@@ -34,8 +34,8 @@ func CheckLoginMiddleware(ctx iris.Context) {
 	if len(split) < 2 {
 		ctx.JSON(
 			map[string]interface{}{
-				"code": -100,
-				"msg": "账户未登录",
+				"code": datamodels.HttpUserNotLogin,
+				"msg": datamodels.HttpUserNotLogin.String(),
 			})
 		return
 	}
@@ -45,8 +45,8 @@ func CheckLoginMiddleware(ctx iris.Context) {
 	if err != nil {
 		ctx.JSON(
 			map[string]interface{}{
-			"code": -100,
-			"msg": "账户未登录或登录信息已失效",
+			"code": datamodels.HttpUserExpired,
+			"msg": datamodels.HttpUserExpired.String(),
 		})
 		return
 	}

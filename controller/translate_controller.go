@@ -28,7 +28,7 @@ func isIn(target string, strArray []datamodels.SupportLang) bool {
 func IsSupportLang(srcLang, desLang string) (bool, []datamodels.SupportLang) {
 	newActivation := services.NewActivationService()
 	file, state := newActivation.ParseKeystoreFile()
-	if state != services.Success {
+	if state != datamodels.HttpSuccess {
 		return false, file.SupportLangList
 	}
 	if !isIn(srcLang, file.SupportLangList) {
@@ -57,18 +57,18 @@ func (t *TranslateController) BeforeActivation(b mvc.BeforeActivation) {
 // GetLangList 获取支持的语言
 func (t *TranslateController) GetLangList() mvc.Result {
 	file, state := t.ActivationService.ParseKeystoreFile()
-	if state != services.Success {
+	if state != datamodels.HttpSuccess {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": -100,
+				"code": state,
 				"msg": state.String(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": 200,
-			"msg": "success",
+			"code": datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
 			"data":file.SupportLangList,
 		},
 	}
@@ -85,15 +85,15 @@ func (t *TranslateController) PostTranslateFile() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": -100,
-				"msg": err.Error(),
+				"code": datamodels.HttpJsonParseError,
+				"msg": datamodels.HttpJsonParseError.String(),
 			},
 		}
 	}
 	if b, list := IsSupportLang(req.DesLang, req.SrcLang); !b {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": -100,
+				"code": datamodels.HttpLanguageNotSupport,
 				"msg": fmt.Sprintf("不支持的语言，当前版本支持的语言列表为%v", list),
 			},
 		}
@@ -105,7 +105,8 @@ func (t *TranslateController) PostTranslateFile() mvc.Result {
 	}()
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": 200,
+			"code": datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
 		},
 	}
 }
@@ -120,15 +121,15 @@ func (t *TranslateController) PostTranslateContent() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": -100,
-				"msg": err.Error(),
+				"code": datamodels.HttpJsonParseError,
+				"msg": datamodels.HttpJsonParseError.String(),
 			},
 		}
 	}
 	if b, list := IsSupportLang(req.DesLang, req.SrcLang); !b {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": -100,
+				"code": datamodels.HttpLanguageNotSupport,
 				"msg": fmt.Sprintf("不支持的语言，当前版本支持的语言列表为%v", list),
 			},
 		}
@@ -139,15 +140,15 @@ func (t *TranslateController) PostTranslateContent() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": -100,
+				"code": datamodels.HttpTranslateError,
 				"msg": err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": 200,
-			"msg": "success",
+			"code": datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
 			"data": outputContent,
 		},
 	}
@@ -159,15 +160,15 @@ func (t *TranslateController) PostUpload() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": -100,
+				"code": datamodels.HttpUploadFileError,
 				"msg": err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": 200,
-			"msg": "success",
+			"code": datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
 			"data": list,
 		},
 	}
@@ -180,15 +181,15 @@ func (t TranslateController) GetAllRecords() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": -100,
+				"code": datamodels.HttpRecordGetError,
 				"msg": err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": 200,
-			"msg": "success",
+			"code": datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
 			"data": records,
 		},
 	}
@@ -202,8 +203,8 @@ func (t *TranslateController) PostDeleteRecord() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": -100,
-				"msg": err.Error(),
+				"code": datamodels.HttpJsonParseError,
+				"msg": datamodels.HttpJsonParseError.String(),
 			},
 		}
 	}
@@ -213,15 +214,15 @@ func (t *TranslateController) PostDeleteRecord() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": -100,
+				"code": datamodels.HttpRecordDelError,
 				"msg": err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": 200,
-			"msg": "success",
+			"code": datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
 		},
 	}
 }

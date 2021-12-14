@@ -27,15 +27,15 @@ func (u *UsersController) Get() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  -100,
+				"code":  datamodels.HttpUsersQueryError,
 				"msg": err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code":  200,
-			"msg": "success",
+			"code":  datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
 			"data": users,
 		},
 	}
@@ -46,15 +46,15 @@ func (u *UsersController) DeleteById(Id int64) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  -100,
+				"code":  datamodels.HttpUsersDeleteError,
 				"msg": err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code":  200,
-			"msg": "success",
+			"code":  datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
 		},
 	}
 }
@@ -69,7 +69,7 @@ func (u *UsersController) Post() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  -100,
+				"code":  datamodels.HttpUsersAddError,
 				"msg": err.Error(),
 			},
 		}
@@ -84,15 +84,15 @@ func (u *UsersController) Post() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  -100,
+				"code":  datamodels.HttpUsersExistSameUserNameError,
 				"msg": "存在相同的用户名",
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code":  200,
-			"msg": "success",
+			"code":  datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
 		},
 	}
 }

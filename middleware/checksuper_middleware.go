@@ -13,7 +13,7 @@ func CheckSuperMiddleware(Ctx iris.Context) {
 		return
 	}
 	Ctx.JSON(map[string]interface{}{
-		"code":  -100,
-		"msg": "权限不足，禁止访问",
+		"code":  datamodels.HttpUserForbidden,
+		"msg": datamodels.HttpUserForbidden.String(),
 	})
 }

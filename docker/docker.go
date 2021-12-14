@@ -92,34 +92,50 @@ func GetInstance() *Operator {
 			panic(err)
 		}
 		instance.cli = cli
-		instance.status = Normal
+		instance.percent = 0
+		instance.status = NormalStatus
 	})
 	return instance
 }
 type Status int
+type Percent int
 
 const (
-	Initializing Status = iota // 激活后第一次的初始化
-	Normal
+	InitializingStatus Status = iota // 激活后第一次的初始化
+	NormalStatus
+	ErrorStatus
 )
 
 type Operator struct {
 	cli *client.Client
 	status Status   // 是否正在初始化
+	percent Percent
 }
 
 func (o *Operator) StartDockers() error {
+	o.percent = 0
 	for _,v := range ContainerList {
 		err := o.loadImage(v)
 		if err != nil {
+			o.status = ErrorStatus
 			return err
 		}
+		o.percent += 15
 		err = o.startContainer(v)
 		if err != nil {
+			o.status = ErrorStatus
 			return err
 		}
+		o.percent += 15
 	}
+	o.percent = 100
 	return nil
+}
+func (o *Operator) SetPercent(percent Percent)  {
+	o.percent = percent
+}
+func (o *Operator) GetPercent() Percent {
+	return o.percent
 }
 
 func (o *Operator) SetStatus(status Status)  {
@@ -133,13 +149,13 @@ func (o *Operator) IsALlRunningStatus() (bool, error) {
 	for _,v := range ContainerList {
 		running, err := o.isContainerRunning(v.ContainerName)
 		if err != nil {
-			return false, err
+			return false,  err
 		}
 		if !running {
 			return false, nil
 		}
 	}
-	return true,nil
+	return true, nil
 }
 
 // LoadImage 从文件加载镜像

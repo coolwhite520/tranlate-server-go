@@ -31,16 +31,16 @@ func (u *UserController) PostPassword() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": -100,
-				"msg":  err.Error(),
+				"code": datamodels.HttpJsonParseError,
+				"msg": datamodels.HttpJsonParseError.String(),
 			},
 		}
 	}
 	if newUserReq.NewPassword != newUserReq.SecondPassword {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": -100,
-				"msg":  "两次密码不一致，请重新输入",
+				"code": datamodels.HttpUserTwicePwdNotSame,
+				"msg": datamodels.HttpUserTwicePwdNotSame.String(),
 			},
 		}
 	}
@@ -53,21 +53,21 @@ func (u *UserController) PostPassword() mvc.Result {
 			if err != nil {
 				return mvc.Response{
 					Object: map[string]interface{}{
-						"code": -100,
+						"code": datamodels.HttpUserUpdatePwdError,
 						"msg":  err.Error(),
 					},
 				}
 			}
 			return mvc.Response{
 				Object: map[string]interface{}{
-					"code": 200,
-					"msg":  "success, 重定向导login进行重新登录，清理掉header中的信息",
+					"code": datamodels.HttpSuccess,
+					"msg":  datamodels.HttpSuccess.String(),
 				},
 			}
 		} else {
 			return mvc.Response{
 				Object: map[string]interface{}{
-					"code": -100,
+					"code": datamodels.HttpUserPwdError,
 					"msg":  "原始密码输入有误，请重新输入",
 				},
 			}
@@ -75,8 +75,8 @@ func (u *UserController) PostPassword() mvc.Result {
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": -100,
-			"msg":  "登录信息有误，请重新登录",
+			"code": datamodels.HttpUserExpired,
+			"msg":  datamodels.HttpUserExpired.String(),
 		},
 	}
 }
@@ -91,8 +91,8 @@ func (u *UserController) PostLogin() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": -100,
-				"msg":  err.Error(),
+				"code": datamodels.HttpJsonParseError,
+				"msg": datamodels.HttpJsonParseError.String(),
 			},
 		}
 	}
@@ -102,8 +102,8 @@ func (u *UserController) PostLogin() mvc.Result {
 		if err != nil {
 			return mvc.Response{
 				Object: map[string]interface{}{
-					"code": 500,
-					"msg":  "服务器错误",
+					"code": datamodels.HttpJwtTokenGenerateError,
+					"msg":  "服务器生成JWT错误",
 				},
 			}
 		}
@@ -111,14 +111,14 @@ func (u *UserController) PostLogin() mvc.Result {
 		u.Ctx.Header("Authorization", fmt.Sprintf("Bearer %s", token))
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": 200,
-				"msg":  "用户登录成功",
+				"code": datamodels.HttpSuccess,
+				"msg":  datamodels.HttpSuccess.String(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": -100,
+			"code": datamodels.HttpUserNameOrPwdError,
 			"msg":  "用户名密码错误",
 		},
 	}

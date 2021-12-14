@@ -26,14 +26,14 @@ func CheckActivationMiddleware(ctx iris.Context) {
 		MachineId:       id,
 	}
 	content, state := newActivation.GenerateKeystoreContent(activationInfo)
-	if state != services.Success {
+	if state != datamodels.HttpSuccess {
 
 	}
 	_, state = newActivation.ParseKeystoreFile()
-	if state != services.Success {
+	if state != datamodels.HttpSuccess {
 		ctx.JSON(
 			map[string]interface{}{
-				"code":      -100,
+				"code":      state,
 				"machineId": id,
 				"msg":       state.String(),
 				"keystore":  content,

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"github.com/kataras/iris/v12"
+	"translate-server/datamodels"
 	"translate-server/docker"
 )
 
@@ -11,19 +12,19 @@ func IsSystemAvailable(ctx iris.Context) {
 		return
 	}
 	if !ok  {
-		if  docker.GetInstance().GetStatus() == docker.Initializing {
+		if  docker.GetInstance().GetStatus() == docker.InitializingStatus {
 			ctx.JSON(
 				map[string]interface{}{
-					"code": -100,
-					"msg": "当前系统正在进行初始化,大约需要几分钟，请稍后...",
-					"percent": 19,
+					"code": datamodels.HttpDockerInitializing,
+					"msg": datamodels.HttpDockerInitializing.String(),
+					"percent": docker.GetInstance().GetPercent(),
 				})
 			return
 		} else {
 			ctx.JSON(
 				map[string]interface{}{
-					"code": -100,
-					"msg": "当前系统服务异常，请联系管理员...",
+					"code": datamodels.HttpDockerServiceException,
+					"msg": datamodels.HttpDockerServiceException.String(),
 				})
 			return
 		}

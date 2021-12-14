@@ -11,12 +11,12 @@ import (
 )
 
 type ActivationService interface {
-	GenerateMachineId() (string, State)
-	GenerateKeystoreContent(activationInfo datamodels.Activation) (string, State)
-	GenerateKeystoreFile(datamodels.Activation) State
-	GenerateKeystoreFileByContent(string) State
-	ParseKeystoreContent(content string) (*datamodels.Activation, State)
-	ParseKeystoreFile() (*datamodels.Activation, State)
+	GenerateMachineId() (string, datamodels.HttpStatusCode)
+	GenerateKeystoreContent(activationInfo datamodels.Activation) (string, datamodels.HttpStatusCode)
+	GenerateKeystoreFile(datamodels.Activation) datamodels.HttpStatusCode
+	GenerateKeystoreFileByContent(string) datamodels.HttpStatusCode
+	ParseKeystoreContent(content string) (*datamodels.Activation, datamodels.HttpStatusCode)
+	ParseKeystoreFile() (*datamodels.Activation, datamodels.HttpStatusCode)
 }
 
 func NewActivationService() ActivationService {
@@ -26,108 +26,86 @@ func NewActivationService() ActivationService {
 const KeyStorePath = "./keystore"
 const AppID = "@My_TrAnSLaTe_sErVeR"
 
-type State int
 
-const (
-	NotFound State = iota // value --> 0
-	ReadFileError
-	ExpiredError
-	GenerateError
-	AESError
-	InvalidateError
-	Success
-)
-
-func (s State) String() string {
-	switch s {
-	case NotFound: return "未找到激活文件"
-	case ReadFileError: return "读取文件失败"
-	case ExpiredError: return "授权已经过期"
-	case GenerateError: return "生成机器码错误，请联系管理员"
-	case AESError: return "Aes加解密错误"
-	case InvalidateError: return "无效的激活文件"
-	default:         return "成功"
-	}
-}
 
 type activation struct {
 }
 
 // GenerateMachineId 生成机器码
-func (a *activation) GenerateMachineId() (string, State) {
+func (a *activation) GenerateMachineId() (string, datamodels.HttpStatusCode) {
 	id, err := machineid.ProtectedID(AppID)
 	if err != nil {
-		return "", GenerateError
+		return "", datamodels.HttpActivationGenerateError
 	}
-	return id, Success
+	return id, datamodels.HttpSuccess
 }
 
-func (a activation) GenerateKeystoreContent(activationInfo datamodels.Activation) (string, State) {
+func (a activation) GenerateKeystoreContent(activationInfo datamodels.Activation) (string, datamodels.HttpStatusCode) {
 	data, err := json.Marshal(activationInfo)
 	if err != nil {
-		return "", GenerateError
+		return "", datamodels.HttpActivationGenerateError
 	}
 	v := utils.Md5V(activationInfo.MachineId + AppID)
 	encrypt, err := utils.AesEncrypt(data, []byte(v))
 	if err != nil {
-		return "", AESError
+		return "", datamodels.HttpActivationAESError
 	}
 	toString := base64.StdEncoding.EncodeToString(encrypt)
-	return toString, Success
+	return toString, datamodels.HttpSuccess
 }
 
 
-func (a *activation) GenerateKeystoreFile(activationInfo datamodels.Activation) State {
-	content, state := a.GenerateKeystoreContent(activationInfo)
-	if state != Success {
-		return state
+func (a *activation) GenerateKeystoreFile(activationInfo datamodels.Activation) datamodels.HttpStatusCode {
+	content, status := a.GenerateKeystoreContent(activationInfo)
+	if status != datamodels.HttpSuccess {
+		return status
 	}
 	ioutil.WriteFile(KeyStorePath, []byte(content), 0777)
-	return Success
+	return datamodels.HttpSuccess
 }
 
-func (a *activation) GenerateKeystoreFileByContent(content string) State {
+func (a *activation) GenerateKeystoreFileByContent(content string) datamodels.HttpStatusCode {
 	ioutil.WriteFile(KeyStorePath, []byte(content), 0777)
-	return Success
+	return datamodels.HttpSuccess
 }
 
-func (a *activation) ParseKeystoreContent(content string) (*datamodels.Activation, State) {
-	id, state := a.GenerateMachineId()
-	if state != Success {
-		return nil, GenerateError
+func (a *activation) ParseKeystoreContent(content string) (*datamodels.Activation, datamodels.HttpStatusCode) {
+	id, status := a.GenerateMachineId()
+	if status != datamodels.HttpSuccess {
+		return nil, status
 	}
 	v := utils.Md5V(id + AppID)
 	base64Decode, err := base64.StdEncoding.DecodeString(content)
 	if err != nil {
-		return nil, InvalidateError
+		return nil, datamodels.HttpActivationInvalidateError
 	}
 	decrypt, err := utils.AesDecrypt(base64Decode, []byte(v))
 	if err != nil {
-		return nil, InvalidateError
+		return nil, datamodels.HttpActivationInvalidateError
 	}
 	var activationInfo datamodels.Activation
 	err = json.Unmarshal(decrypt, &activationInfo)
 	if err != nil {
-		return nil, InvalidateError
+		return nil, datamodels.HttpActivationInvalidateError
 	}
 	if activationInfo.MachineId != id {
-		return nil, InvalidateError
+		return nil, datamodels.HttpActivationInvalidateError
 	}
 	if a.isExpired(&activationInfo) {
-		return nil, ExpiredError
+		return nil, datamodels.HttpActivationExpiredError
 	}
-	return &activationInfo, Success
+	return &activationInfo, datamodels.HttpSuccess
 }
 
-func (a *activation) ParseKeystoreFile() (*datamodels.Activation, State) {
+func (a *activation) ParseKeystoreFile() (*datamodels.Activation, datamodels.HttpStatusCode) {
 	if utils.PathExists(KeyStorePath){
 		data, err := ioutil.ReadFile(KeyStorePath)
 		if err != nil {
-			return nil, ReadFileError
+			return nil, datamodels.HttpActivationReadFileError
 		}
 		return a.ParseKeystoreContent(string(data))
 	}
-	return nil, NotFound
+	return nil, datamodels.HttpActivationNotFound
 }
 
 func (a *activation) isExpired(activationInfo *datamodels.Activation) bool {
