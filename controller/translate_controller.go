@@ -178,7 +178,7 @@ func (t *TranslateController) PostUpload() mvc.Result {
 	}
 }
 // PostDownFile 下载文件
-func (t *TranslateController) PostDownFile() mvc.Result  {
+func (t *TranslateController) PostDownFile() mvc.Result {
 	a:= t.Ctx.Values().Get("User")
 	user, _ := (a).(datamodels.User)
 	var req struct{
