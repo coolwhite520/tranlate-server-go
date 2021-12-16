@@ -12,7 +12,7 @@ import (
 func StartMainServer() {
 	app := iris.New()
 	mvc.Configure(app.Party("/api"), activationMVC, userMVC, usersMVC, translateMVC)
-	app.Run(iris.Addr(":6666"))
+	app.Run(iris.Addr(":7777"))
 }
 
 func activationMVC(app *mvc.Application)  {

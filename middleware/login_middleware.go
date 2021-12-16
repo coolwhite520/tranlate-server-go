@@ -17,14 +17,16 @@ Documentation:
 // The "signatureSharedKey" is used for the HMAC(HS256) signature algorithm.
 var signatureSharedKey = []byte("sercrethatmaycontainch@r32length")
 
-func GenerateToken( user datamodels.User) (string, error){
+func GenerateToken( user datamodels.User) (string, time.Time, error){
 	// Sign and generate compact form token.
-	token, err := jwt.Sign(jwt.HS256, signatureSharedKey, user, jwt.MaxAge(24 * time.Hour))
+	age := jwt.MaxAge(24 * time.Hour)
+	expires := time.Now().Add(time.Hour * 24)
+	token, err := jwt.Sign(jwt.HS256, signatureSharedKey, user, age)
 	if err != nil {
-		return "", err
+		return "", time.Now(), err
 	}
 	tokenString := string(token) // or jwt.BytesToString
-	return tokenString, nil
+	return tokenString, expires, nil
 }
 
 // CheckLoginMiddleware 检测是否成功登录的中间件

@@ -16,7 +16,7 @@ func CheckActivationMiddleware(ctx iris.Context) {
 		CnName: "英语",
 	}, datamodels.SupportLang{
 		EnName: "Chinese",
-		CnName: "中文",
+		CnName: "中文(简体)",
 	})
 	activationInfo := datamodels.Activation{
 		UserName:        "panda",

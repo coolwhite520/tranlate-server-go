@@ -64,7 +64,7 @@ func (h HttpStatusCode) String() string {
 	case HttpActivationAESError:
 		return "激活文件AES错误"
 	case HttpActivationInvalidateError:
-		return "不是有效的激活文件"
+		return "不是有效的激活码"
 	case HttpUserForbidden:
 		return "权限不足，禁止访问"
 	case HttpUserNotLogin:

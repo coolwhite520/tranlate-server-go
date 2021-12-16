@@ -45,9 +45,9 @@ func IsSupportLang(srcLang, desLang string) (bool, []datamodels.SupportLang) {
 
 
 func (t *TranslateController) BeforeActivation(b mvc.BeforeActivation) {
-	b.Router().Use(middleware.CheckActivationMiddleware,
+	b.Router().Use(middleware.CheckLoginMiddleware,
+		middleware.CheckActivationMiddleware,
 		middleware.IsSystemAvailable,
-		middleware.CheckLoginMiddleware,
 		middleware.FileLimiterMiddleware)
 	b.Handle("GET", "/lang", "GetLangList") // 获取支持的语言列表
 	b.Handle("GET", "/records", "GetAllRecords") // 获取所有的翻译记录
