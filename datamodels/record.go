@@ -3,13 +3,13 @@ package datamodels
 type TransStatus int64
 
 const (
-	TransTranslateSuccess TransStatus = iota
-	TransNoRun
+	TransNoRun TransStatus = iota
 	TransBeginExtract
-	TransExtractSuccess
 	TransExtractFailed
+	TransExtractSuccess
 	TransBeginTranslate
 	TransTranslateFailed
+	TransTranslateSuccess
 )
 
 func (t TransStatus) String() string {
@@ -17,13 +17,13 @@ func (t TransStatus) String() string {
 	case TransNoRun:
 		return "上传成功并未翻译"
 	case TransBeginExtract:
-		return "开始抽取文件内容"
+		return "正在抽取文件内容"
 	case TransExtractSuccess:
 		return "抽取文件内容成功"
 	case TransExtractFailed:
 		return "抽取文件内容失败"
 	case TransBeginTranslate:
-		return "开始翻译抽取内容"
+		return "正在进行翻译"
 	case TransTranslateFailed:
 		return "翻译失败"
 	case TransTranslateSuccess:

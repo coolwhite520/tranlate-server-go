@@ -134,6 +134,8 @@ func (t *translateService) TranslateFile(srcLang string, desLang string, recordI
 	translatedDir := fmt.Sprintf("%s/%d/%s", OutputDir,userId, record.DirRandId)
 	srcFilePathName := path.Join(srcDir, record.FileName)
 
+	record.SrcLang = srcLang
+	record.DesLang = desLang
 	record.State = datamodels.TransBeginExtract
 	record.StateDescribe = datamodels.TransBeginExtract.String()
 	t.UpdateRecord(record)
