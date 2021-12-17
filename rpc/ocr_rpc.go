@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
-	"path"
 	"strings"
 	"unicode"
 )
@@ -22,12 +22,27 @@ func IsChineseChar(str string) bool {
 	}
 	return false
 }
+func  postWithMultiPartData(url string, body io.Reader, filename string) (resp *http.Response, err error) {
+	var buffer = new(bytes.Buffer)
+	var writer  = multipart.NewWriter(buffer)
+	w, err := writer.CreateFormFile("image", filename)
+	if err != nil {
+		return nil, err
+	}
+	_, err = io.Copy(w, body)
+	if err != nil {
+		return nil, err
+	}
+	err = writer.Close()
+	if err != nil {
+		return nil, err
+	}
 
+	client:=&http.Client{}
+	return client.Post(url, writer.FormDataContentType(), buffer)
+}
 func OcrParseFile(filePathName string) (string, error) {
-	base := path.Base(filePathName)
-	buf := new(bytes.Buffer)
-	w := multipart.NewWriter(buf)
-	fw, err := w.CreateFormFile("image", base)
+	info, err := os.Stat(filePathName)
 	if err != nil {
 		log.Error(err)
 		return "", err
@@ -37,35 +52,15 @@ func OcrParseFile(filePathName string) (string, error) {
 		log.Error(err)
 		return "", err
 	}
-	bin, err := ioutil.ReadAll(f)
-	if err != nil {
-		log.Error(err)
-		return "", err
-	}
-	_, err = fw.Write(bin)
-	if err != nil {
-		log.Error(err)
-		return "", err
-	}
-	w.Close()
-
-	req, err := http.NewRequest("POST", "http://localhost:9090/upload", buf)
-	if err != nil {
-		log.Error("req err: ", err)
-		return "", err
-	}
-	req.Header.Set("Content-Type", w.FormDataContentType())
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := postWithMultiPartData("http://localhost:9090/upload", f, info.Name())
 	if err != nil {
 		log.Error("resp err: ", err)
 		return "", err
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != 200 {
 		return "", errors.New("resp status:" + fmt.Sprint(resp.StatusCode))
 	}
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Error(err.Error())

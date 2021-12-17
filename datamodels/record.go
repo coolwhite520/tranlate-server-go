@@ -3,24 +3,30 @@ package datamodels
 type TransStatus int64
 
 const (
-	TransSuccess TransStatus = iota
+	TransTranslateSuccess TransStatus = iota
 	TransNoRun
-	TransBegin
-	TransRunning
-	TransError
+	TransBeginExtract
+	TransExtractSuccess
+	TransExtractFailed
+	TransBeginTranslate
+	TransTranslateFailed
 )
 
 func (t TransStatus) String() string {
 	switch t {
 	case TransNoRun:
-		return "上传并未启动翻译"
-	case TransBegin:
-		return "开始对文件进行翻译"
-	case TransRunning:
-		return "正在对文件进行翻译"
-	case TransError:
+		return "上传成功并未翻译"
+	case TransBeginExtract:
+		return "开始抽取文件内容"
+	case TransExtractSuccess:
+		return "抽取文件内容成功"
+	case TransExtractFailed:
+		return "抽取文件内容失败"
+	case TransBeginTranslate:
+		return "开始翻译抽取内容"
+	case TransTranslateFailed:
 		return "翻译失败"
-	case TransSuccess:
+	case TransTranslateSuccess:
 		return "翻译成功"
 	default:
 		return ""
@@ -31,14 +37,13 @@ type Record struct {
 	Id            int64       `json:"id"`
 	Md5           string      `json:"md5"` // 文本的Md5或文件的md5
 	Content       string      `json:"content"`
-	ContentType   string      `json:"content_type"` // text , image/png , application/zip
+	ContentType   string      `json:"content_type"` // text , application/zip, image/png ,
+	TransType     int         `json:"trans_type"`   // 0: 文本 , 1：图片  2: 文档
 	OutputContent string      `json:"output_content"`
 	SrcLang       string      `json:"src_lang"`
 	DesLang       string      `json:"des_lang"`
 	FileName      string      `json:"file_name"`
-	FileSrcDir    string      `json:"file_src_dir"`    // 文件的原始路径，也就是上传后的路径
-	FileMiddleDir string      `json:"file_middle_dir"` // 抽取的文本存储的路径
-	FileDesDir    string      `json:"file_des_dir"`    // 文件的目标路径，也就是翻译后的输入文档路径
+	DirRandId     string      `json:"dir_rand_id"`
 	State         TransStatus `json:"state"`
 	StateDescribe string      `json:"state_describe"`
 	Error         string      `json:"error"`

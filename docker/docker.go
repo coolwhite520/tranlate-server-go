@@ -267,7 +267,8 @@ func (o *Operator) startContainer(info ContainerInfo) error {
 			return err
 		}
 		if running {
-			return o.cli.ContainerRestart(context.Background(), id, nil)
+			//return o.cli.ContainerRestart(context.Background(), id, nil)
+			return nil
 		} else {
 			return o.cli.ContainerStart(context.Background(), id, types.ContainerStartOptions{})
 		}

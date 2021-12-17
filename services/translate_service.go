@@ -22,13 +22,12 @@ var RecordTableFieldList = []string{
 	"Md5",
 	"Content",
 	"ContentType",
+	"TransType",
 	"OutputContent",
 	"SrcLang",
 	"DesLang",
 	"FileName",
-	"FileSrcDir",
-	"FileMiddleDir",
-	"FileDesDir",
+	"DirRandId",
 	"State",
 	"StateDescribe",
 	"Error",
@@ -42,6 +41,7 @@ type TranslateService interface {
 	DeleteTranslateRecordById(id int64, userId int64, bDel bool) error
 	QueryTranslateRecordById(id int64, userId int64) (*datamodels.Record, error) // user自己只能看见自己的文件
 	QueryTranslateRecordsByUserId(userId int64) ([]datamodels.Record, error)
+	QueryTranslateRecordsByUserIdAndType(userId int64, transType int) ([]datamodels.Record, error)
 }
 
 func NewTranslateService() TranslateService {
@@ -57,12 +57,14 @@ func (t *translateService) ReceiveFiles(Ctx iris.Context) ([]datamodels.Record, 
 	user, _ := (u).(datamodels.User)
 	// 创建用户的子目录
 	nowUnixMicro := time.Now().UnixMicro()
-	userUploadDir := fmt.Sprintf("%s/%d/%d", UploadDir, user.Id, nowUnixMicro)
+	DirRandId := fmt.Sprintf("%d", nowUnixMicro)
+	userUploadDir := fmt.Sprintf("%s/%d/%s", UploadDir, user.Id, DirRandId)
 	if !utils.PathExists(userUploadDir) {
-		os.MkdirAll(userUploadDir, 0777)
+		err := os.MkdirAll(userUploadDir, 0777)
+		if err != nil {
+			return records, err
+		}
 	}
-	MiddleDir := fmt.Sprintf("%s/%d/%d", ExtractDir, user.Id, nowUnixMicro)
-	userOutputDir := fmt.Sprintf("%s/%d/%d", OutputDir, user.Id, nowUnixMicro)
 
 	files, _, err := Ctx.UploadFormFiles(userUploadDir)
 	if err != nil {
@@ -71,14 +73,19 @@ func (t *translateService) ReceiveFiles(Ctx iris.Context) ([]datamodels.Record, 
 	for _, v := range files {
 		filePath := fmt.Sprintf("%s/%s", userUploadDir, v.Filename)
 		contentType, _ := utils.GetFileContentType(filePath)
+		var TransType int
+		if strings.Contains(contentType, "image/") {
+			TransType = 1
+		} else {
+			TransType = 2
+		}
 		md5, _ := utils.GetFileMd5(filePath)
 		record := datamodels.Record{
 			ContentType:   contentType,
+			TransType:     TransType,
 			Md5:           md5,
 			FileName:      v.Filename,
-			FileSrcDir:    userUploadDir,
-			FileMiddleDir: MiddleDir,
-			FileDesDir:    userOutputDir,
+			DirRandId:     DirRandId,
 			CreateAt:      time.Now().Format("2006-01-02 15:04:05"),
 			State:         datamodels.TransNoRun,
 			StateDescribe: datamodels.TransNoRun.String(),
@@ -101,8 +108,9 @@ func (t *translateService) TranslateContent(srcLang string, desLang string, cont
 	record.DesLang = desLang
 	record.Content = content
 	record.ContentType = ""
-	record.State = datamodels.TransSuccess
-	record.StateDescribe = datamodels.TransSuccess.String()
+	record.TransType = 0
+	record.State = datamodels.TransTranslateSuccess
+	record.StateDescribe = datamodels.TransTranslateSuccess.String()
 	record.Md5 = utils.Md5V(record.Content)
 	record.OutputContent = outputContent
 	record.UserId = userId
@@ -121,36 +129,49 @@ func (t *translateService) TranslateFile(srcLang string, desLang string, recordI
 		log.Error("查询不到RecordId为", recordId, "的记录")
 		return
 	}
-	srcFilePathName := path.Join(record.FileSrcDir, record.FileName)
-	content, err := t.extractContent(srcFilePathName)
+	srcDir := fmt.Sprintf("%s/%d/%s", UploadDir, userId, record.DirRandId)
+	extractDir := fmt.Sprintf("%s/%d/%s", ExtractDir, userId, record.DirRandId)
+	translatedDir := fmt.Sprintf("%s/%d/%s", OutputDir,userId, record.DirRandId)
+	srcFilePathName := path.Join(srcDir, record.FileName)
+
+	record.State = datamodels.TransBeginExtract
+	record.StateDescribe = datamodels.TransBeginExtract.String()
+	t.UpdateRecord(record)
+	content, err := t.extractContent(record.TransType, srcFilePathName)
 	if err != nil {
-		record.State = datamodels.TransError
-		record.StateDescribe = datamodels.TransError.String()
+		record.State = datamodels.TransExtractFailed
+		record.StateDescribe = datamodels.TransExtractFailed.String()
 		record.Error = err.Error()
 		t.UpdateRecord(record)
 		return
 	}
-	if !utils.PathExists(record.FileMiddleDir) {
-		os.MkdirAll(record.FileMiddleDir, 0777)
+	record.State = datamodels.TransExtractSuccess
+	record.StateDescribe = datamodels.TransExtractSuccess.String()
+	t.UpdateRecord(record)
+	if !utils.PathExists(extractDir) {
+		os.MkdirAll(extractDir, 0777)
 	}
-	desFile := fmt.Sprintf("%s/%s.txt", record.FileMiddleDir, record.FileName)
+	desFile := fmt.Sprintf("%s/%s.txt", extractDir, record.FileName)
 	ioutil.WriteFile(desFile, []byte(content), 0777)
 
+	record.State = datamodels.TransBeginTranslate
+	record.StateDescribe = datamodels.TransBeginTranslate.String()
+	t.UpdateRecord(record)
 	transContent, err := t.translate(srcLang, desLang, content)
 	if err != nil {
-		record.State = datamodels.TransError
-		record.StateDescribe = datamodels.TransError.String()
+		record.State = datamodels.TransTranslateFailed
+		record.StateDescribe = datamodels.TransTranslateFailed.String()
 		record.Error = err.Error()
 		t.UpdateRecord(record)
 		return
 	}
-	if !utils.PathExists(record.FileDesDir) {
-		os.MkdirAll(record.FileDesDir, 0777)
+	if !utils.PathExists(translatedDir) {
+		os.MkdirAll(translatedDir, 0777)
 	}
-	desFile = fmt.Sprintf("%s/%s.txt", record.FileDesDir, record.FileName)
+	desFile = fmt.Sprintf("%s/%s.txt", translatedDir, record.FileName)
 	ioutil.WriteFile(desFile, []byte(transContent), 0777)
-	record.State = datamodels.TransSuccess
-	record.StateDescribe = datamodels.TransSuccess.String()
+	record.State = datamodels.TransTranslateSuccess
+	record.StateDescribe = datamodels.TransTranslateSuccess.String()
 	record.Error = ""
 	t.UpdateRecord(record)
 }
@@ -163,14 +184,22 @@ func (t *translateService) DeleteTranslateRecordById(id int64, userId int64, bDe
 	}
 
 	if bDelFile && byId.ContentType != ""{
-		srcFilePathName := path.Join(byId.FileSrcDir, byId.FileName)
-		middleFilePathName := path.Join(byId.FileMiddleDir, byId.FileName)
-		desFilePathName := path.Join(byId.FileDesDir, byId.FileName)
-		os.Remove(srcFilePathName)
-		os.Remove(middleFilePathName)
-		os.Remove(desFilePathName)
+		srcDir := fmt.Sprintf("%s/%d/%s", UploadDir, userId, byId.DirRandId)
+		extractDir := fmt.Sprintf("%s/%d/%s", ExtractDir, userId, byId.DirRandId)
+		translatedDir := fmt.Sprintf("%s/%d/%s", OutputDir, userId, byId.DirRandId)
+		srcFilePathName := path.Join(srcDir, byId.FileName)
+		middleFilePathName := path.Join(extractDir, byId.FileName)
+		desFilePathName := path.Join(translatedDir, byId.FileName)
+		if utils.PathExists(srcFilePathName) {
+			os.Remove(srcFilePathName)
+		}
+		if utils.PathExists(middleFilePathName) {
+			os.Remove(middleFilePathName)
+		}
+		if utils.PathExists(desFilePathName) {
+			os.Remove(desFilePathName)
+		}
 	}
-
 	sql := fmt.Sprintf("DELETE FROM tbl_record where Id=? and UserId=?")
 	stmt, err := tx.Prepare(sql)
 	if err != nil {
@@ -196,13 +225,12 @@ func (t *translateService) QueryTranslateRecordById(id int64, userId int64) (*da
 		&record.Md5,
 		&record.Content,
 		&record.ContentType,
+		&record.TransType,
 		&record.OutputContent,
 		&record.SrcLang,
 		&record.DesLang,
 		&record.FileName,
-		&record.FileSrcDir,
-		&record.FileMiddleDir,
-		&record.FileDesDir,
+		&record.DirRandId,
 		&record.State,
 		&record.StateDescribe,
 		&record.Error,
@@ -211,12 +239,46 @@ func (t *translateService) QueryTranslateRecordById(id int64, userId int64) (*da
 	if err != nil {
 		return nil, err
 	}
-	record.CreateAt = tt.Local().Format("2006-01-02 15:04:05")
+	record.CreateAt = tt.Format("2006-01-02 15:04:05")
 	return record, nil
 }
-
+func (t *translateService) QueryTranslateRecordsByUserIdAndType(userId int64, transType int) ([]datamodels.Record, error) {
+	sql := fmt.Sprintf("SELECT * FROM tbl_record where UserId=? and TransType=? order by CreateAt DESC")
+	rows, err := db.Query(sql, userId, transType)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	var records []datamodels.Record
+	for rows.Next() {
+		record := datamodels.Record{}
+		var tt time.Time
+		err = rows.Scan(
+			&record.Id,
+			&record.Md5,
+			&record.Content,
+			&record.ContentType,
+			&record.TransType,
+			&record.OutputContent,
+			&record.SrcLang,
+			&record.DesLang,
+			&record.FileName,
+			&record.DirRandId,
+			&record.State,
+			&record.StateDescribe,
+			&record.Error,
+			&record.UserId,
+			&tt)
+		if err != nil {
+			return nil, err
+		}
+		record.CreateAt = tt.Format("2006-01-02 15:04:05")
+		records = append(records, record)
+	}
+	return records, nil
+}
 func (t *translateService) QueryTranslateRecordsByUserId(userId int64) ([]datamodels.Record, error) {
-	sql := fmt.Sprintf("SELECT * FROM tbl_record where UserId=?")
+	sql := fmt.Sprintf("SELECT * FROM tbl_record where UserId=? order by CreateAt DESC")
 	rows, err := db.Query(sql, userId)
 	if err != nil {
 		log.Error(err)
@@ -231,13 +293,12 @@ func (t *translateService) QueryTranslateRecordsByUserId(userId int64) ([]datamo
 			&record.Md5,
 			&record.Content,
 			&record.ContentType,
+			&record.TransType,
 			&record.OutputContent,
 			&record.SrcLang,
 			&record.DesLang,
 			&record.FileName,
-			&record.FileSrcDir,
-			&record.FileMiddleDir,
-			&record.FileDesDir,
+			&record.DirRandId,
 			&record.State,
 			&record.StateDescribe,
 			&record.Error,
@@ -246,7 +307,7 @@ func (t *translateService) QueryTranslateRecordsByUserId(userId int64) ([]datamo
 		if err != nil {
 			return nil, err
 		}
-		record.CreateAt = tt.Local().Format("2006-01-02 15:04:05")
+		record.CreateAt = tt.Format("2006-01-02 15:04:05")
 		records = append(records, record)
 	}
 	return records, nil
@@ -271,13 +332,12 @@ func (t *translateService) UpdateRecord(record *datamodels.Record) error {
 		record.Md5,
 		record.Content,
 		record.ContentType,
+		record.TransType,
 		record.OutputContent,
 		record.SrcLang,
 		record.DesLang,
 		record.FileName,
-		record.FileSrcDir,
-		record.FileMiddleDir,
-		record.FileDesDir,
+		record.DirRandId,
 		record.State,
 		record.StateDescribe,
 		record.Error,
@@ -309,13 +369,12 @@ func (t *translateService) InsertRecord(record *datamodels.Record) error {
 		record.Md5,
 		record.Content,
 		record.ContentType,
+		record.TransType,
 		record.OutputContent,
 		record.SrcLang,
 		record.DesLang,
 		record.FileName,
-		record.FileSrcDir,
-		record.FileMiddleDir,
-		record.FileDesDir,
+		record.DirRandId,
 		record.State,
 		record.StateDescribe,
 		record.Error,
@@ -342,12 +401,8 @@ func (t translateService) tikaDetectedText(filePath string) (string, error) {
 	return rpc.TikaParseFile(filePath)
 }
 
-func (t *translateService) extractContent(filePath string) (string, error) {
-	contentType, err := utils.GetFileContentType(filePath)
-	if err != nil {
-		return "", err
-	}
-	if strings.Contains(contentType, "image/") {
+func (t *translateService) extractContent(TransType int, filePath string) (string, error) {
+	if TransType == 1 {
 		return t.ocrDetectedImage(filePath)
 	} else {
 		return t.tikaDetectedText(filePath)

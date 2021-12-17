@@ -5,7 +5,6 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"io/ioutil"
-	"reflect"
 	"translate-server/datamodels"
 	"translate-server/middleware"
 	"translate-server/services"
@@ -49,6 +48,7 @@ func (t *TranslateController) BeforeActivation(b mvc.BeforeActivation) {
 		middleware.FileLimiterMiddleware)
 	b.Handle("GET", "/lang", "GetLangList")              // 获取支持的语言列表
 	b.Handle("GET", "/records", "GetAllRecords")         // 获取所有的翻译记录
+	b.Handle("GET", "/records/{type: uint64}", "GetRecordsByType")         // 获取所有的翻译记录
 	b.Handle("POST", "/upload", "PostUpload")            // 文件上传
 	b.Handle("POST", "/content", "PostTranslateContent") // 文本翻译
 	b.Handle("POST", "/file", "PostTranslateFile")       // 执行文件翻译
@@ -182,8 +182,8 @@ func (t *TranslateController) PostDownFile() {
 	a := t.Ctx.Values().Get("User")
 	user, _ := (a).(datamodels.User)
 	var req struct {
-		Id        int64  `json:"id"`         // recordId
-		FieldName string `json:"field_name"` // 分别： FileSrcDir、FileMiddleDir、FileDesDir
+		Id   int64 `json:"id"`   // recordId
+		Type int   `json:"type"` // 分别： 0: 原始文件、1：抽取的内容文件、2：翻译结果文件
 	}
 	err := t.Ctx.ReadJSON(&req)
 	if err != nil {
@@ -213,22 +213,24 @@ func (t *TranslateController) PostDownFile() {
 		return
 	}
 	// 通过反射获取FieldName对应的值
-	var filePath string
-	recordType := reflect.TypeOf(*record)
-	for i := 0; i < recordType.NumField(); i++ {
-		key := recordType.Field(i)
-		if key.Name == req.FieldName {
-			of := reflect.ValueOf(*record)
-			field := of.Field(i)
-			filePath = field.String()
-			break
-		}
-	}
+	srcDir := fmt.Sprintf("%s/%d/%s", services.UploadDir, user.Id, record.DirRandId)
+	extractDir := fmt.Sprintf("%s/%d/%s", services.ExtractDir, user.Id, record.DirRandId)
+	translatedDir := fmt.Sprintf("%s/%d/%s", services.OutputDir, user.Id, record.DirRandId)
+
 	var filePathName string
-	if req.FieldName != "FileSrcDir" {
-		filePathName = fmt.Sprintf("%s/%s.txt", filePath, record.FileName)
+	if req.Type == 0 {
+		filePathName = fmt.Sprintf("%s/%s", srcDir, record.FileName)
+	} else if req.Type == 1 {
+		filePathName = fmt.Sprintf("%s/%s.txt", extractDir, record.FileName)
+	} else if req.Type == 2 {
+		filePathName = fmt.Sprintf("%s/%s.txt", translatedDir, record.FileName)
 	} else {
-		filePathName = fmt.Sprintf("%s/%s", filePath, record.FileName)
+		t.Ctx.JSON(
+			map[string]interface{}{
+				"code": datamodels.HttpFileNotFoundError,
+				"msg":  "文件不存在",
+			})
+		return
 	}
 	if !utils.PathExists(filePathName) {
 		t.Ctx.JSON(
@@ -256,6 +258,28 @@ func (t *TranslateController) GetAllRecords() mvc.Result {
 	a := t.Ctx.Values().Get("User")
 	user, _ := (a).(datamodels.User)
 	records, err := t.TranslateService.QueryTranslateRecordsByUserId(user.Id)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpRecordGetError,
+				"msg":  err.Error(),
+			},
+		}
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": datamodels.HttpSuccess,
+			"msg":  datamodels.HttpSuccess.String(),
+			"data": records,
+		},
+	}
+}
+
+func (t *TranslateController) GetRecordsByType() mvc.Result {
+	transType := t.Ctx.Params().GetIntDefault("type", 0)
+	a := t.Ctx.Values().Get("User")
+	user, _ := (a).(datamodels.User)
+	records, err := t.TranslateService.QueryTranslateRecordsByUserIdAndType(user.Id, transType)
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
