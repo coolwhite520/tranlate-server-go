@@ -41,7 +41,7 @@ type TranslateService interface {
 	DeleteTranslateRecordById(id int64, userId int64, bDel bool) error
 	QueryTranslateRecordById(id int64, userId int64) (*datamodels.Record, error) // user自己只能看见自己的文件
 	QueryTranslateRecordsByUserId(userId int64) ([]datamodels.Record, error)
-	QueryTranslateRecordsByUserIdAndType(userId int64, transType int, offset int, count int) ( int, []datamodels.Record, error)
+	QueryTranslateRecordsByUserIdAndType(userId int64, transType int, offset int, count int) (int, []datamodels.Record, error)
 }
 
 func NewTranslateService() TranslateService {
@@ -99,36 +99,35 @@ func (t *translateService) ReceiveFiles(Ctx iris.Context) ([]datamodels.Record, 
 	return records, nil
 }
 
-
-func (t *translateService) Translate(srcLang string, desLang string, content string) (string, string,  error) {
+func (t *translateService) Translate(srcLang string, desLang string, content string) (string, string, error) {
 	sha1 := utils.Sha1(fmt.Sprintf("%s&%s&%s", content, srcLang, desLang))
-	bySha1, err := t.queryTranslateRecordBySha1(sha1)
+	records, err := t.queryTranslateRecordsBySha1(sha1)
 	if err != nil {
 		return "", "", err
 	}
 	var transContent string
-	if bySha1 != nil && bySha1.SrcLang == srcLang && bySha1.DesLang == desLang {
-		if bySha1.TransType == 0 {
-			transContent = bySha1.OutputContent
-		} else {
-			existFile := fmt.Sprintf("%s/%d/%s/%s.txt", OutputDir, bySha1.UserId, bySha1.DirRandId, bySha1.FileName)
-			if utils.PathExists(existFile) {
-				bytes, err := ioutil.ReadFile(existFile)
-				if err != nil {
-					return "","", err
-				}
-				transContent = string(bytes)
+	for _, v := range records {
+		if v.SrcLang == srcLang && v.DesLang == desLang {
+			if v.TransType == 0 {
+				transContent = v.OutputContent
+				break
 			} else {
-				transContent, err = rpc.PyTranslate(srcLang, desLang, content)
-				if err != nil {
-					return "","", err
+				existFile := fmt.Sprintf("%s/%d/%s/%s.txt", OutputDir, v.UserId, v.DirRandId, v.FileName)
+				if utils.PathExists(existFile) {
+					bytes, err := ioutil.ReadFile(existFile)
+					if err != nil {
+						continue
+					}
+					transContent = string(bytes)
+					break
 				}
 			}
 		}
-	} else {
+	}
+	if len(transContent) == 0 {
 		transContent, err = rpc.PyTranslate(srcLang, desLang, content)
 		if err != nil {
-			return "","",  err
+			return "", "", err
 		}
 	}
 	return transContent, sha1, nil
@@ -150,31 +149,33 @@ func (t *translateService) TranslateContent(srcLang string, desLang string, cont
 	record.Sha1 = sha1
 	record.OutputContent = transContent
 	// 记录到数据库中
-	bySha1, err := t.queryTranslateRecordBySha1(sha1)
+	records, err := t.queryTranslateRecordsBySha1(sha1)
 	if err != nil {
 		return "", err
 	}
 	// 如果是自己之前的记录，那么更新一下时间就好
-	if bySha1.UserId == userId && bySha1.TransType == 0 {
-		record.Id = bySha1.Id
-		record.CreateAt = time.Now().Format("2006-01-02 15:04:05")
-		t.UpdateRecord(&record)
-	} else {
-		t.InsertRecord(&record)
+	for _, v := range records {
+		if v.UserId == userId && v.TransType == 0 {
+			record.Id = v.Id
+			record.CreateAt = time.Now().Format("2006-01-02 15:04:05")
+			t.UpdateRecord(&record)
+			return record.OutputContent, nil
+		}
 	}
+	t.InsertRecord(&record)
 	return record.OutputContent, nil
 }
 
 // TranslateFile 异步翻译，将结果写入到数据库中
 func (t *translateService) TranslateFile(srcLang string, desLang string, recordId int64, userId int64) {
 	record, _ := t.QueryTranslateRecordById(recordId, userId)
-	if  record == nil {
+	if record == nil {
 		log.Error("查询不到RecordId为", recordId, "的记录")
 		return
 	}
 	srcDir := fmt.Sprintf("%s/%d/%s", UploadDir, userId, record.DirRandId)
 	extractDir := fmt.Sprintf("%s/%d/%s", ExtractDir, userId, record.DirRandId)
-	translatedDir := fmt.Sprintf("%s/%d/%s", OutputDir,userId, record.DirRandId)
+	translatedDir := fmt.Sprintf("%s/%d/%s", OutputDir, userId, record.DirRandId)
 	srcFilePathName := path.Join(srcDir, record.FileName)
 	record.SrcLang = srcLang
 	record.DesLang = desLang
@@ -263,7 +264,7 @@ func (t *translateService) DeleteTranslateRecordById(id int64, userId int64, bDe
 		return err2
 	}
 
-	if bDelFile && byId.ContentType != ""{
+	if bDelFile && byId.ContentType != "" {
 		srcDir := fmt.Sprintf("%s/%d/%s", UploadDir, userId, byId.DirRandId)
 		extractDir := fmt.Sprintf("%s/%d/%s", ExtractDir, userId, byId.DirRandId)
 		translatedDir := fmt.Sprintf("%s/%d/%s", OutputDir, userId, byId.DirRandId)
@@ -294,37 +295,45 @@ func (t *translateService) DeleteTranslateRecordById(id int64, userId int64, bDe
 	}
 	return nil
 }
+
 // queryTranslateRecordBySha1 根据sha1字符串查找数据
-func (t *translateService) queryTranslateRecordBySha1(sha1str string) (*datamodels.Record, error) {
+func (t *translateService) queryTranslateRecordsBySha1(sha1str string) ([]datamodels.Record, error) {
 	sql := fmt.Sprintf("SELECT * FROM tbl_record where Sha1=?;")
-	row:= db.QueryRow(sql, sha1str)
-	record := new(datamodels.Record)
-	var tt time.Time
-	err := row.Scan(
-		&record.Id,
-		&record.Sha1,
-		&record.Content,
-		&record.ContentType,
-		&record.TransType,
-		&record.OutputContent,
-		&record.SrcLang,
-		&record.DesLang,
-		&record.FileName,
-		&record.DirRandId,
-		&record.State,
-		&record.StateDescribe,
-		&record.Error,
-		&record.UserId,
-		&tt)
+	rows, err := db.Query(sql, sha1str)
 	if err != nil {
 		return nil, err
 	}
-	record.CreateAt = tt.Format("2006-01-02 15:04:05")
-	return record, nil
+	var records []datamodels.Record
+	for rows.Next() {
+		var record datamodels.Record
+		var tt time.Time
+		err := rows.Scan(
+			&record.Id,
+			&record.Sha1,
+			&record.Content,
+			&record.ContentType,
+			&record.TransType,
+			&record.OutputContent,
+			&record.SrcLang,
+			&record.DesLang,
+			&record.FileName,
+			&record.DirRandId,
+			&record.State,
+			&record.StateDescribe,
+			&record.Error,
+			&record.UserId,
+			&tt)
+		if err != nil {
+			return nil, err
+		}
+		record.CreateAt = tt.Format("2006-01-02 15:04:05")
+		records = append(records, record)
+	}
+	return records, nil
 }
 func (t *translateService) QueryTranslateRecordById(id int64, userId int64) (*datamodels.Record, error) {
 	sql := fmt.Sprintf("SELECT * FROM tbl_record where Id=? and UserId=?;")
-	row:= db.QueryRow(sql, id, userId)
+	row := db.QueryRow(sql, id, userId)
 	record := new(datamodels.Record)
 	var tt time.Time
 	err := row.Scan(
@@ -361,7 +370,7 @@ func (t *translateService) QueryTranslateRecordsByUserIdAndType(userId int64,
 		return 0, nil, err
 	}
 
-	sql := fmt.Sprintf("SELECT * FROM tbl_record where UserId=? and TransType=? order by CreateAt DESC limit %d,%d",offset, count)
+	sql := fmt.Sprintf("SELECT * FROM tbl_record where UserId=? and TransType=? order by CreateAt DESC limit %d,%d", offset, count)
 	rows, err := db.Query(sql, userId, transType)
 	if err != nil {
 		log.Error(err)
