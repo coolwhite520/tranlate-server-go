@@ -5,6 +5,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"io/ioutil"
+	"strings"
 	"translate-server/datamodels"
 	"translate-server/middleware"
 	"translate-server/services"
@@ -129,6 +130,17 @@ func (t *TranslateController) PostTranslateContent() mvc.Result {
 			},
 		}
 	}
+
+	// 判断是否为空
+	content:= strings.Trim(req.Content, " ")
+	if len(content) == 0 {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpJsonParseError,
+				"msg":  "传递的内容为空",
+			},
+		}
+	}
 	if b, list := IsSupportLang(req.DesLang, req.SrcLang); !b {
 		return mvc.Response{
 			Object: map[string]interface{}{
@@ -139,7 +151,7 @@ func (t *TranslateController) PostTranslateContent() mvc.Result {
 	}
 	a := t.Ctx.Values().Get("User")
 	user, _ := (a).(datamodels.User)
-	outputContent, err := t.TranslateService.TranslateContent(req.SrcLang, req.DesLang, req.Content, user.Id)
+	outputContent, err := t.TranslateService.TranslateContent(req.SrcLang, req.DesLang, content, user.Id)
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{

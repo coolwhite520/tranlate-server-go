@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS "tbl_user" (
 
 CREATE TABLE IF NOT EXISTS "tbl_record" (
   "Id"	INTEGER PRIMARY KEY AUTOINCREMENT,
-  "Md5"	TEXT,
+  "Sha1"	TEXT,
   "Content"	TEXT,
   "ContentType" TEXT,
   "TransType" INTEGER,
@@ -23,4 +23,4 @@ CREATE TABLE IF NOT EXISTS "tbl_record" (
   "UserId" INTEGER,
   "CreateAt" DATETIME DEFAULT (datetime('now','localtime'))
 );
-
+CREATE INDEX IF NOT EXISTS tbl_record_sha1_idx ON tbl_record(Sha1);
