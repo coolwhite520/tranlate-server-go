@@ -15,7 +15,7 @@ const (
 func (t TransStatus) String() string {
 	switch t {
 	case TransNoRun:
-		return "上传成功并未翻译"
+		return "上传成功并未开启翻译"
 	case TransBeginExtract:
 		return "正在抽取文件内容"
 	case TransExtractSuccess:

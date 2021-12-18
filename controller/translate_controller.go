@@ -48,7 +48,7 @@ func (t *TranslateController) BeforeActivation(b mvc.BeforeActivation) {
 		middleware.FileLimiterMiddleware)
 	b.Handle("GET", "/lang", "GetLangList")              // 获取支持的语言列表
 	b.Handle("GET", "/records", "GetAllRecords")         // 获取所有的翻译记录
-	b.Handle("GET", "/records/{type: uint64}", "GetRecordsByType")         // 获取所有的翻译记录
+	b.Handle("GET", "/records/{type: uint64}/{offset: uint64}/{count: uint64}", "GetRecordsByType")         // 获取所有的翻译记录
 	b.Handle("POST", "/upload", "PostUpload")            // 文件上传
 	b.Handle("POST", "/content", "PostTranslateContent") // 文本翻译
 	b.Handle("POST", "/file", "PostTranslateFile")       // 执行文件翻译
@@ -277,9 +277,11 @@ func (t *TranslateController) GetAllRecords() mvc.Result {
 
 func (t *TranslateController) GetRecordsByType() mvc.Result {
 	transType := t.Ctx.Params().GetIntDefault("type", 0)
+	offset := t.Ctx.Params().GetIntDefault("offset", 0)
+	count := t.Ctx.Params().GetIntDefault("count", 0)
 	a := t.Ctx.Values().Get("User")
 	user, _ := (a).(datamodels.User)
-	records, err := t.TranslateService.QueryTranslateRecordsByUserIdAndType(user.Id, transType)
+	total, records, err := t.TranslateService.QueryTranslateRecordsByUserIdAndType(user.Id, transType, offset, count)
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
@@ -292,7 +294,10 @@ func (t *TranslateController) GetRecordsByType() mvc.Result {
 		Object: map[string]interface{}{
 			"code": datamodels.HttpSuccess,
 			"msg":  datamodels.HttpSuccess.String(),
-			"data": records,
+			"data": map[string]interface{}{
+				"list": records,
+				"total": total,
+			},
 		},
 	}
 }
