@@ -25,3 +25,6 @@ outputs
 .idea
 keystore
 *.tar
+data
+*.rpm
+*.db

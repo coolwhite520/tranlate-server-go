@@ -109,8 +109,6 @@ func init()  {
 var instance *Operator
 var once sync.Once
 
-
-
 func GetInstance() *Operator {
 	once.Do(func() {
 		instance = &Operator{}
@@ -159,6 +157,47 @@ func (o *Operator) StartDockers() error {
 	o.percent = 100
 	return nil
 }
+
+// StartDefaultWebpageDocker 每次server启动都要先启动web服务（用户界面），不同于其他功能docker（需要激活）
+func (o Operator) StartDefaultWebpageDocker() error {
+	// tika 配置
+	web := ContainerInfo{
+		ImageName:     "nginx-web:latest",
+		ContainerName: "nginx-web:latest",
+		LoadFilePath:  "./nginx-web.tar",
+	}
+	config := &container.Config{
+		Image: web.ImageName,
+		ExposedPorts: nat.PortSet{
+			"8080/tcp": {},
+		}}
+	hostConfig := &container.HostConfig{
+		PortBindings: nat.PortMap{
+			"8080/tcp": []nat.PortBinding{
+				{
+					HostIP:   "0.0.0.0",
+					HostPort: "8080",
+				},
+			},
+		},
+	}
+	web.Config = config
+	web.HostConfig = hostConfig
+
+	err := o.loadImage(web)
+	if err != nil {
+		o.status = ErrorStatus
+		return err
+	}
+	err = o.startContainer(web)
+	if err != nil {
+		o.status = ErrorStatus
+		return err
+	}
+	return nil
+}
+
+
 func (o *Operator) SetPercent(percent Percent)  {
 	o.percent = percent
 }

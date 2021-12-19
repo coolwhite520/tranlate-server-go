@@ -14,9 +14,9 @@ import (
 	"translate-server/utils"
 )
 
-const UploadDir = "./uploads"
-const ExtractDir = "./extracts"
-const OutputDir = "./outputs"
+const UploadDir = "./data/uploads"
+const ExtractDir = "./data/extracts"
+const OutputDir = "./data/outputs"
 
 var RecordTableFieldList = []string{
 	"Sha1",

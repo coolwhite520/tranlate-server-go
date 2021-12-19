@@ -1,6 +1,7 @@
 package main
 
 import (
+	log "github.com/sirupsen/logrus"
 	"translate-server/datamodels"
 	_ "translate-server/datamodels"
 	"translate-server/docker"
@@ -11,6 +12,11 @@ import (
 
 func main()  {
 	// 判断是否激活，如果没有激活的话就先不启动docker相关的容器
+	err := docker.GetInstance().StartDefaultWebpageDocker()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 	go func() {
 		service := services.NewActivationService()
 		_, state := service.ParseKeystoreFile()
