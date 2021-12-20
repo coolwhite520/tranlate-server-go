@@ -67,7 +67,7 @@ func (h HttpStatusCode) String() string {
 	case HttpUserTwicePwdNotSame:
 		return "两次密码不一致，请重新输入"
 	case HttpUserNoThisUserError:
-		return "无此用户"
+		return "无此用户，请联系管理员进行开通"
 	case HttpUserExpired:
 		return "登录信息已过期"
 	case HttpFileTooBigger:
