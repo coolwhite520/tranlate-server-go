@@ -4,6 +4,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"strings"
+	"syscall"
 	"translate-server/datamodels"
 	"translate-server/middleware"
 	"translate-server/services"
@@ -151,6 +152,16 @@ func (u *UsersController) PostPassword() mvc.Result {
 			},
 		}
 	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": datamodels.HttpSuccess,
+			"msg":  datamodels.HttpSuccess.String(),
+		},
+	}
+}
+
+func (u *UsersController) PostRestart() mvc.Result{
+	datamodels.GlobalChannel <- syscall.SIGUSR2
 	return mvc.Response{
 		Object: map[string]interface{}{
 			"code": datamodels.HttpSuccess,
