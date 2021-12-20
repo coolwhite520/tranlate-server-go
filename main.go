@@ -28,11 +28,11 @@ var (
 func main()  {
 	go func() {
 		// 不管激活不激活都要启动web的docker镜像，否则用户没有页面可以访问
-		//err := docker.GetInstance().StartDefaultWebpageDocker()
-		//if err != nil {
-		//	log.Fatal(err)
-		//	return
-		//}
+		err := docker.GetInstance().StartDefaultWebpageDocker()
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
 		// 判断是否激活，如果没有激活的话就先不启动docker相关的容器
 		service := services.NewActivationService()
 		_, state := service.ParseKeystoreFile()
