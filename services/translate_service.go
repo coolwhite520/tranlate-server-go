@@ -231,8 +231,9 @@ func (t *translateService) TranslateFile(srcLang string, desLang string, recordI
 	}
 	transContent, sha1, err := t.Translate(srcLang, desLang, content)
 	if err != nil {
-		record.State = datamodels.TransBeginTranslate
-		record.StateDescribe = datamodels.TransBeginTranslate.String()
+		record.State = datamodels.TransTranslateFailed
+		record.StateDescribe = datamodels.TransTranslateFailed.String()
+		record.Error = err.Error()
 		err = t.UpdateRecord(record)
 		return
 	}
