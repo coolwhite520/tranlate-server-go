@@ -15,13 +15,15 @@ import (
 )
 
 func main()  {
-	// 判断是否激活，如果没有激活的话就先不启动docker相关的容器
+
 	//err := docker.GetInstance().StartDefaultWebpageDocker()
 	//if err != nil {
 	//	log.Fatal(err)
 	//	return
 	//}
+	log.Println(os.Args)
 	go func() {
+		// 判断是否激活，如果没有激活的话就先不启动docker相关的容器
 		service := services.NewActivationService()
 		_, state := service.ParseKeystoreFile()
 		if state == datamodels.HttpSuccess {
@@ -66,7 +68,9 @@ func handleSignal() {
 }
 
 func reload() error {
-	cmd := exec.Command(os.Args[0])
+	args := []string{
+		"-graceful"}
+	cmd := exec.Command(os.Args[0], args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	// 新建并执行子进程
