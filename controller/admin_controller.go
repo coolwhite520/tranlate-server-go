@@ -4,28 +4,28 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"strings"
-	"syscall"
 	"translate-server/datamodels"
+	"translate-server/docker"
 	"translate-server/middleware"
 	"translate-server/services"
 )
 
 
-type UsersController struct {
+type AdminController struct {
 	Ctx         iris.Context
 	UserService services.UserService
 }
 
 
-func (u *UsersController) BeforeActivation(b mvc.BeforeActivation) {
-	b.Router().Use(middleware.CheckLoginMiddleware, middleware.CheckSuperMiddleware, middleware.CheckActivationMiddleware, middleware.IsSystemAvailable)
+func (a *AdminController) BeforeActivation(b mvc.BeforeActivation) {
+	b.Router().Use(middleware.CheckLoginMiddleware, middleware.CheckSuperMiddleware, middleware.CheckActivationMiddleware) //  middleware.IsSystemAvailable
 	b.Handle("DELETE","/{id: int64}", "DeleteById")
 }
 
 
 // Get 获取用户列表
-func (u *UsersController) Get() mvc.Result {
-	users, err := u.UserService.QueryAllUsers()
+func (a *AdminController) Get() mvc.Result {
+	users, err := a.UserService.QueryAllUsers()
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
@@ -43,8 +43,8 @@ func (u *UsersController) Get() mvc.Result {
 	}
 }
 // DeleteById 删除用户
-func (u *UsersController) DeleteById(Id int64) mvc.Result {
-	err := u.UserService.DeleteUserById(Id)
+func (a *AdminController) DeleteById(Id int64) mvc.Result {
+	err := a.UserService.DeleteUserById(Id)
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
@@ -62,12 +62,12 @@ func (u *UsersController) DeleteById(Id int64) mvc.Result {
 }
 
 // Post 新增用户
-func (u *UsersController) Post() mvc.Result {
+func (a *AdminController) Post() mvc.Result {
 	var newUserReq struct{
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
-	err := u.Ctx.ReadJSON(&newUserReq)
+	err := a.Ctx.ReadJSON(&newUserReq)
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
@@ -101,7 +101,7 @@ func (u *UsersController) Post() mvc.Result {
 		HashedPassword: password,
 		IsSuper:        false,
 	}
-	err = u.UserService.InsertUser(newUser)
+	err = a.UserService.InsertUser(newUser)
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
@@ -118,12 +118,12 @@ func (u *UsersController) Post() mvc.Result {
 	}
 }
 
-func (u *UsersController) PostPassword() mvc.Result {
+func (a *AdminController) PostPassword() mvc.Result {
 	var newUserReq struct {
 		Id    int64 `json:"id"`
 		NewPassword    string `json:"new_password"`
 	}
-	err := u.Ctx.ReadJSON(&newUserReq)
+	err := a.Ctx.ReadJSON(&newUserReq)
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
@@ -143,7 +143,7 @@ func (u *UsersController) PostPassword() mvc.Result {
 	var user datamodels.User
 	user.Id = newUserReq.Id
 	user.HashedPassword, _ = datamodels.GeneratePassword(newUserReq.NewPassword)
-	err = u.UserService.UpdateUserPassword(user)
+	err = a.UserService.UpdateUserPassword(user)
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
@@ -160,8 +160,19 @@ func (u *UsersController) PostPassword() mvc.Result {
 	}
 }
 
-func (u *UsersController) PostRestart() mvc.Result{
-	datamodels.GlobalChannel <- syscall.SIGQUIT
+func (a *AdminController) PostRepair() mvc.Result{
+	docker.GetInstance().SetStatus(docker.RepairingStatus)
+	err := docker.GetInstance().StartDockers()
+	if err != nil {
+		docker.GetInstance().SetStatus(docker.NormalStatus)
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpDockerServiceException,
+				"msg":  datamodels.HttpDockerServiceException.String(),
+			},
+		}
+	}
+	docker.GetInstance().SetStatus(docker.NormalStatus)
 	return mvc.Response{
 		Object: map[string]interface{}{
 			"code": datamodels.HttpSuccess,

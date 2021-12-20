@@ -12,7 +12,7 @@ import (
 
 func StartMainServer(listener net.Listener) {
 	app := iris.New()
-	mvc.Configure(app.Party("/api"), activationMVC, userMVC, usersMVC, translateMVC)
+	mvc.Configure(app.Party("/api"), activationMVC, userMVC, adminMVC, translateMVC)
 	app.Run(iris.Listener(listener))
 }
 
@@ -38,11 +38,11 @@ func userMVC(app *mvc.Application) {
 }
 
 
-func usersMVC(app *mvc.Application) {
-	party := app.Party("/users")
+func adminMVC(app *mvc.Application) {
+	party := app.Party("/admin")
 	service := services.NewUserService()
 	party.Register(service)
-	party.Handle(new(controller.UsersController))
+	party.Handle(new(controller.AdminController))
 }
 
 func translateMVC(app *mvc.Application) {
