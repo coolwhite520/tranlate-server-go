@@ -18,15 +18,15 @@ limitations under the License.
 
 
 import (
-"context"
-"encoding/json"
-"fmt"
-"io"
-"net/http"
-"reflect"
-"strings"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"reflect"
+	"strings"
 
-"golang.org/x/net/context/ctxhttp"
+	"golang.org/x/net/context/ctxhttp"
 )
 
 // ClientError is returned by Client's various parse methods and

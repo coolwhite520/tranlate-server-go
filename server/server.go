@@ -1,18 +1,19 @@
-package http
+package server
 
 import (
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
+	"net"
 	"translate-server/controller"
 	"translate-server/datamodels"
 	"translate-server/services"
 )
 
-func StartMainServer() {
+func StartMainServer(listener net.Listener) {
 	app := iris.New()
 	mvc.Configure(app.Party("/api"), activationMVC, userMVC, usersMVC, translateMVC)
-	app.Run(iris.Addr(":7777"))
+	app.Run(iris.Listener(listener))
 }
 
 func activationMVC(app *mvc.Application)  {

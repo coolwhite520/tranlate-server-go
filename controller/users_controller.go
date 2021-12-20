@@ -161,7 +161,7 @@ func (u *UsersController) PostPassword() mvc.Result {
 }
 
 func (u *UsersController) PostRestart() mvc.Result{
-	datamodels.GlobalChannel <- syscall.SIGTERM
+	datamodels.GlobalChannel <- syscall.SIGQUIT
 	return mvc.Response{
 		Object: map[string]interface{}{
 			"code": datamodels.HttpSuccess,
