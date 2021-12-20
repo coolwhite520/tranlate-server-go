@@ -47,7 +47,7 @@ func (h HttpStatusCode) String() string {
 	case HttpDockerRepairing:
 		return  "当前系统服务异常，正在尝试自动修复，请稍后"
 	case HttpDockerServiceException:
-		return "当前系统服务异常，请联系管理员，重新启动服务。"
+		return "当前系统服务异常，请联系管理员，进行系统修复。"
 	case HttpActivationNotFound:
 		return "未找到激活文件，请先激活后使用。"
 	case HttpActivationReadFileError:
