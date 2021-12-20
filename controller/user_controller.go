@@ -97,8 +97,16 @@ func (u *UserController) PostLogin() mvc.Result {
 		}
 	}
 	user, b := u.UserService.CheckUser(newUserReq.Username, newUserReq.Password)
+	if user == nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpUserNoThisUserError,
+				"msg": datamodels.HttpUserNoThisUserError.String(),
+			},
+		}
+	}
 	if b {
-		token, _, err := middleware.GenerateToken(user)
+		token, _, err := middleware.GenerateToken(*user)
 		if err != nil {
 			return mvc.Response{
 				Object: map[string]interface{}{
@@ -116,6 +124,7 @@ func (u *UserController) PostLogin() mvc.Result {
 				"user": map[string]interface{}{
 					"avatar": "",
 					"name": user.Username,
+					"isSuper": user.IsSuper,
 				},
 			},
 		}
@@ -123,7 +132,7 @@ func (u *UserController) PostLogin() mvc.Result {
 	return mvc.Response{
 		Object: map[string]interface{}{
 			"code": datamodels.HttpUserNameOrPwdError,
-			"msg":  "用户名密码错误",
+			"msg":  "密码错误",
 		},
 	}
 }

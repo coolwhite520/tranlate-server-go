@@ -9,12 +9,13 @@ import (
 
 
 type UserService interface {
-	CheckUser(username, userPassword string) (datamodels.User, bool)
+	CheckUser(username, userPassword string) (*datamodels.User, bool)
 	InsertUser(user datamodels.User) error
     QueryAdminUsers() ([]datamodels.User, error)
 	QueryAllUsers() ([]datamodels.User, error)
 	DeleteUserById(id int64) error
 	UpdateUserPassword(user datamodels.User) error
+    QueryUserByName(name string) (*datamodels.User, error)
 }
 
 func NewUserService() UserService  {
@@ -25,20 +26,20 @@ type userService struct {
 
 }
 
-func (u *userService) CheckUser(username, userPassword string) (datamodels.User, bool){
+func (u *userService) CheckUser(username, userPassword string) (*datamodels.User, bool){
 	if username == "" || userPassword == "" {
-		return datamodels.User{}, false
+		return nil, false
 	}
 	row := db.QueryRow("select * from tbl_user where Username = ?", username)
 	var user datamodels.User
 	err := row.Scan(&user.Id, &user.Username, &user.HashedPassword, &user.IsSuper, &user.CreatedAt)
 	if err != nil {
-		return datamodels.User{}, false
+		return nil, false
 	}
 	if ok, _ := datamodels.ValidatePassword(userPassword, user.HashedPassword); ok {
-		return user, true
+		return &user, true
 	}
-	return datamodels.User{}, false
+	return &user, false
 }
 func (u *userService) DeleteUserById(Id int64) error {
 	tx, _ := db.Begin()
@@ -109,6 +110,19 @@ func (u *userService) QueryAdminUsers() ([]datamodels.User, error) {
 		users = append(users, user)
 	}
 	return users, nil
+}
+
+func (u *userService) QueryUserByName(name string) (*datamodels.User, error) {
+	sql := fmt.Sprintf("SELECT Id, Username, IsSuper, CreatedAt FROM tbl_user where Username=?")
+	row := db.QueryRow(sql, name)
+	user := datamodels.User{}
+	var t time.Time
+	err := row.Scan(&user.Id, &user.Username, &user.IsSuper, &t)
+	if err != nil {
+		return nil, nil
+	}
+	user.CreatedAt = t.Format("2006-01-02 15:04:05")
+	return &user, nil
 }
 
 func (u *userService) QueryAllUsers() ([]datamodels.User, error) {

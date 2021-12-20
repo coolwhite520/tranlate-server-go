@@ -35,6 +35,7 @@ const (
 	HttpFileNotFoundError
 	HttpFileOpenError
 	// 新增的在后面添加
+	HttpUserNoThisUserError
 )
 
 func (h HttpStatusCode) String() string {
@@ -65,6 +66,8 @@ func (h HttpStatusCode) String() string {
 		return "用户未登录"
 	case HttpUserTwicePwdNotSame:
 		return "两次密码不一致，请重新输入"
+	case HttpUserNoThisUserError:
+		return "无此用户"
 	case HttpUserExpired:
 		return "登录信息已过期"
 	case HttpFileTooBigger:
