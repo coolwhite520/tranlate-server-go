@@ -2,8 +2,6 @@ package main
 
 import (
 	log "github.com/sirupsen/logrus"
-	"os"
-	"os/exec"
 	"os/signal"
 	"syscall"
 	"translate-server/datamodels"
@@ -21,7 +19,7 @@ func main()  {
 	//	log.Fatal(err)
 	//	return
 	//}
-	log.Println(os.Args)
+	//log.Println(os.Args)
 	go func() {
 		// 判断是否激活，如果没有激活的话就先不启动docker相关的容器
 		service := services.NewActivationService()
@@ -45,7 +43,7 @@ func main()  {
 
 func handleSignal() {
 	// 监听信号
-	signal.Notify(datamodels.GlobalChannel, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR2)
+	signal.Notify(datamodels.GlobalChannel, syscall.SIGINT, syscall.SIGTERM)
 	for {
 		sig := <-datamodels.GlobalChannel
 		log.Printf("signal receive: %v\n", sig)
@@ -55,24 +53,6 @@ func handleSignal() {
 			signal.Stop(datamodels.GlobalChannel)
 			log.Println("graceful shutdown")
 			return
-		case syscall.SIGUSR2: // 进程热重启
-			log.Println("reload")
-			err := reload() // 执行热重启函数
-			if err != nil {
-				log.Fatalf("graceful reload error: %v", err)
-			}
-			log.Println("graceful reload")
-			return
 		}
 	}
-}
-
-func reload() error {
-	args := []string{
-		"-graceful"}
-	cmd := exec.Command(os.Args[0], args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	// 新建并执行子进程
-	return cmd.Start()
 }
