@@ -65,7 +65,6 @@ func (t *translateService) ReceiveFiles(Ctx iris.Context) ([]datamodels.Record, 
 			return records, err
 		}
 	}
-
 	files, _, err := Ctx.UploadFormFiles(userUploadDir)
 	if err != nil {
 		return records, err

@@ -180,3 +180,22 @@ func (a *AdminController) PostRepair() mvc.Result{
 		},
 	}
 }
+
+//func (a *AdminController) PostUploadBigFile() mvc.Result{
+//	file, header, err := a.Ctx.FormFile("file")
+//	if err != nil {
+//		return nil
+//	}
+//	create, err := os.Create(header.Filename)
+//	if err != nil {
+//		return nil
+//	}
+//	io.Copy(create, file)
+//	return mvc.Response{
+//		Object: map[string]interface{}{
+//			"code": datamodels.HttpSuccess,
+//			"msg":  datamodels.HttpSuccess.String(),
+//		},
+//	}
+//}
+
