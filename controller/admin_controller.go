@@ -3,6 +3,9 @@ package controller
 import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
+	log "github.com/sirupsen/logrus"
+	"io"
+	"os"
 	"strings"
 	"translate-server/datamodels"
 	"translate-server/docker"
@@ -20,6 +23,8 @@ type AdminController struct {
 func (a *AdminController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Router().Use(middleware.CheckLoginMiddleware, middleware.CheckSuperMiddleware, middleware.CheckActivationMiddleware) //  middleware.IsSystemAvailable
 	b.Handle("DELETE","/{id: int64}", "DeleteById")
+	b.Handle("POST","/upload", "PostUploadBigFile")
+
 }
 
 
@@ -181,21 +186,31 @@ func (a *AdminController) PostRepair() mvc.Result{
 	}
 }
 
-//func (a *AdminController) PostUploadBigFile() mvc.Result{
-//	file, header, err := a.Ctx.FormFile("file")
-//	if err != nil {
-//		return nil
-//	}
-//	create, err := os.Create(header.Filename)
-//	if err != nil {
-//		return nil
-//	}
-//	io.Copy(create, file)
-//	return mvc.Response{
-//		Object: map[string]interface{}{
-//			"code": datamodels.HttpSuccess,
-//			"msg":  datamodels.HttpSuccess.String(),
-//		},
-//	}
-//}
+func (a *AdminController) PostUploadBigFile() mvc.Result{
+	file, header, err := a.Ctx.FormFile("file")
+	if err != nil {
+		return nil
+	}
+	create, err := os.Create(header.Filename)
+	if err != nil {
+		return nil
+	}
+	log.Println(header.Size / 1024 /1024, "MB")
+	_, err = io.Copy(create, file)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpUploadFileError,
+				"msg":  err.Error(),
+			},
+		}
+	}
+
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": datamodels.HttpSuccess,
+			"msg":  datamodels.HttpSuccess.String(),
+		},
+	}
+}
 

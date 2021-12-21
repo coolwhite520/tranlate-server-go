@@ -15,7 +15,7 @@ import (
 func StartMainServer(listener net.Listener) {
 	app := iris.New()
 	ws := mvc.New(app.Party("/upload"))
-	ws.HandleWebsocket(&controller.WebsocketController{ Namespace: "v1"} )
+	ws.HandleWebsocket(&controller.WebsocketController{ Namespace: "default"} )
 	websocketServer := neffos.New(websocket.DefaultGorillaUpgrader, ws)
 	ws.Router.Get("/", websocket.Handler(websocketServer))
 
