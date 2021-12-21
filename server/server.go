@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
-	"github.com/kataras/iris/v12/websocket"
-	"github.com/kataras/neffos"
 	"net"
 	"translate-server/controller"
 	"translate-server/datamodels"
@@ -14,10 +12,10 @@ import (
 
 func StartMainServer(listener net.Listener) {
 	app := iris.New()
-	ws := mvc.New(app.Party("/upload"))
-	ws.HandleWebsocket(&controller.WebsocketController{ Namespace: "default"} )
-	websocketServer := neffos.New(websocket.DefaultGorillaUpgrader, ws)
-	ws.Router.Get("/", websocket.Handler(websocketServer))
+	//ws := mvc.New(app.Party("/api/ws/upload"))
+	//ws.HandleWebsocket(&controller.WebsocketController{ Namespace: "default"} )
+	//websocketServer := neffos.New(websocket.DefaultGorillaUpgrader, ws)
+	//ws.Router.Get("/", websocket.Handler(websocketServer))
 
 	mvc.Configure(app.Party("/api"), activationMVC, userMVC, adminMVC, translateMVC)
 	app.Run(iris.Listener(listener))
