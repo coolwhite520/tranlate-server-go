@@ -8,75 +8,75 @@ import (
 	"translate-server/utils"
 )
 
-var instance *ImgConfig
+var instance *ConfigureLoader
 var once sync.Once
 
-type ImgConfig struct {
+type ConfigureLoader struct {
 	secret string
-	configName string
+	systemConfigFilePath string
 	systemConfig *datamodels.SystemConfig
 }
 
-func GetInstance() *ImgConfig {
+func GetInstance() *ConfigureLoader {
 	once.Do(func() {
-		instance = &ImgConfig{}
+		instance = &ConfigureLoader{}
 		instance.secret = "ecf274d323fab23667a2ccd7904803c8"
-		instance.configName = "./config.dat"
+		instance.systemConfigFilePath = "./config.dat"
 	})
 	return instance
 }
 // TestGenerateConfigFile 自己测试的时候使用
-func (i *ImgConfig) TestGenerateConfigFile() error {
+func (i *ConfigureLoader) TestGenerateConfigFile() error {
 	var configList []datamodels.ComponentInfo
-	web := datamodels.ComponentInfo{
-		FileName:      "nginx-web.tar",
-		ImageName:     "nginx-web",
-		ContainerName: "nginx-web",
-		ContainerTag:  "1.0.1",
-		FileMd5:       "",
-		InternalPort:  "8080",
-		ExposePort:    "8080",
-		//DefaultRun:    true,
-		DefaultRun: false, // 测试的时候需要联合调试，所以就不启动他
-	}
+	//web := datamodels.ComponentInfo{
+	//	FileName:      "nginx-web.tar",
+	//	ImageName:     "nginx-web",
+	//	ContainerName: "nginx-web",
+	//	ImageVersion:  "v1",
+	//	FileMd5:       "",
+	//	ExposedPort:   "8080",
+	//	HostPort:      "8080",
+	//	DefaultRun:    true,
+	//}
 	tika := datamodels.ComponentInfo{
 		FileName:      "tika.tar",
 		ImageName:     "tika",
 		ContainerName: "tika",
-		ContainerTag:  "1.0.1",
+		ImageVersion:  "v1",
 		FileMd5:       "",
-		InternalPort:  "9998",
-		ExposePort:    "9998",
+		ExposedPort:   "9998",
+		HostPort:      "9998",
 		DefaultRun:    false,
 	}
 	translate := datamodels.ComponentInfo{
 		FileName:      "translate.tar",
 		ImageName:     "translate",
 		ContainerName: "translate",
-		ContainerTag:  "1.0.1",
+		ImageVersion:  "v1",
 		FileMd5:       "",
-		InternalPort:  "5000",
-		ExposePort:    "5000",
+		ExposedPort:   "5000",
+		HostPort:      "5000",
 		DefaultRun:    false,
 	}
 	tesseract := datamodels.ComponentInfo{
 		FileName:      "tesseract.tar",
 		ImageName:     "tesseract",
 		ContainerName: "tesseract",
-		ContainerTag:  "1.0.1",
+		ImageVersion:  "v1",
 		FileMd5:       "",
-		InternalPort:  "9090",
-		ExposePort:    "9090",
+		ExposedPort:   "9090",
+		HostPort:      "9090",
 		DefaultRun:    false,
 	}
-	configList = append(configList, web, tika, translate, tesseract)
+	//configList = append(configList, web, tika, translate, tesseract)
+	configList = append(configList, tika, translate, tesseract)
 	var systemConfig datamodels.SystemConfig
 	systemConfig.ComponentList = configList
 	systemConfig.SystemVersion = "3.2.1"
-	return i.generateConfigFile(systemConfig)
+	return i.GenerateSystemConfigFile(systemConfig)
 }
-// generateConfigFile 由我们自己控制
-func (i *ImgConfig) generateConfigFile(systemConfig datamodels.SystemConfig) error {
+// GenerateSystemConfigFile 由我们自己控制
+func (i *ConfigureLoader) GenerateSystemConfigFile(systemConfig datamodels.SystemConfig) error {
 	marshal, err := json.Marshal(systemConfig)
 	if err != nil {
 		return err
@@ -85,16 +85,17 @@ func (i *ImgConfig) generateConfigFile(systemConfig datamodels.SystemConfig) err
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(i.configName, encrypt, 0777)
+	return ioutil.WriteFile(i.systemConfigFilePath, encrypt, 0777)
 }
 
-func (i *ImgConfig) ParseConfigFile(reload bool) (*datamodels.SystemConfig, error) {
+// ParseSystemConfigFile 解析系统配置文件
+func (i *ConfigureLoader) ParseSystemConfigFile(reload bool) (*datamodels.SystemConfig, error) {
 	if !reload {
 		if i.systemConfig != nil {
 			return i.systemConfig, nil
 		}
 	}
-	bytes, err := ioutil.ReadFile(i.configName)
+	bytes, err := ioutil.ReadFile(i.systemConfigFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -109,4 +110,35 @@ func (i *ImgConfig) ParseConfigFile(reload bool) (*datamodels.SystemConfig, erro
 	}
 	i.systemConfig = &systemConfig
 	return i.systemConfig, nil
+}
+
+// GenerateComponentConfigFile 由我们自己控制
+func (i *ConfigureLoader) GenerateComponentConfigFile(comp datamodels.ComponentInfo, componentConfigPath string) error {
+	marshal, err := json.Marshal(comp)
+	if err != nil {
+		return err
+	}
+	encrypt, err := utils.AesEncrypt(marshal, []byte(i.secret))
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(componentConfigPath, encrypt, 0777)
+}
+
+// ParseComponentConfigFile 解析组件内配置文件
+func (i *ConfigureLoader) ParseComponentConfigFile(componentConfigPath string) (*datamodels.ComponentInfo, error) {
+	bytes, err := ioutil.ReadFile(componentConfigPath)
+	if err != nil {
+		return nil, err
+	}
+	decrypt, err := utils.AesDecrypt(bytes, []byte(i.secret))
+	if err != nil {
+		return nil, err
+	}
+	var componentInfo datamodels.ComponentInfo
+	err = json.Unmarshal(decrypt, &componentInfo)
+	if err != nil {
+		return nil, err
+	}
+	return &componentInfo, nil
 }

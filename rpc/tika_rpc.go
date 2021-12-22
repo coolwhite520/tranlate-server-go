@@ -8,7 +8,6 @@ import (
 	"translate-server/rpc/mytika"
 )
 
-const TikaExternalPort = "9998"
 
 // TikaParseFile 根据文件路径进行文本提取
 func TikaParseFile(filePath string) (string, error) {
@@ -19,7 +18,7 @@ func TikaParseFile(filePath string) (string, error) {
 	defer f.Close()
 
 	fmt.Println(f.Name())
-	client := mytika.NewClient(nil, "http://localhost:" + TikaExternalPort)
+	client := mytika.NewClient(nil, "http://localhost:9998")
 	body, err := client.Parse(context.Background(), f)
 	if err != nil {
 		return "", err

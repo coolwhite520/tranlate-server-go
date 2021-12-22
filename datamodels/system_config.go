@@ -4,11 +4,11 @@ type ComponentInfo struct {
 	FileName      string `json:"file_name"`
 	ImageName     string `json:"image_name"`
 	ContainerName string `json:"container_name"`
-	ContainerTag  string `json:"container_tag"` // 可以认为是version
+	ImageVersion  string `json:"image_version"` // 镜像版本
 	FileMd5       string `json:"file_md5"`
-	InternalPort  string `json:"internal_port"` // 服务内部端口
-	ExposePort    string `json:"expose_port"`   // 对外暴露端口
-	DefaultRun    bool   `json:"default_run"`   // 默认是否启动
+	ExposedPort   string `json:"expose_port"` // 服务暴露的端口
+	HostPort      string `json:"host_port"`        // 映射的主机端口
+	DefaultRun    bool   `json:"default_run"` // 默认是否启动
 }
 
 type SystemConfig struct {

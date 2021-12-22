@@ -117,7 +117,7 @@ func (u *UserController) PostLogin() mvc.Result {
 			}
 		}
 		//Authorization: Bearer $token
-		systemConfig, _ := config.GetInstance().ParseConfigFile(false)
+		systemConfig, _ := config.GetInstance().ParseSystemConfigFile(false)
 		u.Ctx.Header("Authorization", fmt.Sprintf("Bearer %s", token))
 		return mvc.Response{
 			Object: map[string]interface{}{

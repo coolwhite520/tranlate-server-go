@@ -14,7 +14,7 @@ import (
 var SignKey = "Today I want to eat noodle."
 
 func PyTranslate(srcLang, desLang, content string) (string, error) {
-	url := fmt.Sprintf("http://127.0.0.1:5000/translate")
+	url := fmt.Sprintf("http://localhost:5000/translate")
 	client := &http.Client{}
 	var req *http.Request
 

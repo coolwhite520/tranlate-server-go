@@ -51,7 +51,7 @@ type Operator struct {
 func (o *Operator) StartDockers() error {
 	service := services.NewActivationService()
 	_, state := service.ParseKeystoreFile()
-	systemConfig, err := config.GetInstance().ParseConfigFile(false)
+	systemConfig, err := config.GetInstance().ParseSystemConfigFile(false)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (o *Operator) GetStatus() Status {
 }
 
 func (o *Operator) IsALlRunningStatus() (bool, error) {
-	systemConfig, err := config.GetInstance().ParseConfigFile(false)
+	systemConfig, err := config.GetInstance().ParseSystemConfigFile(false)
 	if err != nil {
 		return false, err
 	}
@@ -176,14 +176,15 @@ func (o *Operator) startContainer(img datamodels.ComponentInfo) error {
 		config := &container.Config{
 			Image: img.ImageName,
 			ExposedPorts: nat.PortSet{
-				nat.Port(img.ExposePort + "/tcp"): {},
-			}}
+				nat.Port(img.ExposedPort + "/tcp"): {},
+			},
+		}
 		hostConfig := &container.HostConfig{
 			PortBindings: nat.PortMap{
-				nat.Port(img.InternalPort + "/tcp"): []nat.PortBinding{
+				nat.Port(img.ExposedPort + "/tcp"): []nat.PortBinding{
 					{
 						HostIP:   "0.0.0.0",
-						HostPort: img.InternalPort,
+						HostPort: img.HostPort,
 					},
 				},
 			},
