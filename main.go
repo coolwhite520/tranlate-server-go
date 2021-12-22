@@ -15,35 +15,28 @@ import (
 	"translate-server/datamodels"
 	_ "translate-server/datamodels"
 	"translate-server/docker"
+	"translate-server/imgconfig"
 	_ "translate-server/logext"
 	"translate-server/server"
-	"translate-server/services"
 )
+
 var (
-	srv   *http.Server
+	srv      *http.Server
 	listener net.Listener
 	graceful = flag.Bool("graceful", false, "listen on fd open 3 (internal use only)")
 )
 
-func main()  {
+func main() {
+	imgconfig.GetInstance().TestGenerateConfigFile()
+	//return
 	go func() {
-		// 不管激活不激活都要启动web的docker镜像，否则用户没有页面可以访问
-		//err := docker.GetInstance().StartDefaultWebpageDocker()
-		//if err != nil {
-		//	log.Fatal(err)
-		//	return
-		//}
-		// 判断是否激活，如果没有激活的话就先不启动docker相关的容器
-		service := services.NewActivationService()
-		_, state := service.ParseKeystoreFile()
-		if state == datamodels.HttpSuccess {
-			docker.GetInstance().SetStatus(docker.RepairingStatus)
-			err := docker.GetInstance().StartDockers()
-			if err != nil {
-				panic(err)
-			}
-			docker.GetInstance().SetStatus(docker.NormalStatus)
+		docker.GetInstance().SetStatus(docker.RepairingStatus)
+		// StartDockers 内部会判断是否已经是激活的状态
+		err := docker.GetInstance().StartDockers()
+		if err != nil {
+			panic(err)
 		}
+		docker.GetInstance().SetStatus(docker.NormalStatus)
 	}()
 	log.Println(os.Args)
 	srv = &http.Server{Addr: ":7777"}
@@ -87,13 +80,13 @@ func reload() error {
 }
 
 func signalHandler() {
-	signal.Notify(datamodels.GlobalChannel, syscall.SIGINT, syscall.SIGTERM,  syscall.SIGQUIT)
+	signal.Notify(datamodels.GlobalChannel, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	for {
 		sig := <-datamodels.GlobalChannel
 		log.Printf("signal: %v", sig)
 
 		// timeout context for shutdown
-		ctx, _ := context.WithTimeout(context.Background(), 10 * time.Second)
+		ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 		switch sig {
 		case syscall.SIGINT, syscall.SIGTERM:
 			// stop

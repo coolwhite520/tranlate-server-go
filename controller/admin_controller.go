@@ -1,16 +1,18 @@
 package controller
 
 import (
+	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"translate-server/datamodels"
 	"translate-server/docker"
 	"translate-server/middleware"
 	"translate-server/services"
+	"translate-server/utils"
 )
 
 
@@ -19,11 +21,13 @@ type AdminController struct {
 	UserService services.UserService
 }
 
+const UpgradeDirNew = "./upgrade_new"
+const UpgradeDirBak = "./upgrade_bak"
 
 func (a *AdminController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Router().Use(middleware.CheckLoginMiddleware, middleware.CheckSuperMiddleware, middleware.CheckActivationMiddleware) //  middleware.IsSystemAvailable
 	b.Handle("DELETE","/{id: int64}", "DeleteById")
-	b.Handle("POST","/upload", "PostUploadBigFile")
+	b.Handle("POST","/upload", "PostUploadUpgradeFile")
 
 }
 
@@ -186,16 +190,24 @@ func (a *AdminController) PostRepair() mvc.Result{
 	}
 }
 
-func (a *AdminController) PostUploadBigFile() mvc.Result{
-	file, header, err := a.Ctx.FormFile("file")
+func (a *AdminController) PostUploadUpgradeFile() mvc.Result{
+	fileName := a.Ctx.FormValue("fileName")
+	fileMd5 := a.Ctx.FormValue("fileMd5")
+	order, _ := strconv.Atoi(a.Ctx.FormValue("order"))
+	total, _ := strconv.Atoi(a.Ctx.FormValue("total"))
+	file, _, err := a.Ctx.FormFile("file")
 	if err != nil {
 		return nil
 	}
-	create, err := os.Create(header.Filename)
+	dir := fmt.Sprintf("%s/%s", UpgradeDirNew, fileName)
+	if !utils.PathExists(dir) {
+		os.MkdirAll(dir, 0777)
+	}
+	filePathName := fmt.Sprintf("%s/%s-%d", dir, fileName, order)
+	create, err := os.Create(filePathName)
 	if err != nil {
 		return nil
 	}
-	log.Println(header.Size / 1024 /1024, "MB")
 	_, err = io.Copy(create, file)
 	if err != nil {
 		return mvc.Response{
@@ -206,6 +218,34 @@ func (a *AdminController) PostUploadBigFile() mvc.Result{
 		}
 	}
 
+	md5, err := utils.GetFileMd5(filePathName)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpUploadFileError,
+				"msg":  err.Error(),
+			},
+		}
+	}
+
+	if fileMd5 != md5 {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpUploadFileError,
+				"msg":  "md5不一致，请重新上传",
+			},
+		}
+	}
+	if total == order {
+		mergeFile := fmt.Sprintf("%s/%s", dir, fileName)
+		f, _ := os.Create(mergeFile)
+		for i := 1; i <= total; i++ {
+			filePathName := fmt.Sprintf("%s/%s-%d", dir, fileName, i)
+			tempf, _ := os.Open(filePathName)
+			io.Copy(f, tempf)
+		}
+		f.Close()
+	}
 	return mvc.Response{
 		Object: map[string]interface{}{
 			"code": datamodels.HttpSuccess,

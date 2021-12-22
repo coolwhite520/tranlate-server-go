@@ -2,7 +2,6 @@ package docker
 
 import (
 	"context"
-	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
@@ -11,100 +10,11 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"translate-server/datamodels"
+	"translate-server/imgconfig"
+	"translate-server/services"
 )
 
-type ContainerInfo struct {
-	ImageName     string
-	ContainerName string
-	LoadFilePath  string
-	Config        *container.Config
-	HostConfig    *container.HostConfig
-}
-
-var ContainerList []ContainerInfo
-
-func init()  {
-	// tika 配置
-	tika := ContainerInfo{
-		ImageName:     "tika",
-		ContainerName: "tika",
-		LoadFilePath:  "./tika.tar",
-	}
-	config := &container.Config{
-		Image: tika.ImageName,
-		ExposedPorts: nat.PortSet{
-			"9998/tcp": {},
-		}}
-	hostConfig := &container.HostConfig{
-		PortBindings: nat.PortMap{
-			"9998/tcp": []nat.PortBinding{
-				{
-					HostIP:   "0.0.0.0",
-					HostPort: "9998",
-				},
-			},
-		},
-	}
-	tika.Config = config
-	tika.HostConfig = hostConfig
-
-	ContainerList = append(ContainerList, tika)
-}
-func init()  {
-	// tesseract 配置
-	tesseract := ContainerInfo{
-		ImageName:     "tesseract:latest",
-		ContainerName: "tesseract:latest",
-		LoadFilePath:  "./tesseract.tar",
-	}
-	config := &container.Config{
-		Image: tesseract.ImageName,
-		ExposedPorts: nat.PortSet{
-			"9090/tcp": {},
-		}}
-	hostConfig := &container.HostConfig{
-		PortBindings: nat.PortMap{
-			"9090/tcp": []nat.PortBinding{
-				{
-					HostIP:   "0.0.0.0",
-					HostPort: "9090",
-				},
-			},
-		},
-	}
-	tesseract.Config = config
-	tesseract.HostConfig = hostConfig
-
-	ContainerList = append(ContainerList, tesseract)
-}
-
-func init()  {
-	// tika 配置
-	translate := ContainerInfo{
-		ImageName:     "translate",
-		ContainerName: "translate",
-		LoadFilePath:  "./translate.tar",
-	}
-	config := &container.Config{
-		Image: translate.ImageName,
-		ExposedPorts: nat.PortSet{
-			"5000/tcp": {},
-		}}
-	hostConfig := &container.HostConfig{
-		PortBindings: nat.PortMap{
-			"5000/tcp": []nat.PortBinding{
-				{
-					HostIP:   "0.0.0.0",
-					HostPort: "5000",
-				},
-			},
-		},
-	}
-	translate.Config = config
-	translate.HostConfig = hostConfig
-
-	ContainerList = append(ContainerList, translate)
-}
 
 var instance *Operator
 var once sync.Once
@@ -139,64 +49,32 @@ type Operator struct {
 }
 
 func (o *Operator) StartDockers() error {
+	service := services.NewActivationService()
+	_, state := service.ParseKeystoreFile()
+	imgList, err := imgconfig.GetInstance().ParseConfigFile(false)
+	if err != nil {
+		return err
+	}
 	o.percent = 0
-	for _,v := range ContainerList {
-		err := o.loadImage(v)
-		if err != nil {
-			o.status = ErrorStatus
-			return err
+	for _,v := range imgList {
+		if state == datamodels.HttpSuccess || v.DefaultRun {
+			err := o.loadImage(v)
+			if err != nil {
+				o.status = ErrorStatus
+				return err
+			}
+			o.percent += 15
+			err = o.startContainer(v)
+			if err != nil {
+				o.status = ErrorStatus
+				return err
+			}
+			o.percent += 10
 		}
-		o.percent += 15
-		err = o.startContainer(v)
-		if err != nil {
-			o.status = ErrorStatus
-			return err
-		}
-		o.percent += 15
 	}
 	o.percent = 100
 	return nil
 }
-
-// StartDefaultWebpageDocker 每次server启动都要先启动web服务（用户界面），不同于其他功能docker（需要激活）
-func (o Operator) StartDefaultWebpageDocker() error {
-	// tika 配置
-	web := ContainerInfo{
-		ImageName:     "nginx-web:latest",
-		ContainerName: "nginx-web:latest",
-		LoadFilePath:  "./nginx-web.tar",
-	}
-	config := &container.Config{
-		Image: web.ImageName,
-		ExposedPorts: nat.PortSet{
-			"8080/tcp": {},
-		}}
-	hostConfig := &container.HostConfig{
-		PortBindings: nat.PortMap{
-			"8080/tcp": []nat.PortBinding{
-				{
-					HostIP:   "0.0.0.0",
-					HostPort: "8080",
-				},
-			},
-		},
-	}
-	web.Config = config
-	web.HostConfig = hostConfig
-
-	err := o.loadImage(web)
-	if err != nil {
-		o.status = ErrorStatus
-		return err
-	}
-	err = o.startContainer(web)
-	if err != nil {
-		o.status = ErrorStatus
-		return err
-	}
-	return nil
-}
-
 
 func (o *Operator) SetPercent(percent Percent)  {
 	o.percent = percent
@@ -213,7 +91,11 @@ func (o *Operator) GetStatus() Status {
 }
 
 func (o *Operator) IsALlRunningStatus() (bool, error) {
-	for _,v := range ContainerList {
+	imgList, err := imgconfig.GetInstance().ParseConfigFile(false)
+	if err != nil {
+		return false, err
+	}
+	for _,v := range imgList {
 		running, err := o.isContainerRunning(v.ContainerName)
 		if err != nil {
 			return false,  err
@@ -226,15 +108,15 @@ func (o *Operator) IsALlRunningStatus() (bool, error) {
 }
 
 // LoadImage 从文件加载镜像
-func (o *Operator) loadImage(info ContainerInfo) error {
-	b, err := o.existImage(info)
+func (o *Operator) loadImage(img datamodels.DockerImg) error {
+	b, err := o.existImage(img)
 	if err != nil {
 		return err
 	}
 	if b {
 		return nil
 	}
-	f, err := os.Open(info.LoadFilePath)
+	f, err := os.Open(img.FileName)
 	if err != nil {
 		return err
 	}
@@ -245,27 +127,6 @@ func (o *Operator) loadImage(info ContainerInfo) error {
 	return nil
 }
 
-func ReadBigFile(fileName string, handle func([]byte)) error {
-	f, err := os.Open(fileName)
-	if err != nil {
-		fmt.Println("can't opened this file")
-		return err
-	}
-	defer f.Close()
-	s := make([]byte, 4096)
-	for {
-		switch nr, err := f.Read(s[:]); true {
-		case nr < 0:
-			fmt.Fprintf(os.Stderr, "cat: error reading: %s\n", err.Error())
-			os.Exit(1)
-		case nr == 0: // EOF
-			return nil
-		case nr > 0:
-			handle(s[0:nr])
-		}
-	}
-	return nil
-}
 
 // RemoveAllContainer 移除所有容器 包括运行的和没有运行的
 func (o *Operator) RemoveAllContainer() error {
@@ -295,13 +156,13 @@ func (o *Operator) RemoveImage(id string) error {
 }
 
 // StartContainer 启动容器
-func (o *Operator) startContainer(info ContainerInfo) error {
-	hasContainer, id, err := o.hasContainer(info.ContainerName)
+func (o *Operator) startContainer(img datamodels.DockerImg) error {
+	hasContainer, id, err := o.hasContainer(img.ContainerName)
 	if err != nil {
 		return err
 	}
 	if hasContainer {
-		running, err := o.isContainerRunning(info.ContainerName)
+		running, err := o.isContainerRunning(img.ContainerName)
 		if err != nil {
 			return err
 		}
@@ -312,7 +173,22 @@ func (o *Operator) startContainer(info ContainerInfo) error {
 			return o.cli.ContainerStart(context.Background(), id, types.ContainerStartOptions{})
 		}
 	} else {
-		create, err := o.cli.ContainerCreate(context.Background(), info.Config, info.HostConfig, &network.NetworkingConfig{}, nil, "")
+		config := &container.Config{
+			Image: img.ImageName,
+			ExposedPorts: nat.PortSet{
+				nat.Port(img.ExposePort + "/tcp"): {},
+			}}
+		hostConfig := &container.HostConfig{
+			PortBindings: nat.PortMap{
+				nat.Port(img.InternalPort + "/tcp"): []nat.PortBinding{
+					{
+						HostIP:   "0.0.0.0",
+						HostPort: img.InternalPort,
+					},
+				},
+			},
+		}
+		create, err := o.cli.ContainerCreate(context.Background(), config, hostConfig, &network.NetworkingConfig{}, nil, "")
 		if err != nil {
 			return err
 		}
@@ -321,7 +197,7 @@ func (o *Operator) startContainer(info ContainerInfo) error {
 }
 
 // ExistImage 镜像是否存在
-func (o *Operator) existImage(info ContainerInfo) (bool, error) {
+func (o *Operator) existImage(info datamodels.DockerImg) (bool, error) {
 	images, err := o.cli.ImageList(context.Background(), types.ImageListOptions{})
 	if err != nil {
 		return false, err
