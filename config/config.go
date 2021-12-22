@@ -29,9 +29,8 @@ func GetInstance() *ConfigureLoader {
 func (i *ConfigureLoader) TestGenerateConfigFile() error {
 	var configList []datamodels.ComponentInfo
 	//web := datamodels.ComponentInfo{
-	//	FileName:      "nginx-web.tar",
-	//	ImageName:     "nginx-web",
-	//	ContainerName: "nginx-web",
+	//	FileName:      "web.tar",
+	//	ImageName:     "web",
 	//	ImageVersion:  "v1",
 	//	FileMd5:       "",
 	//	ExposedPort:   "8080",
@@ -39,34 +38,34 @@ func (i *ConfigureLoader) TestGenerateConfigFile() error {
 	//	DefaultRun:    true,
 	//}
 	tika := datamodels.ComponentInfo{
-		FileName:      "tika.tar",
-		ImageName:     "tika",
-		ImageVersion:  "v1",
+		FileName:      "tk.tar",
+		ImageName:     "tk",
+		ImageVersion:  "1.0",
 		FileMd5:       "",
 		ExposedPort:   "9998",
 		HostPort:      "9998",
 		DefaultRun:    false,
 	}
-	translate := datamodels.ComponentInfo{
-		FileName:      "translate.tar",
-		ImageName:     "translate",
-		ImageVersion:  "v1",
+	core := datamodels.ComponentInfo{
+		FileName:      "core.tar",
+		ImageName:     "core",
+		ImageVersion:  "1.0",
 		FileMd5:       "",
 		ExposedPort:   "5000",
 		HostPort:      "5000",
 		DefaultRun:    false,
 	}
-	tesseract := datamodels.ComponentInfo{
-		FileName:      "tesseract.tar",
-		ImageName:     "tesseract",
-		ImageVersion:  "v1",
+	ocr := datamodels.ComponentInfo{
+		FileName:      "ocr.tar",
+		ImageName:     "ocr",
+		ImageVersion:  "1.0",
 		FileMd5:       "",
 		ExposedPort:   "9090",
 		HostPort:      "9090",
 		DefaultRun:    false,
 	}
 	//configList = append(configList, web, tika, translate, tesseract)
-	configList = append(configList, tika, translate, tesseract)
+	configList = append(configList, tika, core, ocr)
 	var systemConfig datamodels.SystemConfig
 	systemConfig.ComponentList = configList
 	systemConfig.SystemVersion = datamodels.SystemVersion
