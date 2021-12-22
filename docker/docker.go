@@ -10,8 +10,8 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"translate-server/config"
 	"translate-server/datamodels"
-	"translate-server/imgconfig"
 	"translate-server/services"
 )
 
@@ -51,12 +51,12 @@ type Operator struct {
 func (o *Operator) StartDockers() error {
 	service := services.NewActivationService()
 	_, state := service.ParseKeystoreFile()
-	imgList, err := imgconfig.GetInstance().ParseConfigFile(false)
+	systemConfig, err := config.GetInstance().ParseConfigFile(false)
 	if err != nil {
 		return err
 	}
 	o.percent = 0
-	for _,v := range imgList {
+	for _,v := range systemConfig.ComponentList {
 		if state == datamodels.HttpSuccess || v.DefaultRun {
 			err := o.loadImage(v)
 			if err != nil {
@@ -91,11 +91,11 @@ func (o *Operator) GetStatus() Status {
 }
 
 func (o *Operator) IsALlRunningStatus() (bool, error) {
-	imgList, err := imgconfig.GetInstance().ParseConfigFile(false)
+	systemConfig, err := config.GetInstance().ParseConfigFile(false)
 	if err != nil {
 		return false, err
 	}
-	for _,v := range imgList {
+	for _,v := range systemConfig.ComponentList {
 		running, err := o.isContainerRunning(v.ContainerName)
 		if err != nil {
 			return false,  err
@@ -108,7 +108,7 @@ func (o *Operator) IsALlRunningStatus() (bool, error) {
 }
 
 // LoadImage 从文件加载镜像
-func (o *Operator) loadImage(img datamodels.DockerImg) error {
+func (o *Operator) loadImage(img datamodels.ComponentInfo) error {
 	b, err := o.existImage(img)
 	if err != nil {
 		return err
@@ -156,7 +156,7 @@ func (o *Operator) RemoveImage(id string) error {
 }
 
 // StartContainer 启动容器
-func (o *Operator) startContainer(img datamodels.DockerImg) error {
+func (o *Operator) startContainer(img datamodels.ComponentInfo) error {
 	hasContainer, id, err := o.hasContainer(img.ContainerName)
 	if err != nil {
 		return err
@@ -197,7 +197,7 @@ func (o *Operator) startContainer(img datamodels.DockerImg) error {
 }
 
 // ExistImage 镜像是否存在
-func (o *Operator) existImage(info datamodels.DockerImg) (bool, error) {
+func (o *Operator) existImage(info datamodels.ComponentInfo) (bool, error) {
 	images, err := o.cli.ImageList(context.Background(), types.ImageListOptions{})
 	if err != nil {
 		return false, err

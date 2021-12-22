@@ -12,10 +12,10 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"translate-server/config"
 	"translate-server/datamodels"
 	_ "translate-server/datamodels"
 	"translate-server/docker"
-	"translate-server/imgconfig"
 	_ "translate-server/logext"
 	"translate-server/server"
 )
@@ -27,7 +27,7 @@ var (
 )
 
 func main() {
-	imgconfig.GetInstance().TestGenerateConfigFile()
+	config.GetInstance().TestGenerateConfigFile()
 	//return
 	go func() {
 		docker.GetInstance().SetStatus(docker.RepairingStatus)

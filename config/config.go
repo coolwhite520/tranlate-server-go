@@ -1,4 +1,4 @@
-package imgconfig
+package config
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ var once sync.Once
 type ImgConfig struct {
 	secret string
 	configName string
-	dockerImgList datamodels.DockerImgList
+	systemConfig *datamodels.SystemConfig
 }
 
 func GetInstance() *ImgConfig {
@@ -27,8 +27,8 @@ func GetInstance() *ImgConfig {
 }
 // TestGenerateConfigFile 自己测试的时候使用
 func (i *ImgConfig) TestGenerateConfigFile() error {
-	var configList datamodels.DockerImgList
-	web := datamodels.DockerImg{
+	var configList []datamodels.ComponentInfo
+	web := datamodels.ComponentInfo{
 		FileName:      "nginx-web.tar",
 		ImageName:     "nginx-web",
 		ContainerName: "nginx-web",
@@ -36,9 +36,10 @@ func (i *ImgConfig) TestGenerateConfigFile() error {
 		FileMd5:       "",
 		InternalPort:  "8080",
 		ExposePort:    "8080",
-		DefaultRun:    true,
+		//DefaultRun:    true,
+		DefaultRun: false, // 测试的时候需要联合调试，所以就不启动他
 	}
-	tika := datamodels.DockerImg{
+	tika := datamodels.ComponentInfo{
 		FileName:      "tika.tar",
 		ImageName:     "tika",
 		ContainerName: "tika",
@@ -48,7 +49,7 @@ func (i *ImgConfig) TestGenerateConfigFile() error {
 		ExposePort:    "9998",
 		DefaultRun:    false,
 	}
-	translate := datamodels.DockerImg{
+	translate := datamodels.ComponentInfo{
 		FileName:      "translate.tar",
 		ImageName:     "translate",
 		ContainerName: "translate",
@@ -58,7 +59,7 @@ func (i *ImgConfig) TestGenerateConfigFile() error {
 		ExposePort:    "5000",
 		DefaultRun:    false,
 	}
-	tesseract := datamodels.DockerImg{
+	tesseract := datamodels.ComponentInfo{
 		FileName:      "tesseract.tar",
 		ImageName:     "tesseract",
 		ContainerName: "tesseract",
@@ -69,11 +70,14 @@ func (i *ImgConfig) TestGenerateConfigFile() error {
 		DefaultRun:    false,
 	}
 	configList = append(configList, web, tika, translate, tesseract)
-	return i.generateConfigFile(configList)
+	var systemConfig datamodels.SystemConfig
+	systemConfig.ComponentList = configList
+	systemConfig.SystemVersion = "3.2.1"
+	return i.generateConfigFile(systemConfig)
 }
 // generateConfigFile 由我们自己控制
-func (i *ImgConfig) generateConfigFile(configList datamodels.DockerImgList) error {
-	marshal, err := json.Marshal(configList)
+func (i *ImgConfig) generateConfigFile(systemConfig datamodels.SystemConfig) error {
+	marshal, err := json.Marshal(systemConfig)
 	if err != nil {
 		return err
 	}
@@ -84,10 +88,10 @@ func (i *ImgConfig) generateConfigFile(configList datamodels.DockerImgList) erro
 	return ioutil.WriteFile(i.configName, encrypt, 0777)
 }
 
-func (i *ImgConfig) ParseConfigFile(reload bool) (datamodels.DockerImgList, error) {
+func (i *ImgConfig) ParseConfigFile(reload bool) (*datamodels.SystemConfig, error) {
 	if !reload {
-		if i.dockerImgList != nil {
-			return i.dockerImgList, nil
+		if i.systemConfig != nil {
+			return i.systemConfig, nil
 		}
 	}
 	bytes, err := ioutil.ReadFile(i.configName)
@@ -98,11 +102,11 @@ func (i *ImgConfig) ParseConfigFile(reload bool) (datamodels.DockerImgList, erro
 	if err != nil {
 		return nil, err
 	}
-	var configList datamodels.DockerImgList
-	err = json.Unmarshal(decrypt, &configList)
+	var systemConfig datamodels.SystemConfig
+	err = json.Unmarshal(decrypt, &systemConfig)
 	if err != nil {
 		return nil, err
 	}
-	i.dockerImgList = configList
-	return i.dockerImgList, nil
+	i.systemConfig = &systemConfig
+	return i.systemConfig, nil
 }
