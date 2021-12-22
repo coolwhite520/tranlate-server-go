@@ -21,7 +21,7 @@ type AdminController struct {
 	UserService services.UserService
 }
 
-const UpgradeDirNew = "./upgrade_new"
+const TempDir = "./temp"
 const UpgradeDirBak = "./upgrade_bak"
 
 func (a *AdminController) BeforeActivation(b mvc.BeforeActivation) {
@@ -189,7 +189,7 @@ func (a *AdminController) PostRepair() mvc.Result{
 		},
 	}
 }
-
+// PostUploadUpgradeFile 升级文件必须是zip格式，压缩包里面包含一个同名的 xxx.dat（记录升级文件的信息也就是ComponentInfo结构） 和一个xxx.tar 文件
 func (a *AdminController) PostUploadUpgradeFile() mvc.Result{
 	fileName := a.Ctx.FormValue("fileName")
 	fileMd5 := a.Ctx.FormValue("fileMd5")
@@ -199,7 +199,7 @@ func (a *AdminController) PostUploadUpgradeFile() mvc.Result{
 	if err != nil {
 		return nil
 	}
-	dir := fmt.Sprintf("%s/%s", UpgradeDirNew, fileName)
+	dir := fmt.Sprintf("%s/%s", TempDir, fileName)
 	if !utils.PathExists(dir) {
 		os.MkdirAll(dir, 0777)
 	}
@@ -227,7 +227,6 @@ func (a *AdminController) PostUploadUpgradeFile() mvc.Result{
 			},
 		}
 	}
-
 	if fileMd5 != md5 {
 		return mvc.Response{
 			Object: map[string]interface{}{
@@ -236,6 +235,7 @@ func (a *AdminController) PostUploadUpgradeFile() mvc.Result{
 			},
 		}
 	}
+
 	if total == order {
 		mergeFile := fmt.Sprintf("%s/%s", dir, fileName)
 		f, _ := os.Create(mergeFile)
@@ -246,6 +246,13 @@ func (a *AdminController) PostUploadUpgradeFile() mvc.Result{
 		}
 		f.Close()
 	}
+	// 解压缩zip包 到一个目录中
+
+	// 解析.dat文件
+
+	// 记录到数据库中，然后返回到web端
+
+
 	return mvc.Response{
 		Object: map[string]interface{}{
 			"code": datamodels.HttpSuccess,

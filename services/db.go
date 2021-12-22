@@ -35,6 +35,15 @@ CREATE TABLE IF NOT EXISTS "tbl_record" (
   "CreateAt" DATETIME DEFAULT (datetime('now','localtime'))
 );
 CREATE INDEX IF NOT EXISTS tbl_record_sha1_idx ON tbl_record(Sha1);
+
+CREATE TABLE IF NOT EXISTS "tbl_component" (
+    "ImageName" TEXT,
+    "FileName" TEXT,
+    "FilePath" text,
+    "Version" TEXT,
+    "FileMd5" TEXT,
+    "CreateAt" DATETIME DEFAULT (datetime('now','localtime'))
+);
 `
 
 func init() {
