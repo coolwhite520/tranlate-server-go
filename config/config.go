@@ -41,7 +41,6 @@ func (i *ConfigureLoader) TestGenerateConfigFile() error {
 	tika := datamodels.ComponentInfo{
 		FileName:      "tika.tar",
 		ImageName:     "tika",
-		ContainerName: "tika",
 		ImageVersion:  "v1",
 		FileMd5:       "",
 		ExposedPort:   "9998",
@@ -51,7 +50,6 @@ func (i *ConfigureLoader) TestGenerateConfigFile() error {
 	translate := datamodels.ComponentInfo{
 		FileName:      "translate.tar",
 		ImageName:     "translate",
-		ContainerName: "translate",
 		ImageVersion:  "v1",
 		FileMd5:       "",
 		ExposedPort:   "5000",
@@ -61,7 +59,6 @@ func (i *ConfigureLoader) TestGenerateConfigFile() error {
 	tesseract := datamodels.ComponentInfo{
 		FileName:      "tesseract.tar",
 		ImageName:     "tesseract",
-		ContainerName: "tesseract",
 		ImageVersion:  "v1",
 		FileMd5:       "",
 		ExposedPort:   "9090",
@@ -72,7 +69,7 @@ func (i *ConfigureLoader) TestGenerateConfigFile() error {
 	configList = append(configList, tika, translate, tesseract)
 	var systemConfig datamodels.SystemConfig
 	systemConfig.ComponentList = configList
-	systemConfig.SystemVersion = "3.2.1"
+	systemConfig.SystemVersion = datamodels.SystemVersion
 	return i.GenerateSystemConfigFile(systemConfig)
 }
 // GenerateSystemConfigFile 由我们自己控制

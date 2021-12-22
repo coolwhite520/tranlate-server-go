@@ -9,12 +9,24 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
+	"translate-server/config"
 	"translate-server/utils"
 )
 var SignKey = "Today I want to eat noodle."
 
 func PyTranslate(srcLang, desLang, content string) (string, error) {
-	url := fmt.Sprintf("http://localhost:5000/translate")
+	systemConfig, err := config.GetInstance().ParseSystemConfigFile(false)
+	if err != nil {
+		return "", err
+	}
+	var port string
+	for _, v := range systemConfig.ComponentList {
+		if v.ImageName == "translate" {
+			port = v.HostPort
+			break
+		}
+	}
+	url := fmt.Sprintf("http://localhost:%s/translate", port)
 	client := &http.Client{}
 	var req *http.Request
 

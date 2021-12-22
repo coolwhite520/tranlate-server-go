@@ -96,7 +96,7 @@ func (o *Operator) IsALlRunningStatus() (bool, error) {
 		return false, err
 	}
 	for _,v := range systemConfig.ComponentList {
-		running, err := o.isContainerRunning(v.ContainerName)
+		running, err := o.isContainerRunning(v.ImageName)
 		if err != nil {
 			return false,  err
 		}
@@ -157,12 +157,12 @@ func (o *Operator) RemoveImage(id string) error {
 
 // StartContainer 启动容器
 func (o *Operator) startContainer(img datamodels.ComponentInfo) error {
-	hasContainer, id, err := o.hasContainer(img.ContainerName)
+	hasContainer, id, err := o.hasContainer(img.ImageName)
 	if err != nil {
 		return err
 	}
 	if hasContainer {
-		running, err := o.isContainerRunning(img.ContainerName)
+		running, err := o.isContainerRunning(img.ImageName)
 		if err != nil {
 			return err
 		}
@@ -213,14 +213,14 @@ func (o *Operator) existImage(info datamodels.ComponentInfo) (bool, error) {
 	return false, nil
 }
 
-// HasContainer 是否存在某个容器
-func (o *Operator) hasContainer(name string) (bool, string, error) {
+// HasContainer 是否存在某个容器 容器的名称默认不指定的时候就是随机的，所以通过遍历ContainerList获取的containers中的每一个容器的镜像名称进行判断即可，【镜像生成容器】
+func (o *Operator) hasContainer(imageName string) (bool, string, error) {
 	containers, err := o.cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
 	if err != nil {
 		return false, "", err
 	}
 	for _, v := range containers {
-		if strings.Contains(v.Image, name) {
+		if v.Image == imageName {
 			return true, v.ID, nil
 		}
 	}
@@ -228,13 +228,13 @@ func (o *Operator) hasContainer(name string) (bool, string, error) {
 }
 
 // IsContainerRunning 某个容器是否正在运行
-func (o *Operator) isContainerRunning(name string) (bool, error) {
+func (o *Operator) isContainerRunning(imageName string) (bool, error) {
 	containers, err := o.cli.ContainerList(context.Background(), types.ContainerListOptions{})
 	if err != nil {
 		return false, err
 	}
 	for _, v := range containers {
-		if strings.Contains(v.Image, name) {
+		if v.Image == imageName {
 			return true, nil
 		}
 	}

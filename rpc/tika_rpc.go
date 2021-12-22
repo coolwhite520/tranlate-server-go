@@ -5,6 +5,7 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"translate-server/config"
 	"translate-server/rpc/mytika"
 )
 
@@ -16,9 +17,19 @@ func TikaParseFile(filePath string) (string, error) {
 		log.Fatal(err)
 	}
 	defer f.Close()
-
-	fmt.Println(f.Name())
-	client := mytika.NewClient(nil, "http://localhost:9998")
+	systemConfig, err := config.GetInstance().ParseSystemConfigFile(false)
+	if err != nil {
+		return "", err
+	}
+	var port string
+	for _, v := range systemConfig.ComponentList {
+		if v.ImageName == "tika" {
+			port = v.HostPort
+			break
+		}
+	}
+	url := fmt.Sprintf("http://localhost:%s", port)
+	client := mytika.NewClient(nil, url)
 	body, err := client.Parse(context.Background(), f)
 	if err != nil {
 		return "", err

@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"translate-server/config"
 	"unicode"
 )
 func IsChineseChar(str string) bool {
@@ -52,7 +53,19 @@ func OcrParseFile(filePathName string) (string, error) {
 		log.Error(err)
 		return "", err
 	}
-	resp, err := postWithMultiPartData("http://localhost:9090/upload", f, info.Name())
+	systemConfig, err := config.GetInstance().ParseSystemConfigFile(false)
+	if err != nil {
+		return "", err
+	}
+	var port string
+	for _, v := range systemConfig.ComponentList {
+		if v.ImageName == "tesseract" {
+			port = v.HostPort
+			break
+		}
+	}
+	url := fmt.Sprintf("http://localhost:%s/upload", port)
+	resp, err := postWithMultiPartData(url, f, info.Name())
 	if err != nil {
 		log.Error("resp err: ", err)
 		return "", err

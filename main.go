@@ -38,7 +38,6 @@ func main() {
 		}
 		docker.GetInstance().SetStatus(docker.NormalStatus)
 	}()
-	log.Println(os.Args)
 	srv = &http.Server{Addr: ":7777"}
 	log.Println("server will listening on : http://localhost:7777")
 	var err error
