@@ -59,7 +59,7 @@ func OcrParseFile(filePathName string) (string, error) {
 	}
 	var port string
 	for _, v := range systemConfig.ComponentList {
-		if v.ImageName == "tesseract" {
+		if v.ImageName == "ocr" {
 			port = v.HostPort
 			break
 		}

@@ -23,7 +23,7 @@ func TikaParseFile(filePath string) (string, error) {
 	}
 	var port string
 	for _, v := range systemConfig.ComponentList {
-		if v.ImageName == "tika" {
+		if v.ImageName == "tk" {
 			port = v.HostPort
 			break
 		}

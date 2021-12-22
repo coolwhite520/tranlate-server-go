@@ -21,7 +21,7 @@ func PyTranslate(srcLang, desLang, content string) (string, error) {
 	}
 	var port string
 	for _, v := range systemConfig.ComponentList {
-		if v.ImageName == "translate" {
+		if v.ImageName == "core" {
 			port = v.HostPort
 			break
 		}
