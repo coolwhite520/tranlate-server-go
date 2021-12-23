@@ -58,13 +58,13 @@ func (o *Operator) StartDockers() error {
 	o.percent = 0
 	for _,v := range compList {
 		if state == datamodels.HttpSuccess || v.DefaultRun {
-			err := o.loadImage(v)
+			err := o.LoadImage(v)
 			if err != nil {
 				o.status = ErrorStatus
 				return err
 			}
 			o.percent += 15
-			err = o.startContainer(v)
+			err = o.StartContainer(v)
 			if err != nil {
 				o.status = ErrorStatus
 				return err
@@ -108,7 +108,7 @@ func (o *Operator) IsALlRunningStatus() (bool, error) {
 }
 
 // LoadImage 从文件加载镜像
-func (o *Operator) loadImage(img datamodels.ComponentInfo) error {
+func (o *Operator) LoadImage(img datamodels.ComponentInfo) error {
 	b, err := o.existImage(img.ImageName, img.ImageVersion)
 	if err != nil {
 		return err
@@ -129,35 +129,48 @@ func (o *Operator) loadImage(img datamodels.ComponentInfo) error {
 }
 
 
-// RemoveAllContainer 移除所有容器 包括运行的和没有运行的
-func (o *Operator) RemoveAllContainer() error {
+// RemoveContainer 移除容器
+func (o *Operator) RemoveContainer(imageName string, imageVersion string) error {
 	containers, err := o.cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
 	if err != nil {
 		return err
 	}
 	for _, v := range containers {
-		err = o.cli.ContainerStop(context.Background(), v.ID, nil)
-		if err != nil {
-			return err
-		}
-		err = o.cli.ContainerRemove(context.Background(), v.ID, types.ContainerRemoveOptions{})
-		if err != nil {
-			return err
+		if v.Image == imageName+":"+imageVersion {
+			err = o.cli.ContainerStop(context.Background(), v.ID, nil)
+			if err != nil {
+				return err
+			}
+			err = o.cli.ContainerRemove(context.Background(), v.ID, types.ContainerRemoveOptions{})
+			if err != nil {
+				return err
+			}
+			return nil
 		}
 	}
 	return nil
 }
-
-func (o *Operator) RemoveImage(id string) error {
-	_, err := o.cli.ImageRemove(context.Background(), id, types.ImageRemoveOptions{})
+// RemoveImage 移除镜像
+func (o *Operator) RemoveImage(imageName string, imageVersion string) error {
+	images, err := o.cli.ImageList(context.Background(), types.ImageListOptions{})
 	if err != nil {
 		return err
+	}
+	for _, v := range images {
+		s := v.RepoTags[0]
+		if s == imageName + ":" + imageVersion {
+			_, err = o.cli.ImageRemove(context.Background(), v.ID, types.ImageRemoveOptions{})
+			if err != nil {
+				return err
+			}
+			return nil
+		}
 	}
 	return nil
 }
 
 // StartContainer 启动容器
-func (o *Operator) startContainer(img datamodels.ComponentInfo) error {
+func (o *Operator) StartContainer(img datamodels.ComponentInfo) error {
 	hasContainer, id, err := o.hasContainer(img.ImageName, img.ImageVersion)
 	if err != nil {
 		return err

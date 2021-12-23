@@ -30,40 +30,40 @@ func GetInstance() *ConfigureLoader {
 // TestGenerateConfigFile 自己测试的时候使用
 func (i *ConfigureLoader) TestGenerateConfigFile() error {
 	var configList []datamodels.ComponentInfo
-	web := datamodels.ComponentInfo{
-		FileName:      "web.tar",
-		ImageName:     "web",
-		ImageVersion:  "3.2.12",
-		ExposedPort:   "8080",
-		HostPort:      "8080",
-		DefaultRun:    true,
-	}
+	//web := datamodels.ComponentInfo{
+	//	FileName:      "web.tar",
+	//	ImageName:     "web",
+	//	ImageVersion:  "3.2.12",
+	//	ExposedPort:   "8080",
+	//	HostPort:      "8080",
+	//	DefaultRun:    true,
+	//}
 	tika := datamodels.ComponentInfo{
 		FileName:      "tk.tar",
 		ImageName:     "tk",
-		ImageVersion:  "1.5.1",
+		ImageVersion:  "1.5.2",
 		ExposedPort:   "9998",
 		HostPort:      "9998",
 		DefaultRun:    false,
 	}
-	core := datamodels.ComponentInfo{
-		FileName:      "core.tar",
-		ImageName:     "core",
-		ImageVersion:  "4.2.3",
-		ExposedPort:   "5000",
-		HostPort:      "5000",
-		DefaultRun:    false,
-	}
-	ocr := datamodels.ComponentInfo{
-		FileName:      "ocr.tar",
-		ImageName:     "ocr",
-		ImageVersion:  "1.8.5",
-		ExposedPort:   "9090",
-		HostPort:      "9090",
-		DefaultRun:    false,
-	}
+	//core := datamodels.ComponentInfo{
+	//	FileName:      "core.tar",
+	//	ImageName:     "core",
+	//	ImageVersion:  "4.2.3",
+	//	ExposedPort:   "5000",
+	//	HostPort:      "5000",
+	//	DefaultRun:    false,
+	//}
+	//ocr := datamodels.ComponentInfo{
+	//	FileName:      "ocr.tar",
+	//	ImageName:     "ocr",
+	//	ImageVersion:  "1.8.5",
+	//	ExposedPort:   "9090",
+	//	HostPort:      "9090",
+	//	DefaultRun:    false,
+	//}
 	//configList = append(configList, web, tika, translate, tesseract)
-	configList = append(configList, web, tika, core, ocr)
+	configList = append(configList, tika)
 
 	for _, v:= range configList{
 		filename := fmt.Sprintf("./%s.dat", v.ImageName)
@@ -71,7 +71,23 @@ func (i *ConfigureLoader) TestGenerateConfigFile() error {
 	}
 	return nil
 }
-
+func (i ConfigureLoader) GetCompVersions(compName string) []string {
+	compPath := fmt.Sprintf("./components/%s", compName)
+	fs, _ := ioutil.ReadDir(compPath)
+	var comps []string
+	for _, v := range fs {
+		// 遍历得到文件名
+		if v.IsDir() {
+			//查看是否存在.dat 和 .tar 文件
+			datFile := fmt.Sprintf("%s/%s/%s.dat", compPath, v.Name(), compName)
+			tarFile := fmt.Sprintf("%s/%s/%s.tar", compPath, v.Name(), compName)
+			if utils.PathExists(datFile) && utils.PathExists(tarFile) {
+				comps = append(comps, v.Name())
+			}
+		}
+	}
+	return comps
+}
 // GetComponentList 获取当前系统的组件信息
 func (i *ConfigureLoader) GetComponentList(reload bool) (datamodels.ComponentList, error) {
 	if !reload {
@@ -102,6 +118,24 @@ func (i *ConfigureLoader) parseSystemIniFile() (map[string]string, error) {
 		return nil, err
 	}
 	return cfg.GetSection("components")
+}
+
+func (i *ConfigureLoader) SetSectionKeyValue(sectionName, key, value string) error  {
+	cfg, err := goconfig.LoadConfigFile("./versions.ini")
+	if err != nil {
+		return  err
+	}
+	cfg.SetValue(sectionName, key, value)
+	return nil
+}
+
+// GetSystemVer 解析ini文件
+func (i *ConfigureLoader) GetSystemVer() (string, error) {
+	cfg, err := goconfig.LoadConfigFile("./versions.ini")
+	if err != nil {
+		return "", err
+	}
+	return cfg.GetValue("system", "version")
 }
 
 // GenerateComponentDatFile 由我们自己控制

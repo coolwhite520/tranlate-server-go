@@ -12,7 +12,6 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-	"translate-server/config"
 	"translate-server/datamodels"
 	_ "translate-server/datamodels"
 	"translate-server/docker"
@@ -28,10 +27,10 @@ var (
 
 func main() {
 	//config.GetInstance().TestGenerateConfigFile()
-	list, _ := config.GetInstance().GetComponentList(false)
-	for _, v := range list {
-		log.Println(v)
-	}
+	//list, _ := config.GetInstance().GetComponentList(false)
+	//for _, v := range list {
+	//	log.Println(v)
+	//}
 	//return
 	go func() {
 		docker.GetInstance().SetStatus(docker.RepairingStatus)

@@ -5,6 +5,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"io"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -22,14 +23,12 @@ type AdminController struct {
 	UserService services.UserService
 }
 
-const TempDir = "./temp"
-const UpgradeDirBak = "./upgrade_bak"
 
 func (a *AdminController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Router().Use(middleware.CheckLoginMiddleware, middleware.CheckSuperMiddleware, middleware.CheckActivationMiddleware) //  middleware.IsSystemAvailable
 	b.Handle("DELETE","/{id: int64}", "DeleteById")
 	b.Handle("POST","/upload", "PostUploadUpgradeFile")
-
+	b.Handle("POST","/upgrade", "PostUpgradeComponent")
 }
 
 
@@ -190,9 +189,37 @@ func (a *AdminController) PostRepair() mvc.Result{
 		},
 	}
 }
+
+func Filter(comment string, list []string) [] string  {
+	var newList []string
+	for _, v:= range  list{
+		if v == comment {
+			continue
+		}
+		newList = append(newList, v)
+	}
+	return newList
+}
+
 //GetComponents 获取组件列表
 func (a *AdminController) GetComponents() mvc.Result {
+	type resultData struct{
+		Name string `json:"name"`
+		CurrentVersion string `json:"current_version"`
+		Versions []string `json:"versions"`
+	}
+	type ResultDataList []resultData
+	var retList ResultDataList
 	list, err := config.GetInstance().GetComponentList(false)
+	for _, v := range list {
+		var item resultData
+		versions := config.GetInstance().GetCompVersions(v.ImageName)
+		item.Versions = versions
+		item.Name = v.ImageName
+		item.CurrentVersion = v.ImageVersion
+		retList = append(retList, item)
+	}
+
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
@@ -205,7 +232,7 @@ func (a *AdminController) GetComponents() mvc.Result {
 		Object: map[string]interface{}{
 			"code": datamodels.HttpSuccess,
 			"msg": datamodels.HttpSuccess.String(),
-			"data": list,
+			"data": retList,
 		},
 	}
 }
@@ -220,7 +247,8 @@ func (a *AdminController) PostUploadUpgradeFile() mvc.Result{
 	if err != nil {
 		return nil
 	}
-	dir := fmt.Sprintf("%s/%s", TempDir, fileName)
+	tempDir := os.TempDir()
+	dir := fmt.Sprintf("%s/%s", tempDir, fileName)
 	if !utils.PathExists(dir) {
 		os.MkdirAll(dir, 0777)
 	}
@@ -256,28 +284,151 @@ func (a *AdminController) PostUploadUpgradeFile() mvc.Result{
 			},
 		}
 	}
-
+	// 开始合并文件并解压
 	if total == order {
-		mergeFile := fmt.Sprintf("%s/%s", dir, fileName)
-		f, _ := os.Create(mergeFile)
+		mergeFilePathname := fmt.Sprintf("%s/%s", dir, fileName)
+		mergeFile, _ := os.Create(mergeFilePathname)
 		for i := 1; i <= total; i++ {
-			filePathName := fmt.Sprintf("%s/%s-%d", dir, fileName, i)
-			tempf, _ := os.Open(filePathName)
-			io.Copy(f, tempf)
+			slicedFilePathName := fmt.Sprintf("%s/%s-%d", dir, fileName, i)
+			slicedFile, _ := os.Open(slicedFilePathName)
+			_, err := io.Copy(mergeFile, slicedFile)
+			if err != nil {
+				return mvc.Response{
+					Object: map[string]interface{}{
+						"code": datamodels.HttpUploadFileError,
+						"msg":  "系统错误，文件copy错误",
+					},
+				}
+			}
+			slicedFile.Close()
+			os.Remove(slicedFilePathName)
 		}
-		f.Close()
+		mergeFile.Close()
+		// 解压缩zip包 到一个目录中
+		err:= utils.Unzip(mergeFilePathname, dir)
+		if err != nil {
+			return mvc.Response{
+				Object: map[string]interface{}{
+					"code": datamodels.HttpUploadFileError,
+					"msg":  "系统错误，解压文件失败" + err.Error(),
+				},
+			}
+		}
+		os.Remove(mergeFilePathname)
+		// 解析.dat文件
+		var datName string
+		fs, _ := ioutil.ReadDir(dir)
+		for _, v := range fs {
+			// 遍历得到文件名
+			if strings.Contains(v.Name(), ".dat"){
+				datName = v.Name()
+				break
+			}
+		}
+		datConfig := fmt.Sprintf("%s/%s", dir, datName)
+		compInfo, err := config.GetInstance().ParseComponentDatFile(datConfig)
+		if err != nil {
+			return mvc.Response{
+				Object: map[string]interface{}{
+					"code": datamodels.HttpUploadFileError,
+					"msg":  "系统错误，解析配置失败",
+				},
+			}
+		}
+		// 移动到指定目录
+		desDir := fmt.Sprintf("./components/%s/%s", compInfo.ImageName, compInfo.ImageVersion)
+		err = os.Rename(dir, desDir)
+		if err != nil {
+			return mvc.Response{
+				Object: map[string]interface{}{
+					"code": datamodels.HttpUploadFileError,
+					"msg":  "系统错误，移动目录失败",
+				},
+			}
+		}
 	}
-	// 解压缩zip包 到一个目录中
-
-	// 解析.dat文件
-
-	// 记录到数据库中，然后返回到web端
-
-
 	return mvc.Response{
 		Object: map[string]interface{}{
 			"code": datamodels.HttpSuccess,
 			"msg":  datamodels.HttpSuccess.String(),
+		},
+	}
+}
+
+// PostUpgradeComponent 进行组件的升级
+func (a *AdminController) PostUpgradeComponent() mvc.Result {
+	var newUserReq struct {
+		Name          string `json:"name"`
+		CurrentVersion string `json:"current_version"`
+		UpVersion     string  `json:"up_version"`
+	}
+	err := a.Ctx.ReadJSON(&newUserReq)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpJsonParseError,
+				"msg": datamodels.HttpJsonParseError.String(),
+			},
+		}
+	}
+	// 移除容器
+	err = docker.GetInstance().RemoveContainer(newUserReq.Name, newUserReq.CurrentVersion)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpDockerServiceException,
+				"msg": err.Error(),
+			},
+		}
+	}
+	// 移除镜像
+	err = docker.GetInstance().RemoveImage(newUserReq.Name, newUserReq.CurrentVersion)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpDockerServiceException,
+				"msg": err.Error(),
+			},
+		}
+	}
+	//
+	dat := fmt.Sprintf("./components/%s/%s/%s.dat", newUserReq.Name, newUserReq.UpVersion, newUserReq.Name)
+	compInfo, err := config.GetInstance().ParseComponentDatFile(dat)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpFileOpenError,
+				"msg": err.Error(),
+			},
+		}
+	}
+	// 加载新的镜像
+	err = docker.GetInstance().LoadImage(*compInfo)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpDockerServiceException,
+				"msg": err.Error(),
+			},
+		}
+	}
+	// 启动容器
+	err = docker.GetInstance().StartContainer(*compInfo)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpDockerServiceException,
+				"msg": err.Error(),
+			},
+		}
+	}
+	// 修改versions.ini
+	config.GetInstance().SetSectionKeyValue("components", newUserReq.Name, newUserReq.UpVersion)
+
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
 		},
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
+	"translate-server/config"
 	"translate-server/datamodels"
 	"translate-server/middleware"
 	"translate-server/services"
@@ -116,6 +117,7 @@ func (u *UserController) PostLogin() mvc.Result {
 			}
 		}
 		//Authorization: Bearer $token
+		ver, _ := config.GetInstance().GetSystemVer()
 		u.Ctx.Header("Authorization", fmt.Sprintf("Bearer %s", token))
 		return mvc.Response{
 			Object: map[string]interface{}{
@@ -125,7 +127,7 @@ func (u *UserController) PostLogin() mvc.Result {
 					"avatar": "",
 					"name": user.Username,
 					"isSuper": user.IsSuper,
-					//"sysVer": systemConfig.SystemVersion,
+					"sysVer": ver,
 				},
 			},
 		}
