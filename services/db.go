@@ -2,8 +2,10 @@ package services
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
+	"translate-server/datamodels"
 )
 
 var db *sql.DB
@@ -43,7 +45,8 @@ var SqlArr = []string {
 
 func init() {
 	var err error
-	db, err = sql.Open("mysql", "root:112233@tcp(127.0.0.1:3306)/?charset=utf8&parseTime=True")
+	dataSourceName := fmt.Sprintf("root:%s@tcp(127.0.0.1:3306)/?charset=utf8&parseTime=True", datamodels.MysqlPassword)
+	db, err = sql.Open("mysql", dataSourceName)
 	if err != nil {
 		log.Errorln(err)
 		return

@@ -1,6 +1,7 @@
 package datamodels
 
 const SystemVersion = "5.3.16"
+const MysqlPassword = "NB2Ffj!lPTe&yOm5"
 
 type ComponentInfo struct {
 	FileName      string `json:"file_name"`

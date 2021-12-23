@@ -207,6 +207,10 @@ func (o *Operator) StartContainer(img datamodels.ComponentInfo) error {
 			//hostConfig.ExtraHosts = []string{"--add-host=host.docker.internal:host-gateway"}
 			hostConfig.ExtraHosts = []string{"host.docker.internal:host-gateway"}
 		}
+		if img.ImageName == "mysql" {
+			mysqlPasswdEnv := fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", datamodels.MysqlPassword)
+			config.Env = []string{mysqlPasswdEnv}
+		}
 		create, err := o.cli.ContainerCreate(context.Background(), config, hostConfig, &network.NetworkingConfig{}, nil, "")
 		if err != nil {
 			return err
