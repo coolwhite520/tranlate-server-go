@@ -2,6 +2,8 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/Unknwon/goconfig"
 	"io/ioutil"
 	"sync"
 	"translate-server/datamodels"
@@ -14,7 +16,7 @@ var once sync.Once
 type ConfigureLoader struct {
 	secret string
 	systemConfigFilePath string
-	systemConfig *datamodels.SystemConfig
+	compList datamodels.ComponentList
 }
 
 func GetInstance() *ConfigureLoader {
@@ -28,20 +30,18 @@ func GetInstance() *ConfigureLoader {
 // TestGenerateConfigFile 自己测试的时候使用
 func (i *ConfigureLoader) TestGenerateConfigFile() error {
 	var configList []datamodels.ComponentInfo
-	//web := datamodels.ComponentInfo{
-	//	FileName:      "web.tar",
-	//	ImageName:     "web",
-	//	ImageVersion:  "v1",
-	//	FileMd5:       "",
-	//	ExposedPort:   "8080",
-	//	HostPort:      "8080",
-	//	DefaultRun:    true,
-	//}
+	web := datamodels.ComponentInfo{
+		FileName:      "web.tar",
+		ImageName:     "web",
+		ImageVersion:  "3.2.12",
+		ExposedPort:   "8080",
+		HostPort:      "8080",
+		DefaultRun:    true,
+	}
 	tika := datamodels.ComponentInfo{
 		FileName:      "tk.tar",
 		ImageName:     "tk",
-		ImageVersion:  "1.0",
-		FileMd5:       "",
+		ImageVersion:  "1.5.1",
 		ExposedPort:   "9998",
 		HostPort:      "9998",
 		DefaultRun:    false,
@@ -49,8 +49,7 @@ func (i *ConfigureLoader) TestGenerateConfigFile() error {
 	core := datamodels.ComponentInfo{
 		FileName:      "core.tar",
 		ImageName:     "core",
-		ImageVersion:  "1.0",
-		FileMd5:       "",
+		ImageVersion:  "4.2.3",
 		ExposedPort:   "5000",
 		HostPort:      "5000",
 		DefaultRun:    false,
@@ -58,58 +57,55 @@ func (i *ConfigureLoader) TestGenerateConfigFile() error {
 	ocr := datamodels.ComponentInfo{
 		FileName:      "ocr.tar",
 		ImageName:     "ocr",
-		ImageVersion:  "1.0",
-		FileMd5:       "",
+		ImageVersion:  "1.8.5",
 		ExposedPort:   "9090",
 		HostPort:      "9090",
 		DefaultRun:    false,
 	}
 	//configList = append(configList, web, tika, translate, tesseract)
-	configList = append(configList, tika, core, ocr)
-	var systemConfig datamodels.SystemConfig
-	systemConfig.ComponentList = configList
-	systemConfig.SystemVersion = datamodels.SystemVersion
-	return i.GenerateSystemConfigFile(systemConfig)
-}
-// GenerateSystemConfigFile 由我们自己控制
-func (i *ConfigureLoader) GenerateSystemConfigFile(systemConfig datamodels.SystemConfig) error {
-	marshal, err := json.Marshal(systemConfig)
-	if err != nil {
-		return err
+	configList = append(configList, web, tika, core, ocr)
+
+	for _, v:= range configList{
+		filename := fmt.Sprintf("./%s.dat", v.ImageName)
+		i.GenerateComponentDatFile(v, filename)
 	}
-	encrypt, err := utils.AesEncrypt(marshal, []byte(i.secret))
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile(i.systemConfigFilePath, encrypt, 0777)
+	return nil
 }
 
-// ParseSystemConfigFile 解析系统配置文件
-func (i *ConfigureLoader) ParseSystemConfigFile(reload bool) (*datamodels.SystemConfig, error) {
+// GetComponentList 获取当前系统的组件信息
+func (i *ConfigureLoader) GetComponentList(reload bool) (datamodels.ComponentList, error) {
 	if !reload {
-		if i.systemConfig != nil {
-			return i.systemConfig, nil
+		if i.compList != nil {
+			return i.compList, nil
 		}
 	}
-	bytes, err := ioutil.ReadFile(i.systemConfigFilePath)
+	m, err := i.parseSystemIniFile()
 	if err != nil {
 		return nil, err
 	}
-	decrypt, err := utils.AesDecrypt(bytes, []byte(i.secret))
+	var compListTemp datamodels.ComponentList
+	for k, v := range m {
+		datFilePath := fmt.Sprintf("./components/%s/%s/%s.dat", k, v, k)
+		comp, err := i.ParseComponentDatFile(datFilePath)
+		if err != nil {
+			return nil, err
+		}
+		compListTemp = append(compListTemp, *comp)
+	}
+	i.compList = compListTemp
+	return i.compList, nil
+}
+// parseSystemIniFile 解析ini文件
+func (i *ConfigureLoader) parseSystemIniFile() (map[string]string, error) {
+	cfg, err := goconfig.LoadConfigFile("./versions.ini")
 	if err != nil {
 		return nil, err
 	}
-	var systemConfig datamodels.SystemConfig
-	err = json.Unmarshal(decrypt, &systemConfig)
-	if err != nil {
-		return nil, err
-	}
-	i.systemConfig = &systemConfig
-	return i.systemConfig, nil
+	return cfg.GetSection("components")
 }
 
-// GenerateComponentConfigFile 由我们自己控制
-func (i *ConfigureLoader) GenerateComponentConfigFile(comp datamodels.ComponentInfo, componentConfigPath string) error {
+// GenerateComponentDatFile 由我们自己控制
+func (i *ConfigureLoader) GenerateComponentDatFile(comp datamodels.ComponentInfo, componentConfigPath string) error {
 	marshal, err := json.Marshal(comp)
 	if err != nil {
 		return err
@@ -121,8 +117,8 @@ func (i *ConfigureLoader) GenerateComponentConfigFile(comp datamodels.ComponentI
 	return ioutil.WriteFile(componentConfigPath, encrypt, 0777)
 }
 
-// ParseComponentConfigFile 解析组件内配置文件
-func (i *ConfigureLoader) ParseComponentConfigFile(componentConfigPath string) (*datamodels.ComponentInfo, error) {
+// ParseComponentDatFile 解析组件内配置文件
+func (i *ConfigureLoader) ParseComponentDatFile(componentConfigPath string) (*datamodels.ComponentInfo, error) {
 	bytes, err := ioutil.ReadFile(componentConfigPath)
 	if err != nil {
 		return nil, err

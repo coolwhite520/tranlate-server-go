@@ -15,12 +15,12 @@ import (
 var SignKey = "Today I want to eat noodle."
 
 func PyTranslate(srcLang, desLang, content string) (string, error) {
-	systemConfig, err := config.GetInstance().ParseSystemConfigFile(false)
+	compList, err := config.GetInstance().GetComponentList(false)
 	if err != nil {
 		return "", err
 	}
 	var port string
-	for _, v := range systemConfig.ComponentList {
+	for _, v := range compList {
 		if v.ImageName == "core" {
 			port = v.HostPort
 			break

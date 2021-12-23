@@ -2,13 +2,13 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"os"
-	"strings"
 	"sync"
 	"translate-server/config"
 	"translate-server/datamodels"
@@ -51,12 +51,12 @@ type Operator struct {
 func (o *Operator) StartDockers() error {
 	service := services.NewActivationService()
 	_, state := service.ParseKeystoreFile()
-	systemConfig, err := config.GetInstance().ParseSystemConfigFile(false)
+	compList, err := config.GetInstance().GetComponentList(false)
 	if err != nil {
 		return err
 	}
 	o.percent = 0
-	for _,v := range systemConfig.ComponentList {
+	for _,v := range compList {
 		if state == datamodels.HttpSuccess || v.DefaultRun {
 			err := o.loadImage(v)
 			if err != nil {
@@ -91,12 +91,12 @@ func (o *Operator) GetStatus() Status {
 }
 
 func (o *Operator) IsALlRunningStatus() (bool, error) {
-	systemConfig, err := config.GetInstance().ParseSystemConfigFile(false)
+	compList, err := config.GetInstance().GetComponentList(false)
 	if err != nil {
 		return false, err
 	}
-	for _,v := range systemConfig.ComponentList {
-		running, err := o.isContainerRunning(v.ImageName)
+	for _,v := range compList {
+		running, err := o.isContainerRunning(v.ImageName, v.ImageVersion)
 		if err != nil {
 			return false,  err
 		}
@@ -109,14 +109,15 @@ func (o *Operator) IsALlRunningStatus() (bool, error) {
 
 // LoadImage 从文件加载镜像
 func (o *Operator) loadImage(img datamodels.ComponentInfo) error {
-	b, err := o.existImage(img)
+	b, err := o.existImage(img.ImageName, img.ImageVersion)
 	if err != nil {
 		return err
 	}
 	if b {
 		return nil
 	}
-	f, err := os.Open(img.FileName)
+	imgFilePathname := fmt.Sprintf("./components/%s/%s/%s", img.ImageName, img.ImageVersion, img.FileName)
+	f, err := os.Open(imgFilePathname)
 	if err != nil {
 		return err
 	}
@@ -157,24 +158,23 @@ func (o *Operator) RemoveImage(id string) error {
 
 // StartContainer 启动容器
 func (o *Operator) startContainer(img datamodels.ComponentInfo) error {
-	hasContainer, id, err := o.hasContainer(img.ImageName)
+	hasContainer, id, err := o.hasContainer(img.ImageName, img.ImageVersion)
 	if err != nil {
 		return err
 	}
 	if hasContainer {
-		running, err := o.isContainerRunning(img.ImageName)
+		running, err := o.isContainerRunning(img.ImageName, img.ImageVersion)
 		if err != nil {
 			return err
 		}
 		if running {
-			//return o.cli.ContainerRestart(context.Background(), id, nil)
 			return nil
 		} else {
 			return o.cli.ContainerStart(context.Background(), id, types.ContainerStartOptions{})
 		}
 	} else {
 		config := &container.Config{
-			Image: img.ImageName,
+			Image: img.ImageName + ":" + img.ImageVersion,
 			ExposedPorts: nat.PortSet{
 				nat.Port(img.ExposedPort + "/tcp"): {},
 			},
@@ -198,15 +198,14 @@ func (o *Operator) startContainer(img datamodels.ComponentInfo) error {
 }
 
 // ExistImage 镜像是否存在
-func (o *Operator) existImage(info datamodels.ComponentInfo) (bool, error) {
+func (o *Operator) existImage(imageName string, imageTag string) (bool, error) {
 	images, err := o.cli.ImageList(context.Background(), types.ImageListOptions{})
 	if err != nil {
 		return false, err
 	}
 	for _, image := range images {
 		s := image.RepoTags[0]
-		arrays := strings.Split(s, ":")
-		if strings.Contains(arrays[0], info.ImageName) {
+		if s == imageName + ":" + imageTag {
 			return true, nil
 		}
 	}
@@ -214,13 +213,13 @@ func (o *Operator) existImage(info datamodels.ComponentInfo) (bool, error) {
 }
 
 // HasContainer 是否存在某个容器 容器的名称默认不指定的时候就是随机的，所以通过遍历ContainerList获取的containers中的每一个容器的镜像名称进行判断即可，【镜像生成容器】
-func (o *Operator) hasContainer(imageName string) (bool, string, error) {
+func (o *Operator) hasContainer(imageName string, imageTag string) (bool, string, error) {
 	containers, err := o.cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
 	if err != nil {
 		return false, "", err
 	}
 	for _, v := range containers {
-		if v.Image == imageName {
+		if v.Image == imageName + ":" + imageTag {
 			return true, v.ID, nil
 		}
 	}
@@ -228,13 +227,13 @@ func (o *Operator) hasContainer(imageName string) (bool, string, error) {
 }
 
 // IsContainerRunning 某个容器是否正在运行
-func (o *Operator) isContainerRunning(imageName string) (bool, error) {
+func (o *Operator) isContainerRunning(imageName string, imageTag string) (bool, error) {
 	containers, err := o.cli.ContainerList(context.Background(), types.ContainerListOptions{})
 	if err != nil {
 		return false, err
 	}
 	for _, v := range containers {
-		if v.Image == imageName {
+		if v.Image == imageName + ":" + imageTag {
 			return true, nil
 		}
 	}

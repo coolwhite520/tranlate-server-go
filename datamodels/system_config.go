@@ -11,8 +11,4 @@ type ComponentInfo struct {
 	HostPort      string `json:"host_port"`        // 映射的主机端口
 	DefaultRun    bool   `json:"default_run"` // 默认是否启动
 }
-
-type SystemConfig struct {
-	SystemVersion string          `json:"system_version"`
-	ComponentList []ComponentInfo `json:"component_list"`
-}
+type ComponentList []ComponentInfo

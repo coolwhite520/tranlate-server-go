@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"translate-server/config"
 	"translate-server/datamodels"
 	"translate-server/docker"
 	"translate-server/middleware"
@@ -189,6 +190,26 @@ func (a *AdminController) PostRepair() mvc.Result{
 		},
 	}
 }
+//GetComponents 获取组件列表
+func (a *AdminController) GetComponents() mvc.Result {
+	list, err := config.GetInstance().GetComponentList(false)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpFileNotFoundError,
+				"msg":  err.Error(),
+			},
+		}
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
+			"data": list,
+		},
+	}
+}
+
 // PostUploadUpgradeFile 升级文件必须是zip格式，压缩包里面包含一个同名的 xxx.dat（记录升级文件的信息也就是ComponentInfo结构） 和一个xxx.tar 文件
 func (a *AdminController) PostUploadUpgradeFile() mvc.Result{
 	fileName := a.Ctx.FormValue("fileName")

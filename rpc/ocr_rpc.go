@@ -53,12 +53,12 @@ func OcrParseFile(filePathName string) (string, error) {
 		log.Error(err)
 		return "", err
 	}
-	systemConfig, err := config.GetInstance().ParseSystemConfigFile(false)
+	compList, err := config.GetInstance().GetComponentList(false)
 	if err != nil {
 		return "", err
 	}
 	var port string
-	for _, v := range systemConfig.ComponentList {
+	for _, v := range compList {
 		if v.ImageName == "ocr" {
 			port = v.HostPort
 			break

@@ -27,7 +27,11 @@ var (
 )
 
 func main() {
-	config.GetInstance().TestGenerateConfigFile()
+	//config.GetInstance().TestGenerateConfigFile()
+	list, _ := config.GetInstance().GetComponentList(false)
+	for _, v := range list {
+		log.Println(v)
+	}
 	//return
 	go func() {
 		docker.GetInstance().SetStatus(docker.RepairingStatus)
