@@ -169,7 +169,7 @@ func (o *Operator) RemoveImage(imageName string, imageVersion string) error {
 	return nil
 }
 
-// StartContainer 启动容器
+// StartContainer 启动容器 ,如果是 部署在linux下，那么当启动web镜像（nginx）的时候，需要添加--add-host=host.docker.internal:host-gateway参数
 func (o *Operator) StartContainer(img datamodels.ComponentInfo) error {
 	hasContainer, id, err := o.hasContainer(img.ImageName, img.ImageVersion)
 	if err != nil {
@@ -201,6 +201,11 @@ func (o *Operator) StartContainer(img datamodels.ComponentInfo) error {
 					},
 				},
 			},
+		}
+		// web存在于docker中，需要访问主机上api接口
+		if img.ImageName == "web" {
+			//hostConfig.ExtraHosts = []string{"--add-host=host.docker.internal:host-gateway"}
+			hostConfig.ExtraHosts = []string{"host.docker.internal:host-gateway"}
 		}
 		create, err := o.cli.ContainerCreate(context.Background(), config, hostConfig, &network.NetworkingConfig{}, nil, "")
 		if err != nil {

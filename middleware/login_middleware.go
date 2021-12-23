@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 	"translate-server/datamodels"
-	"translate-server/services"
 )
 
 /*
@@ -60,16 +59,15 @@ func CheckLoginMiddleware(ctx iris.Context) {
 	//expiresAtString := standardClaims.ExpiresAt().Format(ctx.Application().ConfigurationReadOnly().GetTimeFormat())
 	//timeLeft := standardClaims.Timeleft()
 	// 判断一下用户是否已经被删除了
-
-	dbUser, _ := services.NewUserService().QueryUserByName(user.Username)
-	if  dbUser == nil{
-		ctx.JSON(
-			map[string]interface{}{
-				"code": datamodels.HttpUserNoThisUserError,
-				"msg": datamodels.HttpUserNoThisUserError.String(),
-			})
-		return
-	}
+	//dbUser, _ := services.NewUserService().QueryUserByName(user.Username)
+	//if  dbUser == nil{
+	//	ctx.JSON(
+	//		map[string]interface{}{
+	//			"code": datamodels.HttpUserNoThisUserError,
+	//			"msg": datamodels.HttpUserNoThisUserError.String(),
+	//		})
+	//	return
+	//}
 	ctx.Values().Set("User", user)
 	ctx.Next()
 
