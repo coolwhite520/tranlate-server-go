@@ -45,7 +45,7 @@ func (a activation) GenerateKeystoreContent(activationInfo datamodels.Activation
 	if err != nil {
 		return "", datamodels.HttpActivationGenerateError
 	}
-	v := utils.Md5V(activationInfo.MachineId + AppID)
+	v := utils.Md5V(activationInfo.Sn + AppID)
 	encrypt, err := utils.AesEncrypt(data, []byte(v))
 	if err != nil {
 		return "", datamodels.HttpActivationAESError
@@ -88,7 +88,7 @@ func (a *activation) ParseKeystoreContent(content string) (*datamodels.Activatio
 	if err != nil {
 		return nil, datamodels.HttpActivationInvalidateError
 	}
-	if activationInfo.MachineId != id {
+	if activationInfo.Sn != id {
 		return nil, datamodels.HttpActivationInvalidateError
 	}
 	if a.isExpired(&activationInfo) {

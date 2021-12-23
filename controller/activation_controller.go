@@ -20,7 +20,7 @@ func (a *ActivationController) BeforeActivation(b mvc.BeforeActivation) {
 
 func (a *ActivationController) Post() mvc.Result {
 	var jsonObj struct{
-		MachineId string `json:"machine_id"`
+		Sn string `json:"sn"`
 		Keystore string `json:"keystore"`
 	}
 	err := a.Ctx.ReadJSON(&jsonObj)

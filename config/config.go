@@ -30,22 +30,22 @@ func GetInstance() *ConfigureLoader {
 // TestGenerateConfigFile 自己测试的时候使用
 func (i *ConfigureLoader) TestGenerateConfigFile() error {
 	var configList []datamodels.ComponentInfo
-	//web := datamodels.ComponentInfo{
-	//	FileName:      "web.tar",
-	//	ImageName:     "web",
-	//	ImageVersion:  "3.2.12",
-	//	ExposedPort:   "8080",
-	//	HostPort:      "8080",
-	//	DefaultRun:    true,
-	//}
-	tika := datamodels.ComponentInfo{
-		FileName:      "tk.tar",
-		ImageName:     "tk",
-		ImageVersion:  "1.5.2",
-		ExposedPort:   "9998",
-		HostPort:      "9998",
-		DefaultRun:    false,
+	web := datamodels.ComponentInfo{
+		FileName:      "web.tar",
+		ImageName:     "web",
+		ImageVersion:  "3.3.1",
+		ExposedPort:   "8080",
+		HostPort:      "8080",
+		DefaultRun:    true,
 	}
+	//tika := datamodels.ComponentInfo{
+	//	FileName:      "tk.tar",
+	//	ImageName:     "tk",
+	//	ImageVersion:  "1.5.2",
+	//	ExposedPort:   "9998",
+	//	HostPort:      "9998",
+	//	DefaultRun:    false,
+	//}
 	//core := datamodels.ComponentInfo{
 	//	FileName:      "core.tar",
 	//	ImageName:     "core",
@@ -63,7 +63,7 @@ func (i *ConfigureLoader) TestGenerateConfigFile() error {
 	//	DefaultRun:    false,
 	//}
 	//configList = append(configList, web, tika, translate, tesseract)
-	configList = append(configList, tika)
+	configList = append(configList, web)
 
 	for _, v:= range configList{
 		filename := fmt.Sprintf("./%s.dat", v.ImageName)

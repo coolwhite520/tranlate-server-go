@@ -27,10 +27,6 @@ var (
 
 func main() {
 	//config.GetInstance().TestGenerateConfigFile()
-	//list, _ := config.GetInstance().GetComponentList(false)
-	//for _, v := range list {
-	//	log.Println(v)
-	//}
 	//return
 	go func() {
 		docker.GetInstance().SetStatus(docker.RepairingStatus)
@@ -96,16 +92,6 @@ func signalHandler() {
 			signal.Stop(datamodels.GlobalChannel)
 			srv.Shutdown(ctx)
 			log.Printf("graceful shutdown")
-			return
-		case syscall.SIGQUIT:
-			// reload
-			log.Printf("reload")
-			err := reload()
-			if err != nil {
-				log.Fatalf("graceful restart error: %v", err)
-			}
-			srv.Shutdown(ctx)
-			log.Printf("graceful reload")
 			return
 		}
 	}
