@@ -157,7 +157,7 @@ func (i *ConfigureLoader) GenerateComponentDatFile(comp datamodels.ComponentInfo
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(componentConfigPath, encrypt, 0777)
+	return ioutil.WriteFile(componentConfigPath, encrypt, 0666)
 }
 
 // ParseComponentDatFile 解析组件内配置文件

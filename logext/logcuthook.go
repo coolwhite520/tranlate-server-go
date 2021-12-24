@@ -12,7 +12,7 @@ import (
 func ConfigLocalFilesystemLogger(logPath string, logFileName string, maxAge time.Duration, rotationTime time.Duration) {
 	baseLogPaht := path.Join(logPath, logFileName)
 	writer, err := rotatelogs.New(
-		baseLogPaht+".%Y%m%d%H%M",
+		baseLogPaht+".%Y%m%d%H",
 		rotatelogs.WithLinkName(baseLogPaht),   // 生成软链，指向最新日志文件
 		rotatelogs.WithMaxAge(maxAge), 			// 文件最大保存时间
 		rotatelogs.WithRotationTime(rotationTime), // 日志切割时间间隔

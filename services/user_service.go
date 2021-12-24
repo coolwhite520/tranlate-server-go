@@ -95,7 +95,6 @@ func (u *userService) InsertUser(user datamodels.User) error {
 func (u *userService) QueryAdminUsers() ([]datamodels.User, error) {
 	sql := fmt.Sprintf("SELECT Id, Username, IsSuper, CreatedAt FROM tbl_user where IsSuper=1")
 	rows, err := db.Query(sql)
-	defer rows.Close()
 	if err != nil {
 		log.Error(err)
 		return nil, err

@@ -56,27 +56,35 @@ func InitDb() {
 			break
 		}
 	}
-	time.Sleep(10 * time.Second)
 	dataSourceName := fmt.Sprintf("root:%s@tcp(127.0.0.1:%s)/?charset=utf8&parseTime=True", datamodels.MysqlPassword, hostPort)
-	db, err = sql.Open("mysql", dataSourceName)
-	if err != nil {
-		log.Error(err)
-		panic(err)
+	for i:=0; i < 100; i++ {
+		time.Sleep(1 * time.Second)
+		db, err = sql.Open("mysql", dataSourceName)
+		if err != nil {
+			log.Error(fmt.Sprintf("attempt to connect mysql port:%s, ", hostPort), err.Error())
+			continue
+		}
+		err = db.Ping()
+		if err != nil{
+			log.Error(fmt.Sprintf("attempt to connect mysql port:%s, ", hostPort), err.Error())
+			continue
+		}
+		break
 	}
+
 	for _, v := range SqlArr {
 		_, err = db.Exec(v)
 		if err != nil {
 			log.Error(err)
-			break
+			panic(err)
 		}
 
 	}
-	db.Close()
 	// 重新建立一个链接，链接到translate_db数据库，就不需要切换操作了
 	dataSourceName = fmt.Sprintf("root:%s@tcp(127.0.0.1:%s)/translate_db?charset=utf8&parseTime=True", datamodels.MysqlPassword, hostPort)
 	db, err = sql.Open("mysql", dataSourceName)
 	if err != nil {
-		log.Errorln(err)
+		log.Error(err)
 		panic(err)
 	}
 	service := NewUserService()

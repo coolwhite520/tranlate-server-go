@@ -60,12 +60,12 @@ func (a *activation) GenerateKeystoreFile(activationInfo datamodels.Activation) 
 	if status != datamodels.HttpSuccess {
 		return status
 	}
-	ioutil.WriteFile(KeyStorePath, []byte(content), 0777)
+	ioutil.WriteFile(KeyStorePath, []byte(content), 0666)
 	return datamodels.HttpSuccess
 }
 
 func (a *activation) GenerateKeystoreFileByContent(content string) datamodels.HttpStatusCode {
-	ioutil.WriteFile(KeyStorePath, []byte(content), 0777)
+	ioutil.WriteFile(KeyStorePath, []byte(content), 0666)
 	return datamodels.HttpSuccess
 }
 

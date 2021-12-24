@@ -60,7 +60,7 @@ func (t *translateService) ReceiveFiles(Ctx iris.Context) ([]datamodels.Record, 
 	DirRandId := fmt.Sprintf("%d", nowUnixMicro)
 	userUploadDir := fmt.Sprintf("%s/%d/%s", UploadDir, user.Id, DirRandId)
 	if !utils.PathExists(userUploadDir) {
-		err := os.MkdirAll(userUploadDir, 0777)
+		err := os.MkdirAll(userUploadDir, 0666)
 		if err != nil {
 			return records, err
 		}
@@ -203,7 +203,7 @@ func (t *translateService) TranslateFile(srcLang string, desLang string, recordI
 	record.StateDescribe = datamodels.TransExtractSuccess.String()
 	t.UpdateRecord(record)
 	if !utils.PathExists(extractDir) {
-		err := os.MkdirAll(extractDir, 0777)
+		err := os.MkdirAll(extractDir, 0666)
 		if err != nil {
 			record.State = datamodels.TransExtractFailed
 			record.StateDescribe = datamodels.TransExtractFailed.String()
@@ -213,7 +213,7 @@ func (t *translateService) TranslateFile(srcLang string, desLang string, recordI
 		}
 	}
 	desFile := fmt.Sprintf("%s/%s.txt", extractDir, record.FileName)
-	err = ioutil.WriteFile(desFile, []byte(content), 0777)
+	err = ioutil.WriteFile(desFile, []byte(content), 0666)
 	if err != nil {
 		record.State = datamodels.TransExtractFailed
 		record.StateDescribe = datamodels.TransExtractFailed.String()
@@ -237,13 +237,13 @@ func (t *translateService) TranslateFile(srcLang string, desLang string, recordI
 		return
 	}
 	if !utils.PathExists(translatedDir) {
-		err := os.MkdirAll(translatedDir, 0777)
+		err := os.MkdirAll(translatedDir, 0666)
 		if err != nil {
 			return
 		}
 	}
 	desFile = fmt.Sprintf("%s/%s.txt", translatedDir, record.FileName)
-	err = ioutil.WriteFile(desFile, []byte(transContent), 0777)
+	err = ioutil.WriteFile(desFile, []byte(transContent), 0666)
 	if err != nil {
 		return
 	}

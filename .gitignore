@@ -29,3 +29,4 @@ data
 *.rpm
 *.db
 components
+translate-server
