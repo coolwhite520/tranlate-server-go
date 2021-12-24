@@ -17,6 +17,7 @@ import (
 	"translate-server/docker"
 	_ "translate-server/logext"
 	"translate-server/server"
+	"translate-server/services"
 )
 
 var (
@@ -25,7 +26,21 @@ var (
 	graceful = flag.Bool("graceful", false, "listen on fd open 3 (internal use only)")
 )
 
+func init()  {
+	//config.GetInstance().TestGenerateConfigFile()
+	//return
+	docker.GetInstance().SetStatus(docker.RepairingStatus)
+	// StartDockers 内部会判断是否已经是激活的状态
+	err := docker.GetInstance().StartDockers()
+	if err != nil {
+		panic(err)
+	}
+	docker.GetInstance().SetStatus(docker.NormalStatus)
+	services.InitDb()
+}
+
 func main() {
+	//return
 	//config.GetInstance().TestGenerateConfigFile()
 	//
 	//sn := "d85485d421f60d5097181c0e052fdfc40299b635a05b295ad6880ad42a908bf2"
@@ -50,15 +65,6 @@ func main() {
 	//}
 	//log.Println(content)
 	//return
-	go func() {
-		docker.GetInstance().SetStatus(docker.RepairingStatus)
-		// StartDockers 内部会判断是否已经是激活的状态
-		err := docker.GetInstance().StartDockers()
-		if err != nil {
-			panic(err)
-		}
-		docker.GetInstance().SetStatus(docker.NormalStatus)
-	}()
 	srv = &http.Server{Addr: ":7777"}
 	log.Println("server will listening on : http://localhost:7777")
 	var err error

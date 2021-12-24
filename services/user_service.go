@@ -78,7 +78,7 @@ func (u *userService) UpdateUserPassword(user datamodels.User) error {
 
 func (u *userService) InsertUser(user datamodels.User) error {
 	tx, _ := db.Begin()
-	sql := fmt.Sprintf("INSERT INTO tbl_user('Username', 'HashedPassword', 'IsSuper') VALUES(?,?,?);")
+	sql := fmt.Sprintf("INSERT INTO tbl_user(Username, HashedPassword, IsSuper) VALUES(?,?,?);")
 	stmt, err := tx.Prepare(sql)
 	if err != nil {
 		log.Error(err)
@@ -95,8 +95,10 @@ func (u *userService) InsertUser(user datamodels.User) error {
 func (u *userService) QueryAdminUsers() ([]datamodels.User, error) {
 	sql := fmt.Sprintf("SELECT Id, Username, IsSuper, CreatedAt FROM tbl_user where IsSuper=1")
 	rows, err := db.Query(sql)
+	defer rows.Close()
 	if err != nil {
 		log.Error(err)
+		return nil, err
 	}
 	var users []datamodels.User
 	for rows.Next() {
@@ -105,7 +107,7 @@ func (u *userService) QueryAdminUsers() ([]datamodels.User, error) {
 		err := rows.Scan(&user.Id, &user.Username, &user.IsSuper, &t)
 		user.CreatedAt = t.Format("2006-01-02 15:04:05")
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
 		}
 		users = append(users, user)
 	}
@@ -128,8 +130,10 @@ func (u *userService) QueryUserByName(name string) (*datamodels.User, error) {
 func (u *userService) QueryAllUsers() ([]datamodels.User, error) {
 	sql := fmt.Sprintf("SELECT Id, Username, IsSuper, CreatedAt FROM tbl_user where IsSuper=0")
 	rows, err := db.Query(sql)
+	defer rows.Close()
 	if err != nil {
 		log.Error(err)
+		return nil, err
 	}
 	var users []datamodels.User
 	for rows.Next() {
@@ -138,7 +142,8 @@ func (u *userService) QueryAllUsers() ([]datamodels.User, error) {
 		err := rows.Scan(&user.Id, &user.Username, &user.IsSuper, &t)
 		user.CreatedAt = t.Format("2006-01-02 15:04:05")
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
+			continue
 		}
 		users = append(users, user)
 	}

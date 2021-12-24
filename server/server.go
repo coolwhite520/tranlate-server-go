@@ -1,12 +1,10 @@
 package server
 
 import (
-	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"net"
 	"translate-server/controller"
-	"translate-server/datamodels"
 	"translate-server/services"
 )
 
@@ -29,15 +27,6 @@ func activationMVC(app *mvc.Application)  {
 func userMVC(app *mvc.Application) {
 	party := app.Party("/user")
 	service := services.NewUserService()
-	users, _ := service.QueryAdminUsers()
-	if users == nil {
-		password, _ := datamodels.GeneratePassword("admin")
-		service.InsertUser(datamodels.User{
-			Username:     fmt.Sprintf("admin"),
-			HashedPassword: password,
-			IsSuper:  true,
-		})
-	}
 	party.Register(service)
 	party.Handle(new(controller.UserController))
 }

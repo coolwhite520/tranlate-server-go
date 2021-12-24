@@ -31,20 +31,20 @@ func GetInstance() *ConfigureLoader {
 func (i *ConfigureLoader) TestGenerateConfigFile() error {
 	var configList []datamodels.ComponentInfo
 	//docker run -p 3306:3306 -e MYSQL_ROOT_PASSWORD=000000 -d mysql:8.0
-	web := datamodels.ComponentInfo{
-		FileName:      "web.tar",
-		ImageName:     "web",
-		ImageVersion:  "3.3.1",
-		ExposedPort:   "8080",
-		HostPort:      "8080",
-		DefaultRun:    true,
-	}
+	//web := datamodels.ComponentInfo{
+	//	FileName:      "web.tar",
+	//	ImageName:     "web",
+	//	ImageVersion:  "3.3.1",
+	//	ExposedPort:   "8080",
+	//	HostPort:      "8080",
+	//	DefaultRun:    true,
+	//}
 	mysql := datamodels.ComponentInfo{
 		FileName:      "mysql.tar",
 		ImageName:     "mysql",
 		ImageVersion:  "8.0",
 		ExposedPort:   "3306",
-		HostPort:      "3306",
+		HostPort:      "3310",
 		DefaultRun:    true,
 	}
 	//tika := datamodels.ComponentInfo{
@@ -72,7 +72,7 @@ func (i *ConfigureLoader) TestGenerateConfigFile() error {
 	//	DefaultRun:    false,
 	//}
 	//configList = append(configList, web, tika, translate, tesseract)
-	configList = append(configList, web, mysql)
+	configList = append(configList,  mysql)
 
 	for _, v:= range configList{
 		filename := fmt.Sprintf("./%s.dat", v.ImageName)
