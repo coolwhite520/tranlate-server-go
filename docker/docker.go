@@ -63,7 +63,7 @@ func (o *Operator) StartDockers() error {
 				o.status = ErrorStatus
 				return err
 			}
-			o.percent += 15
+			o.percent += 10
 			err = o.StartContainer(v)
 			if err != nil {
 				o.status = ErrorStatus
