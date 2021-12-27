@@ -104,7 +104,7 @@ func (u *userService) QueryAdminUsers() ([]datamodels.User, error) {
 		user := datamodels.User{}
 		var t time.Time
 		err := rows.Scan(&user.Id, &user.Username, &user.IsSuper, &t)
-		user.CreatedAt = t.Format("2006-01-02 15:04:05")
+		user.CreatedAt = t.Local().Format("2006-01-02 15:04:05")
 		if err != nil {
 			log.Error(err)
 		}
@@ -122,7 +122,7 @@ func (u *userService) QueryUserByName(name string) (*datamodels.User, error) {
 	if err != nil {
 		return nil, nil
 	}
-	user.CreatedAt = t.Format("2006-01-02 15:04:05")
+	user.CreatedAt = t.Local().Format("2006-01-02 15:04:05")
 	return &user, nil
 }
 
@@ -139,7 +139,7 @@ func (u *userService) QueryAllUsers() ([]datamodels.User, error) {
 		user := datamodels.User{}
 		var t time.Time
 		err := rows.Scan(&user.Id, &user.Username, &user.IsSuper, &t)
-		user.CreatedAt = t.Format("2006-01-02 15:04:05")
+		user.CreatedAt = t.Local().Format("2006-01-02 15:04:05")
 		if err != nil {
 			log.Error(err)
 			continue

@@ -326,7 +326,7 @@ func (t *translateService) queryTranslateRecordsBySha1(sha1str string) ([]datamo
 		if err != nil {
 			return nil, err
 		}
-		record.CreateAt = tt.Format("2006-01-02 15:04:05")
+		record.CreateAt = tt.Local().Format("2006-01-02 15:04:05")
 		records = append(records, record)
 	}
 	return records, nil
@@ -355,7 +355,7 @@ func (t *translateService) QueryTranslateRecordById(id int64, userId int64) (*da
 	if err != nil {
 		return nil, err
 	}
-	record.CreateAt = tt.Format("2006-01-02 15:04:05")
+	record.CreateAt = tt.Local().Format("2006-01-02 15:04:05")
 	return record, nil
 }
 func (t *translateService) QueryTranslateRecordsByUserIdAndType(userId int64,
@@ -399,7 +399,7 @@ func (t *translateService) QueryTranslateRecordsByUserIdAndType(userId int64,
 		if err != nil {
 			return 0, nil, err
 		}
-		record.CreateAt = tt.Format("2006-01-02 15:04:05")
+		record.CreateAt = tt.Local().Format("2006-01-02 15:04:05")
 		records = append(records, record)
 	}
 	return total, records, nil
@@ -434,7 +434,7 @@ func (t *translateService) QueryTranslateRecordsByUserId(userId int64) ([]datamo
 		if err != nil {
 			return nil, err
 		}
-		record.CreateAt = tt.Format("2006-01-02 15:04:05")
+		record.CreateAt = tt.Local().Format("2006-01-02 15:04:05")
 		records = append(records, record)
 	}
 	return records, nil
