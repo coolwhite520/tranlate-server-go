@@ -422,10 +422,11 @@ func (a *AdminController) PostUpgradeComponent() mvc.Result {
 			},
 		}
 	}
-	// 如果是mysql 模块升级，那么需要重新初始化数据库
-	if compInfo.ImageName == "mysql" {
-		services.InitDb()
-	}
+	// 如果是mysql 模块升级，那么需要重新初始化数据库,
+	// ?????现在不需要这么做了，因为已经挂载到本地文件系统了。！！！！！
+	//if compInfo.ImageName == "mysql" {
+	//	services.InitDb()
+	//}
 
 	// 修改versions.ini
 	config.GetInstance().SetSectionKeyValue("components", newUserReq.Name, newUserReq.UpVersion)
