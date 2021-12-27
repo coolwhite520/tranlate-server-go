@@ -30,3 +30,4 @@ data
 *.db
 components
 translate-server
+mysql_db

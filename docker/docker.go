@@ -9,6 +9,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"os"
+	"path/filepath"
 	"sync"
 	"translate-server/config"
 	"translate-server/datamodels"
@@ -210,6 +211,26 @@ func (o *Operator) StartContainer(img datamodels.ComponentInfo) error {
 		if img.ImageName == "mysql" {
 			mysqlPasswdEnv := fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", datamodels.MysqlPassword)
 			config.Env = []string{mysqlPasswdEnv}
+		//	挂载卷本地目录
+			dataDir, err := filepath.Abs("./mysql_db/db")
+			if err != nil {
+				return err
+			}
+			dataConfigDir, err := filepath.Abs("./mysql_db/conf.d")
+			if err != nil {
+				return err
+			}
+			// 容器内部目录
+			containerDataDir := "/var/lib/mysql"
+			containerConfigDir := "/etc/mysql/conf.d"
+			config.Volumes = map[string]struct{}{
+				containerDataDir: {},
+				containerConfigDir: {},
+			}
+			b := fmt.Sprintf("%s:%s", dataDir, containerDataDir)
+			b2 := fmt.Sprintf("%s:%s", dataConfigDir, containerConfigDir)
+			// 将mongodb中的数据挂载到本地
+			hostConfig.Binds = []string {b,b2}
 		}
 		create, err := o.cli.ContainerCreate(context.Background(), config, hostConfig, &network.NetworkingConfig{}, nil, "")
 		if err != nil {

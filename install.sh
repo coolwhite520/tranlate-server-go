@@ -4,4 +4,4 @@ wget https://copr.fedorainfracloud.org/coprs/ngompa/musl-libc/repo/epel-7/ngompa
 yum install -y musl-libc-static
 systemctl start docker
 chmod +x ./translate-server
-./translate-server 
+./translate-server
