@@ -357,6 +357,13 @@ func (a *AdminController) PostUploadUpgradeFile() mvc.Result{
 				},
 			}
 		}
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpSuccess,
+				"msg":  datamodels.HttpSuccess.String(),
+				"data": compInfo,
+			},
+		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
