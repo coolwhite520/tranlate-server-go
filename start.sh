@@ -1,0 +1,1 @@
+nohup ./translate-server & 
