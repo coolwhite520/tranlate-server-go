@@ -337,6 +337,17 @@ func (a *AdminController) PostUploadUpgradeFile() mvc.Result{
 		}
 		// 移动到指定目录
 		desDir := fmt.Sprintf("./components/%s/%s", compInfo.ImageName, compInfo.ImageVersion)
+		if utils.PathExists(desDir) {
+			err := os.RemoveAll(desDir)
+			if err != nil {
+				return mvc.Response{
+					Object: map[string]interface{}{
+						"code": datamodels.HttpUploadFileError,
+						"msg":  "系统错误，删除已有组件失败",
+					},
+				}
+			}
+		}
 		err = os.Rename(dir, desDir)
 		if err != nil {
 			return mvc.Response{
