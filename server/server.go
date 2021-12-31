@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
+	log "github.com/sirupsen/logrus"
 	"net"
 	"translate-server/controller"
 	"translate-server/services"
@@ -20,6 +21,12 @@ func activationMVC(app *mvc.Application)  {
 		ctx.Next()
 	})
 	party := app.Party("/activation")
+	newActivation, err := services.NewActivationService()
+	if err != nil {
+		log.Errorln(err)
+		panic(err)
+	}
+	party.Register(newActivation)
 	party.Handle(new(controller.ActivationController))
 }
 // 用户的
@@ -52,7 +59,11 @@ func translateMVC(app *mvc.Application) {
 		ctx.Next()
 	})
 	service := services.NewTranslateService()
-	activationService := services.NewActivationService()
+	activationService, err := services.NewActivationService()
+	if err != nil {
+		log.Errorln(err)
+		panic(err)
+	}
 	party := app.Party("/translate")
 	party.Register(service, activationService)
 	party.Handle(new(controller.TranslateController))

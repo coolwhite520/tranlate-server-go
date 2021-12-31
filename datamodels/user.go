@@ -9,6 +9,7 @@ type User struct {
 	Username       string `json:"username"`
 	HashedPassword []byte `json:"-" form:"-"`
 	IsSuper        bool   `json:"is_super"`
+	Mark           string `json:"mark"`
 	CreatedAt      string `json:"created_at"`
 }
 

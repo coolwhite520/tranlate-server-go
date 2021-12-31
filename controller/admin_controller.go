@@ -75,6 +75,7 @@ func (a *AdminController) Post() mvc.Result {
 	var newUserReq struct{
 		Username string `json:"username"`
 		Password string `json:"password"`
+		Mark     string `json:"mark"`
 	}
 	err := a.Ctx.ReadJSON(&newUserReq)
 	if err != nil {
@@ -108,6 +109,7 @@ func (a *AdminController) Post() mvc.Result {
 	newUser := datamodels.User{
 		Username:       newUserReq.Username,
 		HashedPassword: password,
+		Mark:           newUserReq.Mark,
 		IsSuper:        false,
 	}
 	err = a.UserService.InsertUser(newUser)
@@ -123,6 +125,40 @@ func (a *AdminController) Post() mvc.Result {
 		Object: map[string]interface{}{
 			"code":  datamodels.HttpSuccess,
 			"msg": datamodels.HttpSuccess.String(),
+		},
+	}
+}
+
+func (a *AdminController) PostMark() mvc.Result {
+	var newUserReq struct {
+		Id    int64 `json:"id"`
+		Mark    string `json:"mark"`
+	}
+	err := a.Ctx.ReadJSON(&newUserReq)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpJsonParseError,
+				"msg": datamodels.HttpJsonParseError.String(),
+			},
+		}
+	}
+	var user datamodels.User
+	user.Id = newUserReq.Id
+	user.Mark = newUserReq.Mark
+	err = a.UserService.UpdateUserMark(user)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpUserUpdatePwdError,
+				"msg":  err.Error(),
+			},
+		}
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": datamodels.HttpSuccess,
+			"msg":  datamodels.HttpSuccess.String(),
 		},
 	}
 }

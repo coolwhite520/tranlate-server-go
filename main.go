@@ -40,31 +40,22 @@ func init()  {
 }
 
 func main() {
-	//return
-	//config.GetInstance().TestGenerateConfigFile()
-	//
-	//sn := "d85485d421f60d5097181c0e052fdfc40299b635a05b295ad6880ad42a908bf2"
-	//var langList []datamodels.SupportLang
-	//langList = append(langList, datamodels.SupportLang{
-	//	EnName: "English",
-	//	CnName: "英语",
-	//}, datamodels.SupportLang{
-	//	EnName: "Chinese",
-	//	CnName: "中文(简体)",
-	//})
-	//activationInfo := datamodels.Activation{
-	//	UserName:        "panda",
-	//	SupportLangList: langList,
-	//	CreatedAt:       time.Now().Format("2006-01-02 15:04:05"),
-	//	ExpiredAt:       time.Date(2099, 1, 1, 1, 1, 1, 1, time.Local).Format("2006-01-02 15:04:05"),
-	//	Sn:       sn,
-	//}
-	//content, state := services.NewActivationService().GenerateKeystoreContent(activationInfo)
-	//if state != datamodels.HttpSuccess {
-	//	return
-	//}
-	//log.Println(content)
-	//return
+
+	go func() {
+		service, err := services.NewActivationService()
+		if err != nil {
+			log.Errorln(err)
+			panic(err)
+		}
+		for  {
+			time.Sleep(time.Second * 10 )
+			expiredInfo, state:= service.ParseExpiredFile()
+			if state == datamodels.HttpSuccess {
+				expiredInfo.LeftTimeSpan = expiredInfo.LeftTimeSpan - 10
+				service.GenerateExpiredFile(*expiredInfo)
+			}
+		}
+	}()
 	srv = &http.Server{Addr: ":7777"}
 	log.Println("server will listening on : http://localhost:7777")
 	var err error

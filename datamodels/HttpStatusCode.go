@@ -7,7 +7,7 @@ const (
 	HttpDockerInitializing HttpStatusCode = -1000 - iota + 1
 	HttpDockerRepairing
 	HttpDockerServiceException
-	HttpActivationNotFound
+	HttpActivationNotFound    // 包括两个文件keystore、machineId文件
 	HttpActivationReadFileError
 	HttpActivationExpiredError
 	HttpActivationGenerateError
@@ -53,7 +53,7 @@ func (h HttpStatusCode) String() string {
 	case HttpActivationReadFileError:
 		return "激活文件读取错误"
 	case HttpActivationExpiredError:
-		return "激活文件已经失效"
+		return "激活码已过期"
 	case HttpActivationGenerateError:
 		return "生成激活文件失败"
 	case HttpActivationAESError:

@@ -8,6 +8,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"sync"
@@ -50,7 +51,11 @@ type Operator struct {
 }
 
 func (o *Operator) StartDockers() error {
-	service := services.NewActivationService()
+	service, err := services.NewActivationService()
+	if err != nil {
+		log.Errorln(err)
+		panic(err)
+	}
 	_, state := service.ParseKeystoreFile()
 	compList, err := config.GetInstance().GetComponentList(false)
 	if err != nil {

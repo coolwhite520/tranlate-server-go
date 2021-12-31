@@ -18,29 +18,7 @@ type TranslateController struct {
 	ActivationService services.ActivationService
 }
 
-func isIn(target string, strArray []datamodels.SupportLang) bool {
-	for _, element := range strArray {
-		if target == element.EnName {
-			return true
-		}
-	}
-	return false
-}
 
-func IsSupportLang(srcLang, desLang string) (bool, []datamodels.SupportLang) {
-	newActivation := services.NewActivationService()
-	file, state := newActivation.ParseKeystoreFile()
-	if state != datamodels.HttpSuccess {
-		return false, file.SupportLangList
-	}
-	if !isIn(srcLang, file.SupportLangList) {
-		return false, file.SupportLangList
-	}
-	if !isIn(desLang, file.SupportLangList) {
-		return false, file.SupportLangList
-	}
-	return true, file.SupportLangList
-}
 
 func (t *TranslateController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Router().Use(middleware.CheckLoginMiddleware,
@@ -93,7 +71,7 @@ func (t *TranslateController) PostTranslateFile() mvc.Result {
 			},
 		}
 	}
-	if b, list := IsSupportLang(req.DesLang, req.SrcLang); !b {
+	if b, list :=  t.ActivationService.IsSupportLang(req.DesLang, req.SrcLang); !b {
 		return mvc.Response{
 			Object: map[string]interface{}{
 				"code": datamodels.HttpLanguageNotSupport,
@@ -141,7 +119,7 @@ func (t *TranslateController) PostTranslateContent() mvc.Result {
 			},
 		}
 	}
-	if b, list := IsSupportLang(req.DesLang, req.SrcLang); !b {
+	if b, list := t.ActivationService.IsSupportLang(req.DesLang, req.SrcLang); !b {
 		return mvc.Response{
 			Object: map[string]interface{}{
 				"code": datamodels.HttpLanguageNotSupport,
