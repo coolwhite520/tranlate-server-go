@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"syscall"
 	"translate-server/datamodels"
 	"translate-server/utils"
@@ -33,7 +34,12 @@ func NewActivationService() (ActivationService, error) {
 		return nil, err
 	}
 	p.currentMachineId = id
-	p.expiredFilePath = fmt.Sprintf("./.%s", id)
+	systemType := runtime.GOOS
+	if  systemType == "linux"{
+		p.expiredFilePath = fmt.Sprintf("/usr/bin/.%s", id)
+	} else {
+		p.expiredFilePath = fmt.Sprintf("./.%s", id)
+	}
 	return p, nil
 }
 

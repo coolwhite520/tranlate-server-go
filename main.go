@@ -48,6 +48,7 @@ func main() {
 			panic(err)
 		}
 		for  {
+			// 每隔10分钟，减少一下剩余可用时间
 			time.Sleep(time.Minute * 10 )
 			expiredInfo, state:= service.ParseExpiredFile()
 			if state == datamodels.HttpSuccess {
