@@ -48,10 +48,10 @@ func main() {
 			panic(err)
 		}
 		for  {
-			time.Sleep(time.Second * 10 )
+			time.Sleep(time.Minute * 10 )
 			expiredInfo, state:= service.ParseExpiredFile()
 			if state == datamodels.HttpSuccess {
-				expiredInfo.LeftTimeSpan = expiredInfo.LeftTimeSpan - 10
+				expiredInfo.LeftTimeSpan = expiredInfo.LeftTimeSpan - 10 * 60
 				service.GenerateExpiredFile(*expiredInfo)
 			}
 		}
