@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"os"
@@ -429,6 +430,7 @@ func (a *AdminController) PostUpgradeComponent() mvc.Result {
 	// 移除容器
 	err = docker.GetInstance().RemoveContainer(newUserReq.Name, newUserReq.CurrentVersion)
 	if err != nil {
+		log.Errorln(err)
 		return mvc.Response{
 			Object: map[string]interface{}{
 				"code": datamodels.HttpDockerServiceException,
@@ -439,6 +441,7 @@ func (a *AdminController) PostUpgradeComponent() mvc.Result {
 	// 移除镜像
 	err = docker.GetInstance().RemoveImage(newUserReq.Name, newUserReq.CurrentVersion)
 	if err != nil {
+		log.Errorln(err)
 		return mvc.Response{
 			Object: map[string]interface{}{
 				"code": datamodels.HttpDockerServiceException,
@@ -450,6 +453,7 @@ func (a *AdminController) PostUpgradeComponent() mvc.Result {
 	dat := fmt.Sprintf("./components/%s/%s/%s.dat", newUserReq.Name, newUserReq.UpVersion, newUserReq.Name)
 	compInfo, err := config.GetInstance().ParseComponentDatFile(dat)
 	if err != nil {
+		log.Errorln(err)
 		return mvc.Response{
 			Object: map[string]interface{}{
 				"code": datamodels.HttpFileOpenError,
@@ -460,6 +464,7 @@ func (a *AdminController) PostUpgradeComponent() mvc.Result {
 	// 加载新的镜像
 	err = docker.GetInstance().LoadImage(*compInfo)
 	if err != nil {
+		log.Errorln(err)
 		return mvc.Response{
 			Object: map[string]interface{}{
 				"code": datamodels.HttpDockerServiceException,
@@ -470,6 +475,7 @@ func (a *AdminController) PostUpgradeComponent() mvc.Result {
 	// 启动容器
 	err = docker.GetInstance().StartContainer(*compInfo)
 	if err != nil {
+		log.Errorln(err)
 		return mvc.Response{
 			Object: map[string]interface{}{
 				"code": datamodels.HttpDockerServiceException,
@@ -484,6 +490,7 @@ func (a *AdminController) PostUpgradeComponent() mvc.Result {
 	//}
 	// 修改versions.ini
 	config.GetInstance().SetSectionKeyValue("components", newUserReq.Name, newUserReq.UpVersion)
+	config.GetInstance().GetComponentList(true)
 
 	//重启dockerd防止由于firewalld导致的dockerd链条缺失的问题
 	// 可能需要手动重启，不知道为什么golang的cmd调用不好使

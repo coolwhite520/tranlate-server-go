@@ -129,13 +129,14 @@ func (i *ConfigureLoader) parseSystemIniFile() (map[string]string, error) {
 	return cfg.GetSection("components")
 }
 
-func (i *ConfigureLoader) SetSectionKeyValue(sectionName, key, value string) error  {
+func (i *ConfigureLoader) SetSectionKeyValue(sectionName, key, value string) (bool, error)  {
 	cfg, err := goconfig.LoadConfigFile("./versions.ini")
 	if err != nil {
-		return  err
+		return  false, err
 	}
-	cfg.SetValue(sectionName, key, value)
-	return nil
+	b := cfg.SetValue(sectionName, key, value)
+	err = goconfig.SaveConfigFile(cfg, "./versions.ini")
+	return b, err
 }
 
 // GetSystemVer 解析ini文件
@@ -145,6 +146,13 @@ func (i *ConfigureLoader) GetSystemVer() (string, error) {
 		return "", err
 	}
 	return cfg.GetValue("system", "version")
+}
+func (i *ConfigureLoader) GetComponentVer(compName string) (string, error) {
+	cfg, err := goconfig.LoadConfigFile("./versions.ini")
+	if err != nil {
+		return "", err
+	}
+	return cfg.GetValue("components", compName)
 }
 
 // GenerateComponentDatFile 由我们自己控制
