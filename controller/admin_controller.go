@@ -409,6 +409,7 @@ func (a *AdminController) PostUploadUpgradeFile() mvc.Result{
 	}
 }
 
+
 // PostUpgradeComponent 进行组件的升级
 func (a *AdminController) PostUpgradeComponent() mvc.Result {
 	var newUserReq struct {
@@ -481,10 +482,11 @@ func (a *AdminController) PostUpgradeComponent() mvc.Result {
 	//if compInfo.ImageName == "mysql" {
 	//	services.InitDb()
 	//}
-
 	// 修改versions.ini
 	config.GetInstance().SetSectionKeyValue("components", newUserReq.Name, newUserReq.UpVersion)
 
+	//重启dockerd防止由于firewalld导致的dockerd链条缺失的问题
+	// 可能需要手动重启，不知道为什么golang的cmd调用不好使
 	return mvc.Response{
 		Object: map[string]interface{}{
 			"code": datamodels.HttpSuccess,

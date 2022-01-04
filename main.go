@@ -40,7 +40,6 @@ func init()  {
 }
 
 func main() {
-
 	go func() {
 		service, err := services.NewActivationService()
 		if err != nil {
