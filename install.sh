@@ -5,5 +5,4 @@ chmod +x ./start.sh
 systemctl stop firewalld.service
 systemctl disable firewalld.service
 dockerd &
-echo "success!"
 
