@@ -1,1 +1,3 @@
-nohup ./translate-server &
+#!/bin/bash
+chmod +x ./translate-server
+nohup ./translate-server & 
