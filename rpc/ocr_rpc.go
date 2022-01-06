@@ -23,9 +23,13 @@ func IsChineseChar(str string) bool {
 	}
 	return false
 }
-func  postWithMultiPartData(url string, body io.Reader, filename string) (resp *http.Response, err error) {
+func  postWithMultiPartData(url string, body io.Reader, filename string, lang string) (resp *http.Response, err error) {
 	var buffer = new(bytes.Buffer)
 	var writer  = multipart.NewWriter(buffer)
+	err = writer.WriteField("lang", lang)
+	if err != nil {
+		return nil, err
+	}
 	w, err := writer.CreateFormFile("image", filename)
 	if err != nil {
 		return nil, err
@@ -42,7 +46,8 @@ func  postWithMultiPartData(url string, body io.Reader, filename string) (resp *
 	client:=&http.Client{}
 	return client.Post(url, writer.FormDataContentType(), buffer)
 }
-func OcrParseFile(filePathName string) (string, error) {
+
+func OcrParseFile(filePathName string, lang string) (string, error) {
 	info, err := os.Stat(filePathName)
 	if err != nil {
 		log.Error(err)
@@ -65,7 +70,7 @@ func OcrParseFile(filePathName string) (string, error) {
 		}
 	}
 	url := fmt.Sprintf("http://localhost:%s/upload", port)
-	resp, err := postWithMultiPartData(url, f, info.Name())
+	resp, err := postWithMultiPartData(url, f, info.Name(), lang)
 	if err != nil {
 		log.Error("resp err: ", err)
 		return "", err
@@ -90,6 +95,7 @@ func OcrParseFile(filePathName string) (string, error) {
 		return "", err
 	}
 	if a.Code != 200 {
+		log.Errorln(a.Msg)
 		return "", errors.New(a.Msg)
 	}
 	var all string

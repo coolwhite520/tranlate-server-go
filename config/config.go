@@ -185,3 +185,4 @@ func (i *ConfigureLoader) ParseComponentDatFile(componentConfigPath string) (*da
 	}
 	return &componentInfo, nil
 }
+

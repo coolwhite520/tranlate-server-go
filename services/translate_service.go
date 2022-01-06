@@ -182,7 +182,7 @@ func (t *translateService) TranslateFile(srcLang string, desLang string, recordI
 	record.StateDescribe = datamodels.TransBeginExtract.String()
 	t.UpdateRecord(record)
 	// 开始抽取数据
-	content, err := t.extractContent(record.TransType, srcFilePathName)
+	content, err := t.extractContent(record.TransType, srcFilePathName, srcLang)
 	if err != nil {
 		record.State = datamodels.TransExtractFailed
 		record.StateDescribe = datamodels.TransExtractFailed.String()
@@ -516,17 +516,24 @@ func (t *translateService) InsertRecord(record *datamodels.Record) error {
 	return nil
 }
 
-func (t translateService) ocrDetectedImage(filePath string) (string, error) {
-	return rpc.OcrParseFile(filePath)
+func (t translateService) ocrDetectedImage(filePath string, srcLang string) (string, error) {
+	var ocrType string
+	for k, v := range datamodels.LanguageOcrList {
+		if k == srcLang {
+			ocrType = v
+			break
+		}
+	}
+	return rpc.OcrParseFile(filePath, ocrType)
 }
 
 func (t translateService) tikaDetectedText(filePath string) (string, error) {
 	return rpc.TikaParseFile(filePath)
 }
 
-func (t *translateService) extractContent(TransType int, filePath string) (string, error) {
+func (t *translateService) extractContent(TransType int, filePath string, srcLang string) (string, error) {
 	if TransType == 1 {
-		return t.ocrDetectedImage(filePath)
+		return t.ocrDetectedImage(filePath, srcLang)
 	} else {
 		return t.tikaDetectedText(filePath)
 	}
