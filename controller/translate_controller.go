@@ -26,6 +26,7 @@ func (t *TranslateController) BeforeActivation(b mvc.BeforeActivation) {
 		middleware.IsSystemAvailable,
 		middleware.FileLimiterMiddleware)
 	b.Handle("GET", "/lang", "GetLangList")              // 获取支持的语言列表
+	b.Handle("GET", "/allLang", "GetAllLangList")              // 获取支持的语言列表
 	b.Handle("GET", "/records", "GetAllRecords")         // 获取所有的翻译记录
 	b.Handle("GET", "/records/{type: uint64}/{offset: uint64}/{count: uint64}", "GetRecordsByType")         // 获取所有的翻译记录
 	b.Handle("POST", "/upload", "PostUpload")            // 文件上传
@@ -51,6 +52,17 @@ func (t *TranslateController) GetLangList() mvc.Result {
 			"code": datamodels.HttpSuccess,
 			"msg":  datamodels.HttpSuccess.String(),
 			"data": file.SupportLangList,
+		},
+	}
+}
+
+// GetAllLangList 获取支持的语言
+func (t *TranslateController) GetAllLangList() mvc.Result {
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": datamodels.HttpSuccess,
+			"msg":  datamodels.HttpSuccess.String(),
+			"data": datamodels.AllLanguageList,
 		},
 	}
 }
