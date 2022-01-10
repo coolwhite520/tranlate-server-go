@@ -47,7 +47,6 @@ var SqlArr = []string{
 	`CREATE TABLE IF NOT EXISTS tbl_user_operator (
 	   Id int(11) NOT NULL AUTO_INCREMENT,
 	   UserId int(11),
-       Username TEXT,
        Ip TEXT,
        Operator TEXT,
        CreateAt DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
