@@ -1,4 +1,4 @@
-// +build linux darwin
+// +build amd64
 
 package services
 
@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"os"
 	"runtime"
-	"syscall"
 	"translate-server/datamodels"
 	"translate-server/utils"
 )
@@ -168,17 +167,9 @@ func (a *activation) GenerateExpiredFile(keystoreExpired datamodels.KeystoreExpi
 	}
 	defer f.Close()
 	// 非阻塞模式下，加共享锁
-	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_SH | syscall.LOCK_NB); err != nil {
-		log.Errorln(err)
-		return datamodels.HttpActivationGenerateError
-	}
+
 	_, err = f.WriteString(content)
 	if err != nil {
-		log.Errorln(err)
-		return datamodels.HttpActivationGenerateError
-	}
-	// 解锁
-	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_UN); err != nil {
 		log.Errorln(err)
 		return datamodels.HttpActivationGenerateError
 	}
@@ -218,18 +209,9 @@ func (a *activation) ParseExpiredFile() (*datamodels.KeystoreExpired, datamodels
 			return nil, datamodels.HttpActivationReadFileError
 		}
 		defer f.Close()
-		// 非阻塞模式下，加共享锁
-		if err := syscall.Flock(int(f.Fd()), syscall.LOCK_SH | syscall.LOCK_NB); err != nil {
-			log.Errorln(err)
-			return nil, datamodels.HttpActivationReadFileError
-		}
+
 		all, err := ioutil.ReadAll(f)
 		if err != nil {
-			log.Errorln(err)
-			return nil, datamodels.HttpActivationReadFileError
-		}
-		// 解锁
-		if err := syscall.Flock(int(f.Fd()), syscall.LOCK_UN); err != nil {
 			log.Errorln(err)
 			return nil, datamodels.HttpActivationReadFileError
 		}
