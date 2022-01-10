@@ -52,6 +52,13 @@ var SqlArr = []string{
        CreateAt DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
 	   PRIMARY KEY (Id)
 	)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,
+	`CREATE TABLE IF NOT EXISTS tbl_ips (
+	   Id int(11) NOT NULL AUTO_INCREMENT,
+       Ip TEXT,
+       Type INTEGER,
+       CreateAt DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+	   PRIMARY KEY (Id)
+	)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,
 }
 
 func InitDb() {

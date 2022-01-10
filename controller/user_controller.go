@@ -159,6 +159,7 @@ func (u *UserController) PostLogin() mvc.Result {
 					"avatar": "",
 					"name": user.Username,
 					"user_id": user.Id,
+					"client_ip": record.Ip,
 					"isSuper": user.IsSuper,
 					"sysVer": ver,
 				},
