@@ -36,6 +36,7 @@ func (t TransStatus) String() string {
 	}
 }
 
+// Record 记录用户翻译记录
 type Record struct {
 	Id            int64       `json:"id"`
 	Sha1           string     `json:"sha1"` // 文本或文件的sha1

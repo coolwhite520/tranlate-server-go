@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
+	"github.com/thinkeridea/go-extend/exnet"
 	"translate-server/config"
 	"translate-server/datamodels"
 	"translate-server/middleware"
@@ -82,6 +83,30 @@ func (u *UserController) PostPassword() mvc.Result {
 	}
 }
 
+func (u *UserController) PostLogoff() mvc.Result {
+	var newUserReq struct {
+		UserId int64 `json:"user_id"`
+	}
+	err := u.Ctx.ReadJSON(&newUserReq)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpJsonParseError,
+				"msg": datamodels.HttpJsonParseError.String(),
+			},
+		}
+	}
+
+	record := datamodels.UserOperatorRecord{
+		UserId:   newUserReq.UserId,
+		Ip:       exnet.ClientIP(u.Ctx.Request()),
+		Operator: "logoff",
+	}
+	u.UserService.AddUserOperatorRecord(record)
+
+	return mvc.Response{}
+}
+
 // PostLogin /api/user/login
 func (u *UserController) PostLogin() mvc.Result {
 	var newUserReq struct {
@@ -116,6 +141,13 @@ func (u *UserController) PostLogin() mvc.Result {
 				},
 			}
 		}
+		//记录到操作表中
+		record := datamodels.UserOperatorRecord{
+			UserId:   user.Id,
+			Ip:       exnet.ClientIP(u.Ctx.Request()),
+			Operator: "login",
+		}
+		u.UserService.AddUserOperatorRecord(record)
 		//Authorization: Bearer $token
 		ver, _ := config.GetInstance().GetSystemVer()
 		u.Ctx.Header("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -126,6 +158,7 @@ func (u *UserController) PostLogin() mvc.Result {
 				"user": map[string]interface{}{
 					"avatar": "",
 					"name": user.Username,
+					"user_id": user.Id,
 					"isSuper": user.IsSuper,
 					"sysVer": ver,
 				},
@@ -140,4 +173,3 @@ func (u *UserController) PostLogin() mvc.Result {
 	}
 }
 
-// 修改密码

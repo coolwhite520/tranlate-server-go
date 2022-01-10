@@ -27,7 +27,10 @@ type AdminController struct {
 
 func (a *AdminController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Router().Use(middleware.CheckLoginMiddleware, middleware.CheckSuperMiddleware, middleware.CheckActivationMiddleware) //  middleware.IsSystemAvailable
+	b.Handle("GET","/ops/{offset: int}/{count: int}", "GetUserOperatorRecords")
 	b.Handle("DELETE","/{id: int64}", "DeleteById")
+	b.Handle("DELETE","/ops/{id: int64}", "DeleteUserOperatorById")
+	b.Handle("DELETE","/ops", "DeleteAllUserOperator")
 	b.Handle("POST","/upload", "PostUploadUpgradeFile")
 	b.Handle("POST","/upgrade", "PostUpgradeComponent")
 }
@@ -49,6 +52,66 @@ func (a *AdminController) Get() mvc.Result {
 			"code":  datamodels.HttpSuccess,
 			"msg": datamodels.HttpSuccess.String(),
 			"data": users,
+		},
+	}
+}
+
+// GetUserOperatorRecords 获取用户操作记录
+func (a *AdminController) GetUserOperatorRecords(offset, count int) mvc.Result {
+	total, records, err := a.UserService.QueryUserOperatorRecords(offset, count )
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code":  datamodels.HttpUsersQueryError,
+				"msg": err.Error(),
+			},
+		}
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code":  datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
+			"data": map[string]interface{}{
+				"list": records,
+				"total": total,
+			},
+		},
+	}
+}
+
+// DeleteUserOperatorById 删除用户
+func (a *AdminController) DeleteUserOperatorById(Id int64) mvc.Result {
+	err := a.UserService.DeleteUserOperatorRecord(Id)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code":  datamodels.HttpUsersDeleteError,
+				"msg": err.Error(),
+			},
+		}
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code":  datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
+		},
+	}
+}
+
+func (a *AdminController) DeleteAllUserOperator() mvc.Result {
+	err := a.UserService.DeleteAllUserOperatorRecords()
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code":  datamodels.HttpUsersDeleteError,
+				"msg": err.Error(),
+			},
+		}
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code":  datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
 		},
 	}
 }

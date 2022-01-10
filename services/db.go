@@ -44,6 +44,15 @@ var SqlArr = []string{
 	   INDEX(Sha1),
 	   PRIMARY KEY (Id)
 	)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,
+	`CREATE TABLE IF NOT EXISTS tbl_user_operator (
+	   Id int(11) NOT NULL AUTO_INCREMENT,
+	   UserId int(11),
+       Username TEXT,
+       Ip TEXT,
+       Operator TEXT,
+       CreateAt DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+	   PRIMARY KEY (Id)
+	)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,
 }
 
 func InitDb() {

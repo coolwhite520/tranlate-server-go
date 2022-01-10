@@ -87,6 +87,7 @@ require (
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/tdewolff/minify/v2 v2.9.22 // indirect
 	github.com/tdewolff/parse/v2 v2.5.21 // indirect
+	github.com/thinkeridea/go-extend v1.3.2 // indirect
 	github.com/toolkits/file v0.0.0-20160325033739-a5b3c5147e07 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.31.0 // indirect

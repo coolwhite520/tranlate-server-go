@@ -19,6 +19,11 @@ type UserService interface {
     QueryUserByName(name string) (*datamodels.User, error)
 	QueryTableFieldCount(dbName, tblName string) (int, error)
 	DropDatabase(dbName string) error
+
+	AddUserOperatorRecord(record datamodels.UserOperatorRecord) error
+	QueryUserOperatorRecords(offset, count int) (int, []datamodels.UserOperatorRecord, error)
+	DeleteUserOperatorRecord(Id int64) error
+	DeleteAllUserOperatorRecords() error
 }
 
 func NewUserService() UserService  {
@@ -183,6 +188,90 @@ func (u *userService) DropDatabase(dbName string) error {
 	sql := fmt.Sprintf("DROP DATABASE IF EXISTS %s;", dbName)
 	_, err := db.Exec(sql)
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// AddUserOperatorRecord 新增用户登录记录
+func (u *userService) AddUserOperatorRecord(record datamodels.UserOperatorRecord) error {
+	tx, _ := db.Begin()
+	sql := fmt.Sprintf("INSERT INTO tbl_user_operator(UserId, Ip, Operator) VALUES(?,?,?);")
+	stmt, err := tx.Prepare(sql)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	_, err = stmt.Exec(record.UserId, record.Ip, record.Operator)
+	tx.Commit()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
+}
+//QueryUserOperatorRecords 获取用户的操作记录 login logout 等
+func (u *userService) QueryUserOperatorRecords(offset, count int) (int, []datamodels.UserOperatorRecord, error) {
+	sqlCount := fmt.Sprintf("SELECT count(1) FROM tbl_user_operator")
+	ret := db.QueryRow(sqlCount)
+	var total int
+	err := ret.Scan(&total)
+	if err != nil {
+		log.Error(err)
+		return 0, nil, err
+	}
+
+	sql := fmt.Sprintf("SELECT a.Id, a.UserId, b.Username, a.Ip, a.Operator, a.CreateAt FROM tbl_user_operator a left join tbl_user b on a.UserId = b.Id order by a.CreateAt DESC limit %d,%d", offset, count)
+	rows, err := db.Query(sql)
+	defer rows.Close()
+	if err != nil {
+		log.Error(err)
+		return 0, nil, err
+	}
+	var records []datamodels.UserOperatorRecord
+	for rows.Next() {
+		record := datamodels.UserOperatorRecord{}
+		var t time.Time
+		err := rows.Scan(&record.Id, &record.UserId, &record.Username, &record.Ip, &record.Operator, &t)
+		record.CreateAt = t.Local().Format("2006-01-02 15:04:05")
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+		records = append(records, record)
+	}
+	return total, records, nil
+}
+// DeleteUserOperatorRecord 删除操作记录
+func (u *userService) DeleteUserOperatorRecord(Id int64) error {
+	tx, _ := db.Begin()
+	sql := fmt.Sprintf("Delete From tbl_user_operator where Id=?;")
+	stmt, err := tx.Prepare(sql)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	_, err = stmt.Exec(Id)
+	tx.Commit()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
+}
+//DeleteAllUserOperatorRecords 清理表中数据
+func (u *userService) DeleteAllUserOperatorRecords() error {
+	tx, _ := db.Begin()
+	sql := fmt.Sprintf("Delete From tbl_user_operator;")
+	stmt, err := tx.Prepare(sql)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	_, err = stmt.Exec()
+	tx.Commit()
+	if err != nil {
+		log.Error(err)
 		return err
 	}
 	return nil

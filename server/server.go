@@ -6,6 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net"
 	"translate-server/controller"
+	"translate-server/middleware"
 	"translate-server/services"
 )
 
@@ -16,10 +17,7 @@ func StartMainServer(listener net.Listener) {
 }
 // 激活的
 func activationMVC(app *mvc.Application)  {
-	app.Router.Use(func(ctx iris.Context) {
-		//log.Infof("Path: %s", ctx.Path())
-		ctx.Next()
-	})
+
 	party := app.Party("/activation")
 	newActivation, err := services.NewActivationService()
 	if err != nil {
@@ -31,10 +29,7 @@ func activationMVC(app *mvc.Application)  {
 }
 // 用户的
 func userMVC(app *mvc.Application) {
-	app.Router.Use(func(ctx iris.Context) {
-		//log.Infof("Path: %s", ctx.Path())
-		ctx.Next()
-	})
+	app.Router.Use(middleware.IpAccessMiddleware)
 	party := app.Party("/user")
 	service := services.NewUserService()
 	party.Register(service)
@@ -43,10 +38,6 @@ func userMVC(app *mvc.Application) {
 
 // 管理
 func adminMVC(app *mvc.Application) {
-	app.Router.Use(func(ctx iris.Context) {
-		//log.Infof("Path: %s", ctx.Path())
-		ctx.Next()
-	})
 	party := app.Party("/admin")
 	service := services.NewUserService()
 	party.Register(service)
@@ -54,10 +45,7 @@ func adminMVC(app *mvc.Application) {
 }
 // 翻译
 func translateMVC(app *mvc.Application) {
-	app.Router.Use(func(ctx iris.Context) {
-		//log.Infof("Path: %s", ctx.Path())
-		ctx.Next()
-	})
+	app.Router.Use(middleware.IpAccessMiddleware)
 	service := services.NewTranslateService()
 	activationService, err := services.NewActivationService()
 	if err != nil {
