@@ -212,6 +212,7 @@ func (o *Operator) StartContainer(img datamodels.ComponentInfo) error {
 		if img.ImageName == "web" {
 			//hostConfig.ExtraHosts = []string{"--add-host=host.docker.internal:host-gateway"}
 			hostConfig.ExtraHosts = []string{"host.docker.internal:host-gateway"}
+			hostConfig.NetworkMode = "host"
 		}
 		if img.ImageName == "mysql" {
 			mysqlPasswdEnv := fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", datamodels.MysqlPassword)
