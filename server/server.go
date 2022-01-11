@@ -6,7 +6,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net"
 	"translate-server/controller"
-	"translate-server/middleware"
 	"translate-server/services"
 )
 
@@ -17,7 +16,6 @@ func StartMainServer(listener net.Listener) {
 }
 // 激活的
 func activationMVC(app *mvc.Application)  {
-
 	party := app.Party("/activation")
 	newActivation, err := services.NewActivationService()
 	if err != nil {
@@ -29,7 +27,6 @@ func activationMVC(app *mvc.Application)  {
 }
 // 用户的
 func userMVC(app *mvc.Application) {
-	app.Router.Use(middleware.IpAccessMiddleware)
 	party := app.Party("/user")
 	service := services.NewUserService()
 	party.Register(service)
@@ -40,12 +37,12 @@ func userMVC(app *mvc.Application) {
 func adminMVC(app *mvc.Application) {
 	party := app.Party("/admin")
 	service := services.NewUserService()
-	party.Register(service)
+	tableService := services.NewIpTableService()
+	party.Register(service, tableService)
 	party.Handle(new(controller.AdminController))
 }
 // 翻译
 func translateMVC(app *mvc.Application) {
-	app.Router.Use(middleware.IpAccessMiddleware)
 	service := services.NewTranslateService()
 	activationService, err := services.NewActivationService()
 	if err != nil {

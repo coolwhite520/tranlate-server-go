@@ -28,14 +28,15 @@ const (
 	HttpTranslateError
 	HttpRecordGetError
 	HttpRecordDelError
-	HttpUsersQueryError
-	HttpUsersDeleteError
-	HttpUsersAddError
+	HttpMysqlQueryError
+	HttpMysqlDelError
+	HttpMysqlAddError
 	HttpUsersExistSameUserNameError
 	HttpFileNotFoundError
 	HttpFileOpenError
 	// 新增的在后面添加
 	HttpUserNoThisUserError
+	HttpForbiddenIp
 )
 
 func (h HttpStatusCode) String() string {
@@ -76,6 +77,8 @@ func (h HttpStatusCode) String() string {
 		return "解析数据错误，参数传递错误"
 	case HttpLanguageNotSupport:
 		return "系统不支持传输的语言"
+	case HttpForbiddenIp:
+		return "不被允许的IP地址访问。"
 	default:
 		return ""
 	}

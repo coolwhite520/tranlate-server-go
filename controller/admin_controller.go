@@ -22,17 +22,24 @@ import (
 type AdminController struct {
 	Ctx         iris.Context
 	UserService services.UserService
+	IpTableService services.IpTableService
 }
 
 
 func (a *AdminController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Router().Use(middleware.CheckLoginMiddleware, middleware.CheckSuperMiddleware, middleware.CheckActivationMiddleware) //  middleware.IsSystemAvailable
-	b.Handle("GET","/ops/{offset: int}/{count: int}", "GetUserOperatorRecords")
 	b.Handle("DELETE","/{id: int64}", "DeleteById")
+	b.Handle("GET","/ops/{offset: int}/{count: int}", "GetUserOperatorRecords")
 	b.Handle("DELETE","/ops/{id: int64}", "DeleteUserOperatorById")
 	b.Handle("DELETE","/ops", "DeleteAllUserOperator")
 	b.Handle("POST","/upload", "PostUploadUpgradeFile")
 	b.Handle("POST","/upgrade", "PostUpgradeComponent")
+	b.Handle("GET","/ip_table", "GetIpTableRecords")
+	b.Handle("POST","/ip_table", "PostAddIpTableRecord")
+	b.Handle("DELETE","/ip_table/{id: int64}", "DeleteIpTableRecord")
+	b.Handle("POST","/ip_table_type", "PostSetIpTableType")
+	b.Handle("GET","/ip_table_type", "GetIpTableType")
+
 }
 
 
@@ -42,7 +49,7 @@ func (a *AdminController) Get() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  datamodels.HttpUsersQueryError,
+				"code":  datamodels.HttpMysqlQueryError,
 				"msg": err.Error(),
 			},
 		}
@@ -62,7 +69,7 @@ func (a *AdminController) GetUserOperatorRecords(offset, count int) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  datamodels.HttpUsersQueryError,
+				"code":  datamodels.HttpMysqlQueryError,
 				"msg": err.Error(),
 			},
 		}
@@ -85,7 +92,7 @@ func (a *AdminController) DeleteUserOperatorById(Id int64) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  datamodels.HttpUsersDeleteError,
+				"code":  datamodels.HttpMysqlDelError,
 				"msg": err.Error(),
 			},
 		}
@@ -103,7 +110,7 @@ func (a *AdminController) DeleteAllUserOperator() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  datamodels.HttpUsersDeleteError,
+				"code":  datamodels.HttpMysqlDelError,
 				"msg": err.Error(),
 			},
 		}
@@ -121,7 +128,7 @@ func (a *AdminController) DeleteById(Id int64) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  datamodels.HttpUsersDeleteError,
+				"code":  datamodels.HttpMysqlDelError,
 				"msg": err.Error(),
 			},
 		}
@@ -145,7 +152,7 @@ func (a *AdminController) Post() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  datamodels.HttpUsersAddError,
+				"code":  datamodels.HttpMysqlAddError,
 				"msg": err.Error(),
 			},
 		}
@@ -156,7 +163,7 @@ func (a *AdminController) Post() mvc.Result {
 	if len(newUserReq.Username) < 5 {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  datamodels.HttpUsersAddError,
+				"code":  datamodels.HttpMysqlAddError,
 				"msg": "用户名必须大于4位",
 			},
 		}
@@ -164,7 +171,7 @@ func (a *AdminController) Post() mvc.Result {
 	if len(newUserReq.Password) < 5 {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  datamodels.HttpUsersAddError,
+				"code":  datamodels.HttpMysqlAddError,
 				"msg": "密码必须大于4位",
 			},
 		}
@@ -244,7 +251,7 @@ func (a *AdminController) PostPassword() mvc.Result {
 	if len(newUserReq.NewPassword) < 5 {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  datamodels.HttpUsersAddError,
+				"code":  datamodels.HttpMysqlAddError,
 				"msg": "密码必须大于4位",
 			},
 		}
@@ -557,6 +564,119 @@ func (a *AdminController) PostUpgradeComponent() mvc.Result {
 
 	//重启dockerd防止由于firewalld导致的dockerd链条缺失的问题
 	// 可能需要手动重启，不知道为什么golang的cmd调用不好使
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
+		},
+	}
+}
+
+func (a *AdminController) PostAddIpTableRecord() mvc.Result {
+	var record datamodels.IpTableRecord
+	err := a.Ctx.ReadJSON(&record)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpJsonParseError,
+				"msg": datamodels.HttpJsonParseError.String(),
+			},
+		}
+	}
+	err = a.IpTableService.AddRecord(record)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpMysqlAddError,
+				"msg": err.Error(),
+			},
+		}
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
+		},
+	}
+}
+func (a *AdminController) DeleteIpTableRecord(Id int64) mvc.Result {
+	err := a.IpTableService.DelRecord(Id)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpMysqlDelError,
+				"msg": err.Error(),
+			},
+		}
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
+		},
+	}
+}
+func (a *AdminController) GetIpTableRecords() mvc.Result  {
+	records, err := a.IpTableService.QueryRecords()
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpMysqlQueryError,
+				"msg": err.Error(),
+			},
+		}
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
+			"data": records,
+		},
+	}
+}
+
+func (a *AdminController) GetIpTableType() mvc.Result {
+	tableType, err := a.IpTableService.GetIpTableType()
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpJsonParseError,
+				"msg": err,
+			},
+		}
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
+			"data": tableType,
+		},
+	}
+}
+
+
+func (a *AdminController) PostSetIpTableType() mvc.Result {
+	var record struct{
+		Type string `json:"type"`
+	}
+	err := a.Ctx.ReadJSON(&record)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpJsonParseError,
+				"msg": datamodels.HttpJsonParseError.String(),
+			},
+		}
+	}
+	_, err = a.IpTableService.SetIpTableType(record.Type)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpJsonParseError,
+				"msg": err,
+			},
+		}
+	}
 	return mvc.Response{
 		Object: map[string]interface{}{
 			"code": datamodels.HttpSuccess,

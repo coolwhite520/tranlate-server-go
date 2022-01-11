@@ -55,7 +55,7 @@ var SqlArr = []string{
 	`CREATE TABLE IF NOT EXISTS tbl_ips (
 	   Id int(11) NOT NULL AUTO_INCREMENT,
        Ip TEXT,
-       Type INTEGER,
+       Type VARCHAR(255),
        CreateAt DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
 	   PRIMARY KEY (Id)
 	)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,

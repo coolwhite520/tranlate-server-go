@@ -221,7 +221,7 @@ func (u *userService) QueryUserOperatorRecords(offset, count int) (int, []datamo
 		return 0, nil, err
 	}
 
-	sql := fmt.Sprintf("SELECT a.Id, a.UserId, b.Username, a.Ip, a.Operator, a.CreateAt FROM tbl_user_operator a left join tbl_user b on a.UserId = b.Id order by a.CreateAt DESC limit %d,%d", offset, count)
+	sql := fmt.Sprintf("SELECT a.Id, a.UserId, b.Username, a.Ip, a.Operator, a.CreateAt FROM tbl_user_operator a RIGHT JOIN tbl_user b ON a.UserId = b.Id ORDER BY a.CreateAt DESC LIMIT %d,%d", offset, count)
 	rows, err := db.Query(sql)
 	defer rows.Close()
 	if err != nil {

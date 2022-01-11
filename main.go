@@ -37,6 +37,10 @@ func init()  {
 	}
 	docker.GetInstance().SetStatus(docker.NormalStatus)
 	services.InitDb()
+	err = services.InitConfigIniFile()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func main() {
