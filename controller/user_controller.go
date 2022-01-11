@@ -158,6 +158,7 @@ func (u *UserController) PostLogin() mvc.Result {
 				"user": map[string]interface{}{
 					"avatar": "",
 					"name": user.Username,
+					"ip": record.Ip,
 					"user_id": user.Id,
 					"isSuper": user.IsSuper,
 					"sysVer": ver,

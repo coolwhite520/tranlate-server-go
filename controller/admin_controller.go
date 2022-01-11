@@ -5,6 +5,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	log "github.com/sirupsen/logrus"
+	"github.com/thinkeridea/go-extend/exnet"
 	"io"
 	"io/ioutil"
 	"os"
@@ -666,6 +667,33 @@ func (a *AdminController) PostSetIpTableType() mvc.Result {
 				"code": datamodels.HttpJsonParseError,
 				"msg": datamodels.HttpJsonParseError.String(),
 			},
+		}
+	}
+	ipAddr := exnet.ClientIP(a.Ctx.Request())
+	// 白名单的时候先把自己加入到名单中
+	if record.Type == "white" {
+		records, err := a.IpTableService.QueryRecords()
+		if err != nil {
+			return mvc.Response{
+				Object: map[string]interface{}{
+					"code": datamodels.HttpMysqlQueryError,
+					"msg": err,
+				},
+			}
+		}
+		if!middleware.IsInWhiteList(ipAddr, records) {
+			err := a.IpTableService.AddRecord(datamodels.IpTableRecord{
+				Ip:   ipAddr,
+				Type: "white",
+			})
+			if err != nil {
+				return mvc.Response{
+					Object: map[string]interface{}{
+						"code": datamodels.HttpMysqlAddError,
+						"msg": err,
+					},
+				}
+			}
 		}
 	}
 	_, err = a.IpTableService.SetIpTableType(record.Type)
