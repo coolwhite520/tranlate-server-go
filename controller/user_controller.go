@@ -149,7 +149,7 @@ func (u *UserController) PostLogin() mvc.Result {
 		}
 		u.UserService.AddUserOperatorRecord(record)
 		//Authorization: Bearer $token
-		ver, _ := config.GetInstance().GetSystemVer()
+		ver := config.GetInstance().GetSystemVer()
 		u.Ctx.Header("Authorization", fmt.Sprintf("Bearer %s", token))
 		return mvc.Response{
 			Object: map[string]interface{}{

@@ -140,12 +140,8 @@ func (i *ConfigureLoader) SetSectionKeyValue(sectionName, key, value string) (bo
 }
 
 // GetSystemVer 解析ini文件
-func (i *ConfigureLoader) GetSystemVer() (string, error) {
-	cfg, err := goconfig.LoadConfigFile("./versions.ini")
-	if err != nil {
-		return "", err
-	}
-	return cfg.GetValue("system", "version")
+func (i *ConfigureLoader) GetSystemVer() string {
+	return "5.3.16"
 }
 func (i *ConfigureLoader) GetComponentVer(compName string) (string, error) {
 	cfg, err := goconfig.LoadConfigFile("./versions.ini")
