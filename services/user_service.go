@@ -24,6 +24,9 @@ type UserService interface {
 	QueryUserOperatorRecords(offset, count int) (int, []datamodels.UserOperatorRecord, error)
 	DeleteUserOperatorRecord(Id int64) error
 	DeleteAllUserOperatorRecords() error
+
+	QueryUserFavorById(userId int64) (string, error)
+	InsertOrReplaceUserFavor(userId int64, newFavor string) error
 }
 
 func NewUserService() UserService  {
@@ -269,6 +272,35 @@ func (u *userService) DeleteAllUserOperatorRecords() error {
 		return err
 	}
 	_, err = stmt.Exec()
+	tx.Commit()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
+}
+
+func (u *userService) QueryUserFavorById(userId int64) (string, error) {
+	sqlCount := fmt.Sprintf("SELECT Favor FROM tbl_user_favor WHERE UserId=?")
+	ret := db.QueryRow(sqlCount, userId)
+	var favor string
+	err := ret.Scan(&favor)
+	if err != nil {
+		log.Error(err)
+		return "",nil
+	}
+	return favor, nil
+}
+
+func (u *userService) InsertOrReplaceUserFavor(userId int64, newFavor string) error {
+	tx, _ := db.Begin()
+	sql := fmt.Sprintf("REPLACE INTO tbl_user_favor(UserId, Favor) VALUES(?,?);")
+	stmt, err := tx.Prepare(sql)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	_, err = stmt.Exec( userId, newFavor)
 	tx.Commit()
 	if err != nil {
 		log.Error(err)

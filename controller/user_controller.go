@@ -20,7 +20,64 @@ func (u *UserController) BeforeActivation(b mvc.BeforeActivation) {
 	//b.Router().Use(middleware.CheckActivationMiddleware, middleware.IsSystemAvailable)
 	// 只有登录以后，才可以进行密码修改
 	b.Handle("POST", "/password", "PostPassword", middleware.CheckLoginMiddleware)
+	b.Handle("POST", "/logoff", "PostLogoff", middleware.CheckLoginMiddleware)
+	b.Handle("GET", "/favor", "GetQueryUserFavor", middleware.CheckLoginMiddleware)
+	b.Handle("POST", "/favor", "PostAddUserFavor", middleware.CheckLoginMiddleware)
 }
+
+func (u *UserController) PostAddUserFavor() mvc.Result {
+	var newUserReq struct {
+		Favor string `json:"favor"`
+	}
+	err := u.Ctx.ReadJSON(&newUserReq)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpJsonParseError,
+				"msg": datamodels.HttpJsonParseError.String(),
+			},
+		}
+	}
+	a := u.Ctx.Values().Get("User")
+	user, _ := (a).(datamodels.User)
+	err = u.UserService.InsertOrReplaceUserFavor(user.Id, newUserReq.Favor)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpMysqlAddError,
+				"msg": err.Error(),
+			},
+		}
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": datamodels.HttpSuccess,
+			"msg":  datamodels.HttpSuccess.String(),
+		},
+	}
+}
+
+func (u *UserController) GetQueryUserFavor() mvc.Result {
+	a := u.Ctx.Values().Get("User")
+	user, _ := (a).(datamodels.User)
+	favor, err := u.UserService.QueryUserFavorById(user.Id)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": datamodels.HttpMysqlQueryError,
+				"msg": err.Error(),
+			},
+		}
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": datamodels.HttpSuccess,
+			"msg":  datamodels.HttpSuccess.String(),
+			"data": favor,
+		},
+	}
+}
+
 
 // PostPassword /api/user/password
 func (u *UserController) PostPassword() mvc.Result {
@@ -106,6 +163,8 @@ func (u *UserController) PostLogoff() mvc.Result {
 
 	return mvc.Response{}
 }
+
+
 
 // PostLogin /api/user/login
 func (u *UserController) PostLogin() mvc.Result {
