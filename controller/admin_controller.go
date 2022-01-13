@@ -358,7 +358,7 @@ func (a *AdminController) PostUploadUpgradeFile() mvc.Result{
 	tempDir := os.TempDir()
 	dir := fmt.Sprintf("%s/%s", tempDir, fileName)
 	if !utils.PathExists(dir) {
-		os.MkdirAll(dir, 0666)
+		os.MkdirAll(dir, os.ModePerm)
 	}
 	filePathName := fmt.Sprintf("%s/%s-%d", dir, fileName, order)
 	create, err := os.Create(filePathName)
