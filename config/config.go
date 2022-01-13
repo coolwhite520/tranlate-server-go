@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/Unknwon/goconfig"
 	"io/ioutil"
-	"os"
 	"sync"
 	"translate-server/datamodels"
 	"translate-server/utils"
@@ -162,7 +161,7 @@ func (i *ConfigureLoader) GenerateComponentDatFile(comp datamodels.ComponentInfo
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(componentConfigPath, encrypt, os.ModePerm)
+	return ioutil.WriteFile(componentConfigPath, encrypt, 0666)
 }
 
 // ParseComponentDatFile 解析组件内配置文件

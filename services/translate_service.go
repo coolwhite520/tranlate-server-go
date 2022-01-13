@@ -213,7 +213,7 @@ func (t *translateService) TranslateFile(srcLang string, desLang string, recordI
 		}
 	}
 	desFile := fmt.Sprintf("%s/%s.txt", extractDir, record.FileName)
-	err = ioutil.WriteFile(desFile, []byte(content), os.ModePerm)
+	err = ioutil.WriteFile(desFile, []byte(content), 0666)
 	if err != nil {
 		record.State = datamodels.TransExtractFailed
 		record.StateDescribe = datamodels.TransExtractFailed.String()
@@ -243,7 +243,7 @@ func (t *translateService) TranslateFile(srcLang string, desLang string, recordI
 		}
 	}
 	desFile = fmt.Sprintf("%s/%s.txt", translatedDir, record.FileName)
-	err = ioutil.WriteFile(desFile, []byte(transContent), os.ModePerm)
+	err = ioutil.WriteFile(desFile, []byte(transContent), 0666)
 	if err != nil {
 		return
 	}

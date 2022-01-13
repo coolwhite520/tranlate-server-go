@@ -107,7 +107,7 @@ func (a activation) GenerateKeystoreContent(activationInfo datamodels.Activation
 
 
 func (a *activation) GenerateKeystoreFileByContent(content string) datamodels.HttpStatusCode {
-	ioutil.WriteFile(KeyStorePath, []byte(content), os.ModePerm)
+	ioutil.WriteFile(KeyStorePath, []byte(content), 0666)
 	return datamodels.HttpSuccess
 }
 
