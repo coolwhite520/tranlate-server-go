@@ -42,6 +42,7 @@ type TranslateService interface {
 	QueryTranslateRecordById(id int64, userId int64) (*datamodels.Record, error) // user自己只能看见自己的文件
 	QueryTranslateRecordsByUserId(userId int64) ([]datamodels.Record, error)
 	QueryTranslateRecordsByUserIdAndType(userId int64, transType int, offset int, count int) (int, []datamodels.Record, error)
+	QueryTranslateFileRecordsByUserId(userId int64, offset int, count int) (int, []datamodels.Record, error)
 }
 
 func NewTranslateService() TranslateService {
@@ -360,7 +361,6 @@ func (t *translateService) QueryTranslateRecordById(id int64, userId int64) (*da
 }
 func (t *translateService) QueryTranslateRecordsByUserIdAndType(userId int64,
 	transType int, offset int, count int) (int, []datamodels.Record, error) {
-
 	sqlCount := fmt.Sprintf("SELECT count(1) FROM tbl_record where UserId=? and TransType=?")
 	ret := db.QueryRow(sqlCount, userId, transType)
 	var total int
@@ -404,6 +404,52 @@ func (t *translateService) QueryTranslateRecordsByUserIdAndType(userId int64,
 	}
 	return total, records, nil
 }
+
+func (t *translateService) QueryTranslateFileRecordsByUserId(userId int64, offset int, count int) (int, []datamodels.Record, error) {
+	sqlCount := fmt.Sprintf("SELECT count(1) FROM tbl_record where UserId=? and TransType != 0")
+	ret := db.QueryRow(sqlCount, userId)
+	var total int
+	err := ret.Scan(&total)
+	if err != nil {
+		log.Error(err)
+		return 0, nil, err
+	}
+
+	sql := fmt.Sprintf("SELECT * FROM tbl_record where UserId=? and TransType != 0 order by CreateAt DESC limit %d,%d", offset, count)
+	rows, err := db.Query(sql, userId)
+	if err != nil {
+		log.Error(err)
+		return 0, nil, err
+	}
+	var records []datamodels.Record
+	for rows.Next() {
+		record := datamodels.Record{}
+		var tt time.Time
+		err = rows.Scan(
+			&record.Id,
+			&record.Sha1,
+			&record.Content,
+			&record.ContentType,
+			&record.TransType,
+			&record.OutputContent,
+			&record.SrcLang,
+			&record.DesLang,
+			&record.FileName,
+			&record.DirRandId,
+			&record.State,
+			&record.StateDescribe,
+			&record.Error,
+			&record.UserId,
+			&tt)
+		if err != nil {
+			return 0, nil, err
+		}
+		record.CreateAt = tt.Local().Format("2006-01-02 15:04:05")
+		records = append(records, record)
+	}
+	return total, records, nil
+}
+
 func (t *translateService) QueryTranslateRecordsByUserId(userId int64) ([]datamodels.Record, error) {
 	sql := fmt.Sprintf("SELECT * FROM tbl_record where UserId=? order by CreateAt DESC")
 	rows, err := db.Query(sql, userId)

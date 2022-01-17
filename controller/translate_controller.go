@@ -283,7 +283,14 @@ func (t *TranslateController) GetRecordsByType() mvc.Result {
 	count := t.Ctx.Params().GetIntDefault("count", 0)
 	a := t.Ctx.Values().Get("User")
 	user, _ := (a).(datamodels.User)
-	total, records, err := t.TranslateService.QueryTranslateRecordsByUserIdAndType(user.Id, transType, offset, count)
+	var total int
+	var records []datamodels.Record
+	var err error
+	if transType == 3 {
+		total, records, err = t.TranslateService.QueryTranslateFileRecordsByUserId(user.Id, offset, count)
+	} else {
+		total, records, err = t.TranslateService.QueryTranslateRecordsByUserIdAndType(user.Id, transType, offset, count)
+	}
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
