@@ -24,6 +24,7 @@ type AdminController struct {
 	Ctx         iris.Context
 	UserService services.UserService
 	IpTableService services.IpTableService
+	TransService services.TranslateService
 }
 
 
@@ -40,9 +41,36 @@ func (a *AdminController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle("DELETE","/ip_table/{id: int64}", "DeleteIpTableRecord")
 	b.Handle("POST","/ip_table_type", "PostSetIpTableType")
 	b.Handle("GET","/ip_table_type", "GetIpTableType")
+	b.Handle("GET","/all_records/{offset: uint64}/{count: uint64}", "GetAllTransRecords")
 
 }
 
+
+
+// GetAllTransRecords 获取所有用户的翻译记录
+func (a *AdminController) GetAllTransRecords() mvc.Result {
+	offset := a.Ctx.Params().GetIntDefault("offset", 0)
+	count := a.Ctx.Params().GetIntDefault("count", 0)
+	total, records, err := a.TransService.QueryTranslateRecords(offset, count)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code":  datamodels.HttpMysqlQueryError,
+				"msg": err.Error(),
+			},
+		}
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code":  datamodels.HttpSuccess,
+			"msg": datamodels.HttpSuccess.String(),
+			"data": map[string]interface{}{
+				"list": records,
+				"total": total,
+			},
+		},
+	}
+}
 
 // Get 获取用户列表
 func (a *AdminController) Get() mvc.Result {

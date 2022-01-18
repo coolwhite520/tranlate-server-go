@@ -43,6 +43,8 @@ type TranslateService interface {
 	QueryTranslateRecordsByUserId(userId int64) ([]datamodels.Record, error)
 	QueryTranslateRecordsByUserIdAndType(userId int64, transType int, offset int, count int) (int, []datamodels.Record, error)
 	QueryTranslateFileRecordsByUserId(userId int64, offset int, count int) (int, []datamodels.Record, error)
+	// QueryTranslateRecords 只有管理员有这个权限
+	QueryTranslateRecords(offset int, count int) (int, []datamodels.RecordEx, error)
 }
 
 func NewTranslateService() TranslateService {
@@ -445,6 +447,54 @@ func (t *translateService) QueryTranslateFileRecordsByUserId(userId int64, offse
 			return 0, nil, err
 		}
 		record.CreateAt = tt.Local().Format("2006-01-02 15:04:05")
+		records = append(records, record)
+	}
+	return total, records, nil
+}
+
+
+func (t *translateService) QueryTranslateRecords(offset int, count int) (int, []datamodels.RecordEx, error) {
+	sqlCount := fmt.Sprintf("SELECT count(1)  FROM tbl_record a LEFT JOIN tbl_user b ON a.UserId = b.Id;")
+	ret := db.QueryRow(sqlCount)
+	var total int
+	err := ret.Scan(&total)
+	if err != nil {
+		log.Error(err)
+		return 0, nil, err
+	}
+	sql := fmt.Sprintf("SELECT a.*, b.Username as Username  FROM tbl_record a LEFT JOIN tbl_user b ON a.UserId = b.Id order by CreateAt DESC limit %d,%d", offset, count)
+	rows, err := db.Query(sql)
+	if err != nil {
+		log.Error(err)
+		return 0, nil, err
+	}
+	var records []datamodels.RecordEx
+	for rows.Next() {
+		record := datamodels.RecordEx{}
+		var tt time.Time
+		err = rows.Scan(
+			&record.Id,
+			&record.Sha1,
+			&record.Content,
+			&record.ContentType,
+			&record.TransType,
+			&record.OutputContent,
+			&record.SrcLang,
+			&record.DesLang,
+			&record.FileName,
+			&record.DirRandId,
+			&record.State,
+			&record.StateDescribe,
+			&record.Error,
+			&record.UserId,
+			&tt,
+			&record.UserName,
+			)
+		if err != nil {
+			return 0, nil, err
+		}
+		record.CreateAt = tt.Local().Format("2006-01-02 15:04:05")
+
 		records = append(records, record)
 	}
 	return total, records, nil

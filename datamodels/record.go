@@ -54,3 +54,8 @@ type Record struct {
 	UserId        int64       `json:"user_id"`
 	CreateAt      string      `json:"create_at"`
 }
+
+type RecordEx struct {
+	Record
+	UserName string `json:"user_name"`
+}

@@ -32,7 +32,8 @@ func adminMVC(app *mvc.Application) {
 	party := app.Party("/admin")
 	service := services.NewUserService()
 	tableService := services.NewIpTableService()
-	party.Register(service, tableService)
+	transService := services.NewTranslateService()
+	party.Register(service, tableService, transService)
 	party.Handle(new(controller.AdminController))
 }
 
