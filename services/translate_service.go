@@ -150,6 +150,8 @@ func (t *translateService) TranslateContent(srcLang string, desLang string, cont
 	record.UserId = userId
 	record.Sha1 = sha1
 	record.OutputContent = transContent
+	record.State = datamodels.TransTranslateSuccess
+	record.StateDescribe = datamodels.TransTranslateSuccess.String()
 	// 记录到数据库中
 	records, err := t.queryTranslateRecordsBySha1(sha1)
 	if err != nil {
@@ -454,7 +456,7 @@ func (t *translateService) QueryTranslateFileRecordsByUserId(userId int64, offse
 
 
 func (t *translateService) QueryTranslateRecords(offset int, count int) (int, []datamodels.RecordEx, error) {
-	sqlCount := fmt.Sprintf("SELECT count(1)  FROM tbl_record a LEFT JOIN tbl_user b ON a.UserId = b.Id;")
+	sqlCount := fmt.Sprintf("SELECT count(1)  FROM tbl_record a INNER JOIN tbl_user b ON a.UserId = b.Id;")
 	ret := db.QueryRow(sqlCount)
 	var total int
 	err := ret.Scan(&total)
@@ -462,7 +464,7 @@ func (t *translateService) QueryTranslateRecords(offset int, count int) (int, []
 		log.Error(err)
 		return 0, nil, err
 	}
-	sql := fmt.Sprintf("SELECT a.*, b.Username as Username  FROM tbl_record a LEFT JOIN tbl_user b ON a.UserId = b.Id order by CreateAt DESC limit %d,%d", offset, count)
+	sql := fmt.Sprintf("SELECT a.*, b.Username as Username  FROM tbl_record a INNER JOIN tbl_user b ON a.UserId = b.Id order by CreateAt DESC limit %d,%d", offset, count)
 	rows, err := db.Query(sql)
 	if err != nil {
 		log.Error(err)
