@@ -40,6 +40,7 @@ var SqlArr = []string{
 	   StateDescribe TEXT,
 	   Error TEXT,
 	   UserId INTEGER,
+       OutFileExt TEXT,
 	   CreateAt DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
 	   INDEX(Sha1),
 	   PRIMARY KEY (Id)
@@ -68,7 +69,7 @@ var SqlArr = []string{
 
 func InitDb() {
 	service := NewUserService()
-	var hostPort string
+	hostPort := "3310"
 	list, err := config.GetInstance().GetComponentList(false)
 	if err != nil {
 		panic(err)
@@ -79,7 +80,7 @@ func InitDb() {
 			break
 		}
 	}
-	dataSourceName := fmt.Sprintf("root:%s@tcp(127.0.0.1:%s)/?charset=utf8&parseTime=True", datamodels.MysqlPassword, hostPort)
+	dataSourceName := fmt.Sprintf("root:%s@tcp(%s:%s)/?charset=utf8&parseTime=True", datamodels.MysqlPassword, "127.0.0.1", hostPort)
 	for i:=0; i < 100; i++ {
 		time.Sleep(1 * time.Second)
 		db, err = sql.Open("mysql", dataSourceName)
@@ -133,7 +134,7 @@ func InitDb() {
 
 	}
 	// 重新建立一个链接，链接到translate_db数据库，就不需要切换操作了
-	dataSourceName = fmt.Sprintf("root:%s@tcp(127.0.0.1:%s)/translate_db?charset=utf8&parseTime=True", datamodels.MysqlPassword, hostPort)
+	dataSourceName = fmt.Sprintf("root:%s@tcp(%s:%s)/translate_db?charset=utf8&parseTime=True", datamodels.MysqlPassword, "127.0.0.1", hostPort)
 	db, err = sql.Open("mysql", dataSourceName)
 	if err != nil {
 		log.Error(err)

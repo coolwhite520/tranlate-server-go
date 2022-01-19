@@ -62,14 +62,14 @@ func OcrParseFile(filePathName string, lang string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var port string
+	port := "9090"
 	for _, v := range compList {
 		if v.ImageName == "ocr" {
 			port = v.HostPort
 			break
 		}
 	}
-	url := fmt.Sprintf("http://localhost:%s/upload", port)
+	url := fmt.Sprintf("http://%s:%s/upload", config.ProxyUrl, port)
 	resp, err := postWithMultiPartData(url, f, info.Name(), lang)
 	if err != nil {
 		log.Error("resp err: ", err)

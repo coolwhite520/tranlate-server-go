@@ -21,14 +21,14 @@ func TikaParseFile(filePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var port string
+	port := "9998"
 	for _, v := range compList {
 		if v.ImageName == "tk" {
 			port = v.HostPort
 			break
 		}
 	}
-	url := fmt.Sprintf("http://localhost:%s", port)
+	url := fmt.Sprintf("http://%s:%s", config.ProxyUrl, port)
 	client := mytika.NewClient(nil, url)
 	body, err := client.Parse(context.Background(), f)
 	if err != nil {

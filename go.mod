@@ -3,17 +3,22 @@ module translate-server
 go 1.17
 
 require (
+	baliance.com/gooxml v1.0.1
+	github.com/Unknwon/goconfig v1.0.0
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/docker/docker v20.10.11+incompatible
 	github.com/docker/go-connections v0.4.0
+	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gorilla/mux v1.8.0
 	github.com/kataras/iris/v12 v12.2.0-alpha4.0.20211119121342-226a4cb06497
+	github.com/kataras/neffos v0.0.18
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/mattn/go-sqlite3 v1.14.9
 	github.com/otiai10/gosseract/v2 v2.3.1
 	github.com/pkg/errors v0.9.1
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/sirupsen/logrus v1.8.1
+	github.com/thinkeridea/go-extend v1.3.2
 	golang.org/x/crypto v0.0.0-20211108221036-ceb1ce70b4fa
 	golang.org/x/net v0.0.0-20211209124913-491a49abca63
 )
@@ -25,7 +30,6 @@ require (
 	github.com/CloudyKit/jet/v6 v6.1.0 // indirect
 	github.com/Microsoft/go-winio v0.5.1 // indirect
 	github.com/Shopify/goreferrer v0.0.0-20210630161223-536fa16abd6f // indirect
-	github.com/Unknwon/goconfig v1.0.0 // indirect
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
@@ -38,7 +42,6 @@ require (
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/flosch/pongo2/v4 v4.0.2 // indirect
 	github.com/go-ping/ping v0.0.0-20211130115550-779d1e919534 // indirect
-	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/gobwas/httphead v0.0.0-20200921212729-da3d93bc3c58 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.0.4 // indirect
@@ -61,7 +64,6 @@ require (
 	github.com/kataras/blocks v0.0.4 // indirect
 	github.com/kataras/golog v0.1.7 // indirect
 	github.com/kataras/jwt v0.1.2 // indirect
-	github.com/kataras/neffos v0.0.18 // indirect
 	github.com/kataras/pio v0.0.10 // indirect
 	github.com/kataras/sitemap v0.0.5 // indirect
 	github.com/kataras/tunnel v0.0.3 // indirect
@@ -87,7 +89,6 @@ require (
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/tdewolff/minify/v2 v2.9.22 // indirect
 	github.com/tdewolff/parse/v2 v2.5.21 // indirect
-	github.com/thinkeridea/go-extend v1.3.2 // indirect
 	github.com/toolkits/file v0.0.0-20160325033739-a5b3c5147e07 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.31.0 // indirect

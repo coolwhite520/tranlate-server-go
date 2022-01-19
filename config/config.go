@@ -13,6 +13,10 @@ import (
 var instance *ConfigureLoader
 var once sync.Once
 
+//const proxyUrl = "127.0.0.1"
+const ProxyUrl = "192.168.3.32"   // 方便远程调试
+
+
 type ConfigureLoader struct {
 	secret string
 	systemConfigFilePath string
@@ -24,6 +28,7 @@ func GetInstance() *ConfigureLoader {
 		instance = &ConfigureLoader{}
 		instance.secret = "ecf274d323fab23667a2ccd7904803c8"
 		instance.systemConfigFilePath = "./config.dat"
+
 	})
 	return instance
 }

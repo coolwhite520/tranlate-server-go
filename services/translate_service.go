@@ -1,12 +1,14 @@
 package services
 
 import (
+	"baliance.com/gooxml/document"
 	"fmt"
 	"github.com/kataras/iris/v12"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 	"translate-server/datamodels"
@@ -32,6 +34,7 @@ var RecordTableFieldList = []string{
 	"StateDescribe",
 	"Error",
 	"UserId",
+	"OutFileExt",
 }
 
 type TranslateService interface {
@@ -76,10 +79,13 @@ func (t *translateService) ReceiveFiles(Ctx iris.Context) ([]datamodels.Record, 
 		filePath := fmt.Sprintf("%s/%s", userUploadDir, v.Filename)
 		contentType, _ := utils.GetFileContentType(filePath)
 		var TransType int
+		var OutFileExt string
 		if strings.Contains(contentType, "image/") {
 			TransType = 1
+			OutFileExt = ".docx"
 		} else {
 			TransType = 2
+			OutFileExt = filepath.Ext(v.Filename)
 		}
 
 		record := datamodels.Record{
@@ -91,6 +97,7 @@ func (t *translateService) ReceiveFiles(Ctx iris.Context) ([]datamodels.Record, 
 			State:         datamodels.TransNoRun,
 			StateDescribe: datamodels.TransNoRun.String(),
 			UserId:        user.Id,
+			OutFileExt:    OutFileExt,
 		}
 		err = t.InsertRecord(&record)
 		if err != nil {
@@ -113,16 +120,6 @@ func (t *translateService) Translate(srcLang string, desLang string, content str
 			if v.TransType == 0 {
 				transContent = v.OutputContent
 				break
-			} else {
-				existFile := fmt.Sprintf("%s/%d/%s/%s.txt", OutputDir, v.UserId, v.DirRandId, v.FileName)
-				if utils.PathExists(existFile) {
-					bytes, err := ioutil.ReadFile(existFile)
-					if err != nil {
-						continue
-					}
-					transContent = string(bytes)
-					break
-				}
 			}
 		}
 	}
@@ -170,23 +167,151 @@ func (t *translateService) TranslateContent(srcLang string, desLang string, cont
 	return record.OutputContent, nil
 }
 
-// TranslateFile 异步翻译，将结果写入到数据库中
-func (t *translateService) TranslateFile(srcLang string, desLang string, recordId int64, userId int64) {
-	record, _ := t.QueryTranslateRecordById(recordId, userId)
-	if record == nil {
-		log.Error("查询不到RecordId为", recordId, "的记录")
-		return
-	}
-	srcDir := fmt.Sprintf("%s/%d/%s", UploadDir, userId, record.DirRandId)
-	extractDir := fmt.Sprintf("%s/%d/%s", ExtractDir, userId, record.DirRandId)
-	translatedDir := fmt.Sprintf("%s/%d/%s", OutputDir, userId, record.DirRandId)
+func (t *translateService) translateDocxFile(srcLang string, desLang string, record *datamodels.Record)  {
+	srcDir := fmt.Sprintf("%s/%d/%s", UploadDir, record.UserId, record.DirRandId)
+	translatedDir := fmt.Sprintf("%s/%d/%s", OutputDir, record.UserId, record.DirRandId)
 	srcFilePathName := path.Join(srcDir, record.FileName)
+	// 开始抽取数据
 	record.SrcLang = srcLang
 	record.DesLang = desLang
 	record.State = datamodels.TransBeginExtract
 	record.StateDescribe = datamodels.TransBeginExtract.String()
+	err := t.UpdateRecord(record)
+	if err != nil {
+		return
+	}
+	content, err := t.extractContent(record.TransType, srcFilePathName, srcLang)
+	if err != nil {
+		record.State = datamodels.TransExtractFailed
+		record.StateDescribe = datamodels.TransExtractFailed.String()
+		record.Error = err.Error()
+		t.UpdateRecord(record)
+		return
+	}
+	content = strings.Trim(content, " ")
+	// 抽取成功，但是是空数据，那么就退出了
+	if len(content) == 0 {
+		record.State = datamodels.TransExtractSuccessContentEmpty
+		record.StateDescribe = datamodels.TransExtractSuccessContentEmpty.String()
+		t.UpdateRecord(record)
+		return
+	}
+
+	// 更新状态
+	record.State = datamodels.TransExtractSuccess
+	record.StateDescribe = datamodels.TransExtractSuccess.String()
 	t.UpdateRecord(record)
+
+	doc, err := document.Open(srcFilePathName)
+	if err != nil {
+		log.Errorln(err)
+		return
+	}
+	paragraphs := doc.Paragraphs()
+	for _, p := range paragraphs {
+		var content string
+		for _, r := range p.Runs() {
+			content += r.Text()
+		}
+		if len(strings.Trim(content, " ")) > 0 {
+			for _, r := range p.Runs() {
+				p.RemoveRun(r)
+			}
+			run := p.AddRun()
+			transContent, _, _ := t.Translate(srcLang, desLang, content)
+			run.AddText(transContent)
+		}
+	}
+	headers := doc.Headers()
+	for _, h := range headers {
+		for _, p := range h.Paragraphs() {
+			var content string
+			for _, r := range p.Runs() {
+				content += r.Text()
+			}
+			if len(strings.Trim(content, " ")) > 0 {
+				for _, r := range p.Runs() {
+					p.RemoveRun(r)
+				}
+				run := p.AddRun()
+				transContent, _, _ := t.Translate(srcLang, desLang, content)
+				run.AddText(transContent)
+			}
+		}
+	}
+	tables := doc.Tables()
+	for _, tal := range tables {
+		for _, r := range tal.Rows() {
+			for _,c := range r.Cells() {
+				for _, p := range c.Paragraphs() {
+					var content string
+					for _, r := range p.Runs() {
+						content += r.Text()
+					}
+					if len(strings.Trim(content, " ")) > 0 {
+						for _, r := range p.Runs() {
+							p.RemoveRun(r)
+						}
+						run := p.AddRun()
+						transContent, _, _ := t.Translate(srcLang, desLang, content)
+						run.AddText(transContent)
+					}
+				}
+
+			}
+		}
+	}
+
+	footers := doc.Footers()
+	for _, f := range footers {
+		for _, p := range f.Paragraphs() {
+			var content string
+			for _, r := range p.Runs() {
+				content += r.Text()
+			}
+			if len(strings.Trim(content, " ")) > 0 {
+				for _, r := range p.Runs() {
+					p.RemoveRun(r)
+				}
+				run := p.AddRun()
+				transContent, _, _ := t.Translate(srcLang, desLang, content)
+				run.AddText(transContent)
+			}
+		}
+
+	}
+	if !utils.PathExists(translatedDir) {
+		err := os.MkdirAll(translatedDir, os.ModePerm)
+		if err != nil {
+			return
+		}
+	}
+	desFile := fmt.Sprintf("%s/%s", translatedDir, record.FileName)
+	err = doc.SaveToFile(desFile)
+	if err != nil {
+		return
+	}
+	record.Sha1 = ""
+	record.State = datamodels.TransTranslateSuccess
+	record.StateDescribe = datamodels.TransTranslateSuccess.String()
+	record.Error = ""
+	t.UpdateRecord(record)
+}
+
+func (t translateService) translateCommonFile(srcLang string, desLang string, record *datamodels.Record)  {
+	srcDir := fmt.Sprintf("%s/%d/%s", UploadDir, record.UserId, record.DirRandId)
+	extractDir := fmt.Sprintf("%s/%d/%s", ExtractDir, record.UserId, record.DirRandId)
+	translatedDir := fmt.Sprintf("%s/%d/%s", OutputDir, record.UserId, record.DirRandId)
+	srcFilePathName := path.Join(srcDir, record.FileName)
 	// 开始抽取数据
+	record.SrcLang = srcLang
+	record.DesLang = desLang
+	record.State = datamodels.TransBeginExtract
+	record.StateDescribe = datamodels.TransBeginExtract.String()
+	err := t.UpdateRecord(record)
+	if err != nil {
+		return
+	}
 	content, err := t.extractContent(record.TransType, srcFilePathName, srcLang)
 	if err != nil {
 		record.State = datamodels.TransExtractFailed
@@ -217,7 +342,7 @@ func (t *translateService) TranslateFile(srcLang string, desLang string, recordI
 			return
 		}
 	}
-	desFile := fmt.Sprintf("%s/%s.txt", extractDir, record.FileName)
+	desFile := fmt.Sprintf("%s/%s%s", extractDir, record.FileName, record.OutFileExt)
 	err = ioutil.WriteFile(desFile, []byte(content), 0666)
 	if err != nil {
 		record.State = datamodels.TransExtractFailed
@@ -247,7 +372,7 @@ func (t *translateService) TranslateFile(srcLang string, desLang string, recordI
 			return
 		}
 	}
-	desFile = fmt.Sprintf("%s/%s.txt", translatedDir, record.FileName)
+	desFile = fmt.Sprintf("%s/%s%s", translatedDir, record.FileName, record.OutFileExt)
 	err = ioutil.WriteFile(desFile, []byte(transContent), 0666)
 	if err != nil {
 		return
@@ -259,6 +384,44 @@ func (t *translateService) TranslateFile(srcLang string, desLang string, recordI
 	err = t.UpdateRecord(record)
 	if err != nil {
 		return
+	}
+}
+
+// TranslateFile 异步翻译，将结果写入到数据库中
+func (t *translateService) TranslateFile(srcLang string, desLang string, recordId int64, userId int64) {
+	record, _ := t.QueryTranslateRecordById(recordId, userId)
+	if record == nil {
+		log.Error("查询不到RecordId为", recordId, "的记录")
+		return
+	}
+	srcDir := fmt.Sprintf("%s/%d/%s", UploadDir, record.UserId, record.DirRandId)
+	translatedDir := fmt.Sprintf("%s/%d/%s", OutputDir, record.UserId, record.DirRandId)
+	srcFilePathName := path.Join(srcDir, record.FileName)
+	// 计算文件md5
+	md5, err := utils.GetFileMd5(srcFilePathName)
+	if err != nil {
+		return
+	}
+	// 拼接sha1字符串
+	sha1 := utils.Sha1(fmt.Sprintf("%s&%s&%s", md5, srcLang, desLang))
+	records, err := t.queryTranslateRecordsBySha1(sha1)
+	if err != nil {
+		return
+	}
+	if !utils.PathExists(translatedDir) {
+		err := os.MkdirAll(translatedDir, os.ModePerm)
+		if err != nil {
+			return
+		}
+	}
+	for _, r := range records {
+		fmt.Sprintf("%s/%d/%s/%s", OutputDir, r.UserId, r.DirRandId, r.FileName)
+	}
+	ext := filepath.Ext(record.FileName)
+	if strings.ToLower(ext) == ".docx" {
+		t.translateDocxFile(srcLang, desLang, record)
+	} else {
+		t.translateCommonFile(srcLang, desLang, record)
 	}
 }
 
@@ -327,6 +490,7 @@ func (t *translateService) queryTranslateRecordsBySha1(sha1str string) ([]datamo
 			&record.StateDescribe,
 			&record.Error,
 			&record.UserId,
+			&record.OutFileExt,
 			&tt)
 		if err != nil {
 			return nil, err
@@ -356,6 +520,7 @@ func (t *translateService) QueryTranslateRecordById(id int64, userId int64) (*da
 		&record.StateDescribe,
 		&record.Error,
 		&record.UserId,
+		&record.OutFileExt,
 		&tt)
 	if err != nil {
 		return nil, err
@@ -399,6 +564,7 @@ func (t *translateService) QueryTranslateRecordsByUserIdAndType(userId int64,
 			&record.StateDescribe,
 			&record.Error,
 			&record.UserId,
+			&record.OutFileExt,
 			&tt)
 		if err != nil {
 			return 0, nil, err
@@ -444,6 +610,7 @@ func (t *translateService) QueryTranslateFileRecordsByUserId(userId int64, offse
 			&record.StateDescribe,
 			&record.Error,
 			&record.UserId,
+			&record.OutFileExt,
 			&tt)
 		if err != nil {
 			return 0, nil, err
@@ -489,6 +656,7 @@ func (t *translateService) QueryTranslateRecords(offset int, count int) (int, []
 			&record.StateDescribe,
 			&record.Error,
 			&record.UserId,
+			&record.OutFileExt,
 			&tt,
 			&record.UserName,
 			)
@@ -528,6 +696,7 @@ func (t *translateService) QueryTranslateRecordsByUserId(userId int64) ([]datamo
 			&record.StateDescribe,
 			&record.Error,
 			&record.UserId,
+			&record.OutFileExt,
 			&tt)
 		if err != nil {
 			return nil, err
@@ -567,6 +736,7 @@ func (t *translateService) UpdateRecord(record *datamodels.Record) error {
 		record.StateDescribe,
 		record.Error,
 		record.UserId,
+		record.OutFileExt,
 	)
 	tx.Commit()
 	if err != nil {
@@ -604,6 +774,7 @@ func (t *translateService) InsertRecord(record *datamodels.Record) error {
 		record.StateDescribe,
 		record.Error,
 		record.UserId,
+		record.OutFileExt,
 	)
 	tx.Commit()
 	if err != nil {

@@ -19,14 +19,14 @@ func PyTranslate(srcLang, desLang, content string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var port string
+	port := "5000"
 	for _, v := range compList {
 		if v.ImageName == "core" {
 			port = v.HostPort
 			break
 		}
 	}
-	url := fmt.Sprintf("http://localhost:%s/translate", port)
+	url := fmt.Sprintf("http://%s:%s/translate", config.ProxyUrl, port)
 	client := &http.Client{}
 	var req *http.Request
 
@@ -46,7 +46,11 @@ func PyTranslate(srcLang, desLang, content string) (string, error) {
 	sign := utils.GenerateHmacSign([]byte(s), []byte(SignKey))
 	bodyData.Sign = sign
 	data, _ := json.Marshal(bodyData)
-	req, _ = http.NewRequest("POST", url, bytes.NewBuffer(data))
+	req, err = http.NewRequest("POST", url, bytes.NewBuffer(data))
+	if err != nil {
+		log.Errorln(err)
+		return "", err
+	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
