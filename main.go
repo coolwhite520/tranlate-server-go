@@ -1,23 +1,19 @@
 package main
 
 import (
-	"context"
-	"errors"
 	"flag"
 	log "github.com/sirupsen/logrus"
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
-	"os/signal"
-	"syscall"
 	"time"
+	"translate-server/config"
 	"translate-server/datamodels"
-	_ "translate-server/datamodels"
 	"translate-server/docker"
 	_ "translate-server/logext"
 	"translate-server/server"
-	"translate-server/services"
+	"translate-server/structs"
+	_ "translate-server/structs"
 )
 
 var (
@@ -36,8 +32,8 @@ func init()  {
 		panic(err)
 	}
 	docker.GetInstance().SetStatus(docker.NormalStatus)
-	services.InitDb()
-	err = services.InitConfigIniFile()
+	datamodels.InitDb()
+	err = config.InitConfigIniFile()
 	if err != nil {
 		panic(err)
 	}
@@ -45,18 +41,14 @@ func init()  {
 
 func main() {
 	go func() {
-		service, err := services.NewActivationService()
-		if err != nil {
-			log.Errorln(err)
-			panic(err)
-		}
+		model := datamodels.NewActivationModel()
 		for  {
 			// 每隔10分钟，减少一下剩余可用时间
 			time.Sleep(time.Minute * 10 )
-			expiredInfo, state:= service.ParseExpiredFile()
-			if state == datamodels.HttpSuccess {
+			expiredInfo, state:= model.ParseExpiredFile()
+			if state == structs.HttpSuccess {
 				expiredInfo.LeftTimeSpan = expiredInfo.LeftTimeSpan - 10 * 60
-				service.GenerateExpiredFile(*expiredInfo)
+				model.GenerateExpiredFile(*expiredInfo)
 			}
 		}
 	}()
@@ -74,48 +66,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("listener error: %v", err)
 	}
-
-	go func() {
-		server.StartMainServer(listener)
-	}()
-	// 信号
-	signalHandler()
+	server.StartMainServer(listener)
 }
 
-func reload() error {
-	tl, ok := listener.(*net.TCPListener)
-	if !ok {
-		return errors.New("listener is not tcp listener")
-	}
-	f, err := tl.File()
-	if err != nil {
-		return err
-	}
-	args := []string{"-graceful"}
-	cmd := exec.Command(os.Args[0], args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	// put socket FD at the first entry
-	cmd.ExtraFiles = []*os.File{f}
-	return cmd.Start()
-}
 
-func signalHandler() {
-	signal.Notify(datamodels.GlobalChannel, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	for {
-		sig := <-datamodels.GlobalChannel
-		log.Printf("signal: %v", sig)
-
-		// timeout context for shutdown
-		ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-		switch sig {
-		case syscall.SIGINT, syscall.SIGTERM:
-			// stop
-			log.Printf("stop")
-			signal.Stop(datamodels.GlobalChannel)
-			srv.Shutdown(ctx)
-			log.Printf("graceful shutdown")
-			return
-		}
-	}
-}

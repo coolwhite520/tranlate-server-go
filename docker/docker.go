@@ -8,13 +8,12 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"sync"
 	"translate-server/config"
 	"translate-server/datamodels"
-	"translate-server/services"
+	"translate-server/structs"
 )
 
 
@@ -51,11 +50,7 @@ type Operator struct {
 }
 
 func (o *Operator) StartDockers() error {
-	service, err := services.NewActivationService()
-	if err != nil {
-		log.Errorln(err)
-		panic(err)
-	}
+	service := datamodels.NewActivationModel()
 	_, state := service.ParseKeystoreFile()
 	compList, err := config.GetInstance().GetComponentList(false)
 	if err != nil {
@@ -63,7 +58,7 @@ func (o *Operator) StartDockers() error {
 	}
 	o.percent = 0
 	for _,v := range compList {
-		if state == datamodels.HttpSuccess || v.DefaultRun {
+		if state == structs.HttpSuccess || v.DefaultRun {
 			err := o.LoadImage(v)
 			if err != nil {
 				o.status = ErrorStatus
@@ -114,7 +109,7 @@ func (o *Operator) IsALlRunningStatus() (bool, error) {
 }
 
 // LoadImage 从文件加载镜像
-func (o *Operator) LoadImage(img datamodels.ComponentInfo) error {
+func (o *Operator) LoadImage(img structs.ComponentInfo) error {
 	b, err := o.existImage(img.ImageName, img.ImageVersion)
 	if err != nil {
 		return err
@@ -176,7 +171,7 @@ func (o *Operator) RemoveImage(imageName string, imageVersion string) error {
 }
 
 // StartContainer 启动容器 ,如果是 部署在linux下，那么当启动web镜像（nginx）的时候，需要添加--add-host=host.docker.internal:host-gateway参数
-func (o *Operator) StartContainer(img datamodels.ComponentInfo) error {
+func (o *Operator) StartContainer(img structs.ComponentInfo) error {
 	hasContainer, id, err := o.hasContainer(img.ImageName, img.ImageVersion)
 	if err != nil {
 		return err
@@ -215,7 +210,7 @@ func (o *Operator) StartContainer(img datamodels.ComponentInfo) error {
 			hostConfig.NetworkMode = "host"
 		}
 		if img.ImageName == "mysql" {
-			mysqlPasswdEnv := fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", datamodels.MysqlPassword)
+			mysqlPasswdEnv := fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", structs.MysqlPassword)
 			config.Env = []string{mysqlPasswdEnv}
 		//	挂载卷本地目录
 			dataDir, err := filepath.Abs("./mysql_db/db")

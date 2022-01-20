@@ -2,21 +2,16 @@ package middleware
 
 import (
 	"github.com/kataras/iris/v12"
-	log "github.com/sirupsen/logrus"
 	"time"
 	"translate-server/datamodels"
-	"translate-server/services"
+	"translate-server/structs"
 )
 
 func CheckActivationMiddleware(ctx iris.Context) {
-	newActivation, err := services.NewActivationService()
-	if err != nil {
-		log.Errorln(err)
-		panic(err)
-	}
+	newActivation := datamodels.NewActivationModel()
 	sn := newActivation.GetMachineId()
 	activationInfo, state := newActivation.ParseKeystoreFile()
-	if state != datamodels.HttpSuccess {
+	if state != structs.HttpSuccess {
 		ctx.JSON(
 			map[string]interface{}{
 				"code":      state,
@@ -27,28 +22,28 @@ func CheckActivationMiddleware(ctx iris.Context) {
 	}
 	expiredInfo, state := newActivation.ParseExpiredFile()
 	// 用户失误或故意删除了/usr/bin/${machineID}的文件，我们再替他生成回来
-	if state == datamodels.HttpActivationNotFound {
-		expiredInfo = new(datamodels.KeystoreExpired)
+	if state == structs.HttpActivationNotFound {
+		expiredInfo = new(structs.KeystoreExpired)
 		expiredInfo.Sn = activationInfo.Sn
 		expiredInfo.CreatedAt = activationInfo.CreatedAt
 		expiredInfo.LeftTimeSpan = activationInfo.UseTimeSpan - (time.Now().Unix() - activationInfo.CreatedAt)
 		if expiredInfo.LeftTimeSpan <= 0 {
 			ctx.JSON(
 				map[string]interface{}{
-					"code":      datamodels.HttpActivationExpiredError,
+					"code":      structs.HttpActivationExpiredError,
 					"sn":        sn,
-					"msg":       datamodels.HttpActivationExpiredError.String(),
+					"msg":       structs.HttpActivationExpiredError.String(),
 				})
 			return
 		}
 		newActivation.GenerateExpiredFile(*expiredInfo)
-	} else if state == datamodels.HttpSuccess {
+	} else if state == structs.HttpSuccess {
 		if expiredInfo.LeftTimeSpan <= 0 {
 			ctx.JSON(
 				map[string]interface{}{
-					"code":      datamodels.HttpActivationExpiredError,
+					"code":      structs.HttpActivationExpiredError,
 					"sn":        sn,
-					"msg":       datamodels.HttpActivationExpiredError.String(),
+					"msg":       structs.HttpActivationExpiredError.String(),
 				})
 			return
 		}
@@ -61,7 +56,5 @@ func CheckActivationMiddleware(ctx iris.Context) {
 			})
 		return
 	}
-
-
 	ctx.Next()
 }

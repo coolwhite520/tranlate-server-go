@@ -2,31 +2,22 @@ package services
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
-	"time"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/mvc"
+	"github.com/thinkeridea/go-extend/exnet"
+	"translate-server/config"
 	"translate-server/datamodels"
+	"translate-server/middleware"
+	"translate-server/structs"
 )
 
 
 type UserService interface {
-	CheckUser(username, userPassword string) (*datamodels.User, bool)
-	InsertUser(user datamodels.User) error
-    QueryAdminUsers() ([]datamodels.User, error)
-	QueryAllUsers() ([]datamodels.User, error)
-	DeleteUserById(id int64) error
-	UpdateUserPassword(user datamodels.User) error
-	UpdateUserMark(user datamodels.User) error
-    QueryUserByName(name string) (*datamodels.User, error)
-	QueryTableFieldCount(dbName, tblName string) (int, error)
-	DropDatabase(dbName string) error
-
-	AddUserOperatorRecord(record datamodels.UserOperatorRecord) error
-	QueryUserOperatorRecords(offset, count int) (int, []datamodels.UserOperatorRecord, error)
-	DeleteUserOperatorRecord(Id int64) error
-	DeleteAllUserOperatorRecords() error
-
-	QueryUserFavorById(userId int64) (string, error)
-	InsertOrReplaceUserFavor(userId int64, newFavor string) error
+	PostLogin(ctx iris.Context) mvc.Result
+	PostAddUserFavor(ctx iris.Context) mvc.Result
+	GetQueryUserFavor(ctx iris.Context) mvc.Result
+	PostPassword(ctx iris.Context) mvc.Result
+	PostLogoff(ctx iris.Context) mvc.Result
 }
 
 func NewUserService() UserService  {
@@ -36,275 +27,211 @@ func NewUserService() UserService  {
 type userService struct {
 
 }
-
-func (u *userService) CheckUser(username, userPassword string) (*datamodels.User, bool){
-	if username == "" || userPassword == "" {
-		return nil, false
+func (u *userService) PostAddUserFavor(ctx iris.Context) mvc.Result {
+	var newUserReq struct {
+		Favor string `json:"favor"`
 	}
-	row := db.QueryRow("select * from tbl_user where Username = ?", username)
-	var user datamodels.User
-	err := row.Scan(&user.Id, &user.Username, &user.HashedPassword, &user.IsSuper, &user.Mark, &user.CreatedAt)
+	err := ctx.ReadJSON(&newUserReq)
 	if err != nil {
-		return nil, false
-	}
-	if ok, _ := datamodels.ValidatePassword(userPassword, user.HashedPassword); ok {
-		return &user, true
-	}
-	return &user, false
-}
-func (u *userService) DeleteUserById(Id int64) error {
-	tx, _ := db.Begin()
-	sql := fmt.Sprintf("Delete From tbl_user where Id=?;")
-	stmt, err := tx.Prepare(sql)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	_, err = stmt.Exec(Id)
-	tx.Commit()
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	return nil
-}
-
-func (u *userService) UpdateUserPassword(user datamodels.User) error {
-	tx, _ := db.Begin()
-	sql := fmt.Sprintf("UPDATE tbl_user set HashedPassword=? where Id=?;")
-	stmt, err := tx.Prepare(sql)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	_, err = stmt.Exec(user.HashedPassword, user.Id)
-	tx.Commit()
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	return nil
-}
-
-func (u *userService) UpdateUserMark(user datamodels.User) error {
-	tx, _ := db.Begin()
-	sql := fmt.Sprintf("UPDATE tbl_user set Mark=? where Id=?;")
-	stmt, err := tx.Prepare(sql)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	_, err = stmt.Exec(user.Mark, user.Id)
-	tx.Commit()
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	return nil
-}
-
-func (u *userService) InsertUser(user datamodels.User) error {
-	tx, _ := db.Begin()
-	sql := fmt.Sprintf("INSERT INTO tbl_user(Username, HashedPassword, IsSuper, Mark) VALUES(?,?,?,?);")
-	stmt, err := tx.Prepare(sql)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	_, err = stmt.Exec(user.Username, user.HashedPassword, user.IsSuper, user.Mark)
-	tx.Commit()
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	return nil
-}
-func (u *userService) QueryAdminUsers() ([]datamodels.User, error) {
-	sql := fmt.Sprintf("SELECT Id, Username, IsSuper, Mark, CreatedAt FROM tbl_user where IsSuper=1")
-	rows, err := db.Query(sql)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-	var users []datamodels.User
-	for rows.Next() {
-		user := datamodels.User{}
-		var t time.Time
-		err := rows.Scan(&user.Id, &user.Username, &user.IsSuper, &user.Mark, &t)
-		user.CreatedAt = t.Local().Format("2006-01-02 15:04:05")
-		if err != nil {
-			log.Error(err)
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": structs.HttpJsonParseError,
+				"msg": structs.HttpJsonParseError.String(),
+			},
 		}
-		users = append(users, user)
 	}
-	return users, nil
-}
+	a := ctx.Values().Get("User")
+	user, _ := (a).(structs.User)
 
-func (u *userService) QueryUserByName(name string) (*datamodels.User, error) {
-	sql := fmt.Sprintf("SELECT Id, Username, IsSuper, Mark, CreatedAt FROM tbl_user where Username=?")
-	row := db.QueryRow(sql, name)
-	user := datamodels.User{}
-	var t time.Time
-	err := row.Scan(&user.Id, &user.Username, &user.IsSuper, &user.Mark, &t)
+	err = datamodels.InsertOrReplaceUserFavor(user.Id, newUserReq.Favor)
 	if err != nil {
-		return nil, nil
-	}
-	user.CreatedAt = t.Local().Format("2006-01-02 15:04:05")
-	return &user, nil
-}
-
-func (u *userService) QueryAllUsers() ([]datamodels.User, error) {
-	sql := fmt.Sprintf("SELECT Id, Username, IsSuper, Mark, CreatedAt FROM tbl_user where IsSuper=0")
-	rows, err := db.Query(sql)
-	defer rows.Close()
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-	var users []datamodels.User
-	for rows.Next() {
-		user := datamodels.User{}
-		var t time.Time
-		err := rows.Scan(&user.Id, &user.Username, &user.IsSuper, &user.Mark, &t)
-		user.CreatedAt = t.Local().Format("2006-01-02 15:04:05")
-		if err != nil {
-			log.Error(err)
-			continue
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": structs.HttpMysqlAddError,
+				"msg": err.Error(),
+			},
 		}
-		users = append(users, user)
 	}
-	return users, nil
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": structs.HttpSuccess,
+			"msg":  structs.HttpSuccess.String(),
+		},
+	}
 }
 
-func (u *userService) QueryTableFieldCount(dbName, tblName string) (int, error) {
-	sql := fmt.Sprintf("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='%s' AND table_name='%s';", dbName, tblName)
-	row := db.QueryRow(sql)
-	var count int
-	err := row.Scan(&count)
+func (u *userService) GetQueryUserFavor(ctx iris.Context) mvc.Result {
+	a := ctx.Values().Get("User")
+	user, _ := (a).(structs.User)
+	favor, err := datamodels.QueryUserFavorById(user.Id)
 	if err != nil {
-		return 0, nil
-	}
-	return count, nil
-}
-
-func (u *userService) DropDatabase(dbName string) error {
-	sql := fmt.Sprintf("DROP DATABASE IF EXISTS %s;", dbName)
-	_, err := db.Exec(sql)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// AddUserOperatorRecord 新增用户登录记录
-func (u *userService) AddUserOperatorRecord(record datamodels.UserOperatorRecord) error {
-	tx, _ := db.Begin()
-	sql := fmt.Sprintf("INSERT INTO tbl_user_operator(UserId, Ip, Operator) VALUES(?,?,?);")
-	stmt, err := tx.Prepare(sql)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	_, err = stmt.Exec(record.UserId, record.Ip, record.Operator)
-	tx.Commit()
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	return nil
-}
-//QueryUserOperatorRecords 获取用户的操作记录 login logout 等
-func (u *userService) QueryUserOperatorRecords(offset, count int) (int, []datamodels.UserOperatorRecord, error) {
-	sqlCount := fmt.Sprintf("SELECT count(1) FROM tbl_user_operator")
-	ret := db.QueryRow(sqlCount)
-	var total int
-	err := ret.Scan(&total)
-	if err != nil {
-		log.Error(err)
-		return 0, nil, err
-	}
-
-	sql := fmt.Sprintf("SELECT a.Id, a.UserId, b.Username, a.Ip, a.Operator, a.CreateAt FROM tbl_user_operator a RIGHT JOIN tbl_user b ON a.UserId = b.Id ORDER BY a.CreateAt DESC LIMIT %d,%d", offset, count)
-	rows, err := db.Query(sql)
-	defer rows.Close()
-	if err != nil {
-		log.Error(err)
-		return 0, nil, err
-	}
-	var records []datamodels.UserOperatorRecord
-	for rows.Next() {
-		record := datamodels.UserOperatorRecord{}
-		var t time.Time
-		err := rows.Scan(&record.Id, &record.UserId, &record.Username, &record.Ip, &record.Operator, &t)
-		record.CreateAt = t.Local().Format("2006-01-02 15:04:05")
-		if err != nil {
-			log.Error(err)
-			continue
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": structs.HttpMysqlQueryError,
+				"msg": err.Error(),
+			},
 		}
-		records = append(records, record)
 	}
-	return total, records, nil
-}
-// DeleteUserOperatorRecord 删除操作记录
-func (u *userService) DeleteUserOperatorRecord(Id int64) error {
-	tx, _ := db.Begin()
-	sql := fmt.Sprintf("Delete From tbl_user_operator where Id=?;")
-	stmt, err := tx.Prepare(sql)
-	if err != nil {
-		log.Error(err)
-		return err
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": structs.HttpSuccess,
+			"msg":  structs.HttpSuccess.String(),
+			"data": favor,
+		},
 	}
-	_, err = stmt.Exec(Id)
-	tx.Commit()
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	return nil
-}
-//DeleteAllUserOperatorRecords 清理表中数据
-func (u *userService) DeleteAllUserOperatorRecords() error {
-	tx, _ := db.Begin()
-	sql := fmt.Sprintf("Delete From tbl_user_operator;")
-	stmt, err := tx.Prepare(sql)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	_, err = stmt.Exec()
-	tx.Commit()
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	return nil
 }
 
-func (u *userService) QueryUserFavorById(userId int64) (string, error) {
-	sqlCount := fmt.Sprintf("SELECT Favor FROM tbl_user_favor WHERE UserId=?")
-	ret := db.QueryRow(sqlCount, userId)
-	var favor string
-	err := ret.Scan(&favor)
-	if err != nil {
-		log.Error(err)
-		return "",nil
+
+// PostPassword /api/user/password
+func (u *userService) PostPassword(ctx iris.Context) mvc.Result {
+	var newUserReq struct {
+		OldPassword    string `json:"old_password"`
+		NewPassword    string `json:"new_password"`
+		SecondPassword string `json:"second_password"`
 	}
-	return favor, nil
+	err := ctx.ReadJSON(&newUserReq)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": structs.HttpJsonParseError,
+				"msg": structs.HttpJsonParseError.String(),
+			},
+		}
+	}
+	if newUserReq.NewPassword != newUserReq.SecondPassword {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": structs.HttpUserTwicePwdNotSame,
+				"msg": structs.HttpUserTwicePwdNotSame.String(),
+			},
+		}
+	}
+	a := ctx.Values().Get("User")
+	if user, ok := (a).(structs.User); ok {
+		_, b := datamodels.CheckUser(user.Username, newUserReq.OldPassword)
+		if b {
+			user.HashedPassword, _ = structs.GeneratePassword(newUserReq.NewPassword)
+			err = datamodels.UpdateUserPassword(user)
+			if err != nil {
+				return mvc.Response{
+					Object: map[string]interface{}{
+						"code": structs.HttpUserUpdatePwdError,
+						"msg":  err.Error(),
+					},
+				}
+			}
+			return mvc.Response{
+				Object: map[string]interface{}{
+					"code": structs.HttpSuccess,
+					"msg":  structs.HttpSuccess.String(),
+				},
+			}
+		} else {
+			return mvc.Response{
+				Object: map[string]interface{}{
+					"code": structs.HttpUserPwdError,
+					"msg":  "原始密码输入有误，请重新输入",
+				},
+			}
+		}
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": structs.HttpUserExpired,
+			"msg":  structs.HttpUserExpired.String(),
+		},
+	}
 }
 
-func (u *userService) InsertOrReplaceUserFavor(userId int64, newFavor string) error {
-	tx, _ := db.Begin()
-	sql := fmt.Sprintf("REPLACE INTO tbl_user_favor(UserId, Favor) VALUES(?,?);")
-	stmt, err := tx.Prepare(sql)
-	if err != nil {
-		log.Error(err)
-		return err
+func (u *userService) PostLogoff(ctx iris.Context) mvc.Result {
+	var newUserReq struct {
+		UserId int64 `json:"user_id"`
 	}
-	_, err = stmt.Exec( userId, newFavor)
-	tx.Commit()
+	err := ctx.ReadJSON(&newUserReq)
 	if err != nil {
-		log.Error(err)
-		return err
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": structs.HttpJsonParseError,
+				"msg": structs.HttpJsonParseError.String(),
+			},
+		}
 	}
-	return nil
+
+	record := structs.UserOperatorRecord{
+		UserId:   newUserReq.UserId,
+		Ip:       exnet.ClientIP(ctx.Request()),
+		Operator: "logoff",
+	}
+	datamodels.AddUserOperatorRecord(record)
+
+	return mvc.Response{}
+}
+
+
+
+// PostLogin /api/user/login
+func (u *userService) PostLogin(ctx iris.Context) mvc.Result {
+	var newUserReq struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	err := ctx.ReadJSON(&newUserReq)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": structs.HttpJsonParseError,
+				"msg": structs.HttpJsonParseError.String(),
+			},
+		}
+	}
+	user, b := datamodels.CheckUser(newUserReq.Username, newUserReq.Password)
+	if user == nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": structs.HttpUserNoThisUserError,
+				"msg": structs.HttpUserNoThisUserError.String(),
+			},
+		}
+	}
+	if b {
+		token, _, err := middleware.GenerateToken(*user)
+		if err != nil {
+			return mvc.Response{
+				Object: map[string]interface{}{
+					"code": structs.HttpJwtTokenGenerateError,
+					"msg":  "服务器生成JWT错误",
+				},
+			}
+		}
+		//记录到操作表中
+		record := structs.UserOperatorRecord{
+			UserId:   user.Id,
+			Ip:       exnet.ClientIP(ctx.Request()),
+			Operator: "login",
+		}
+		datamodels.AddUserOperatorRecord(record)
+		//Authorization: Bearer $token
+		ver := config.GetInstance().GetSystemVer()
+		ctx.Header("Authorization", fmt.Sprintf("Bearer %s", token))
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": structs.HttpSuccess,
+				"msg":  structs.HttpSuccess.String(),
+				"user": map[string]interface{}{
+					"avatar": "",
+					"name": user.Username,
+					"ip": record.Ip,
+					"user_id": user.Id,
+					"isSuper": user.IsSuper,
+					"sysVer": ver,
+				},
+			},
+		}
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": structs.HttpUserNameOrPwdError,
+			"msg":  "密码错误",
+		},
+	}
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/kataras/iris/v12/middleware/jwt"
 	"strings"
 	"time"
-	"translate-server/datamodels"
+	"translate-server/structs"
 )
 
 /*
@@ -17,7 +17,7 @@ Documentation:
 // The "signatureSharedKey" is used for the HMAC(HS256) signature algorithm.
 var signatureSharedKey = []byte("sercrethatmaycontainch@r32length")
 
-func GenerateToken( user datamodels.User) (string, time.Time, error){
+func GenerateToken( user structs.User) (string, time.Time, error){
 	// Sign and generate compact form token.
 	age := jwt.MaxAge(24 * time.Hour)
 	expires := time.Now().Add(time.Hour * 24)
@@ -36,8 +36,8 @@ func CheckLoginMiddleware(ctx iris.Context) {
 	if len(split) < 2 {
 		ctx.JSON(
 			map[string]interface{}{
-				"code": datamodels.HttpUserNotLogin,
-				"msg": datamodels.HttpUserNotLogin.String(),
+				"code": structs.HttpUserNotLogin,
+				"msg": structs.HttpUserNotLogin.String(),
 			})
 		return
 	}
@@ -47,13 +47,13 @@ func CheckLoginMiddleware(ctx iris.Context) {
 	if err != nil {
 		ctx.JSON(
 			map[string]interface{}{
-			"code": datamodels.HttpUserExpired,
-			"msg": datamodels.HttpUserExpired.String(),
+			"code": structs.HttpUserExpired,
+			"msg": structs.HttpUserExpired.String(),
 		})
 		return
 	}
 
-	var user datamodels.User
+	var user structs.User
 	verifiedToken.Claims(&user)
 	//standardClaims := jwt.GetVerifiedToken(ctx).StandardClaims
 	//expiresAtString := standardClaims.ExpiresAt().Format(ctx.Application().ConfigurationReadOnly().GetTimeFormat())
@@ -63,8 +63,8 @@ func CheckLoginMiddleware(ctx iris.Context) {
 	//if  dbUser == nil{
 	//	ctx.JSON(
 	//		map[string]interface{}{
-	//			"code": datamodels.HttpUserNoThisUserError,
-	//			"msg": datamodels.HttpUserNoThisUserError.String(),
+	//			"code": structs.HttpUserNoThisUserError,
+	//			"msg": structs.HttpUserNoThisUserError.String(),
 	//		})
 	//	return
 	//}

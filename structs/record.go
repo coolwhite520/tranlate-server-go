@@ -1,6 +1,11 @@
-package datamodels
+package structs
 
 type TransStatus int64
+
+
+const UploadDir = "./data/uploads"
+const ExtractDir = "./data/extracts"
+const OutputDir = "./data/outputs"
 
 const (
 	TransNoRun TransStatus = iota
@@ -46,7 +51,8 @@ type Record struct {
 	OutputContent string      `json:"output_content"`
 	SrcLang       string      `json:"src_lang"`
 	DesLang       string      `json:"des_lang"`
-	FileName      string      `json:"file_name"`
+	FileName      string      `json:"file_name"`   // 去掉后缀名后的结果
+	FileExt       string      `json:"file_ext"`
 	DirRandId     string      `json:"dir_rand_id"`
 	State         TransStatus `json:"state"`
 	StateDescribe string      `json:"state_describe"`

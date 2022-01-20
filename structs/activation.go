@@ -1,4 +1,4 @@
-package datamodels
+package structs
 
 type SupportLang struct {
 	EnName string `json:"en_name"`

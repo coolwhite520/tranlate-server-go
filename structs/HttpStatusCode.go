@@ -1,4 +1,4 @@
-package datamodels
+package structs
 
 type HttpStatusCode int64
 

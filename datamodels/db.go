@@ -1,4 +1,4 @@
-package services
+package datamodels
 
 import (
 	"database/sql"
@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"time"
 	"translate-server/config"
-	"translate-server/datamodels"
+	"translate-server/structs"
 )
 
 var db *sql.DB
@@ -35,6 +35,7 @@ var SqlArr = []string{
 	   SrcLang TEXT,
 	   DesLang TEXT,
 	   FileName TEXT,
+       FileExt TEXT,
 	   DirRandId TEXT,
 	   State INTEGER,
 	   StateDescribe TEXT,
@@ -68,7 +69,6 @@ var SqlArr = []string{
 }
 
 func InitDb() {
-	service := NewUserService()
 	hostPort := "3310"
 	list, err := config.GetInstance().GetComponentList(false)
 	if err != nil {
@@ -80,7 +80,7 @@ func InitDb() {
 			break
 		}
 	}
-	dataSourceName := fmt.Sprintf("root:%s@tcp(%s:%s)/?charset=utf8&parseTime=True", datamodels.MysqlPassword, "127.0.0.1", hostPort)
+	dataSourceName := fmt.Sprintf("root:%s@tcp(%s:%s)/?charset=utf8&parseTime=True", structs.MysqlPassword, "127.0.0.1", hostPort)
 	for i:=0; i < 100; i++ {
 		time.Sleep(1 * time.Second)
 		db, err = sql.Open("mysql", dataSourceName)
@@ -96,30 +96,30 @@ func InitDb() {
 		break
 	}
 
-	count, err := service.QueryTableFieldCount("translate_db", "tbl_user")
+	count, err := QueryTableFieldCount("translate_db", "tbl_user")
 	if err != nil {
 		log.Error(err)
 	}
-	var user datamodels.User
+	var user structs.User
 	typeOfUser := reflect.TypeOf(user)
 	userFieldCount := typeOfUser.NumField()
 	if count != userFieldCount {
 		log.Info("OldUserTblFieldCount:", count," NewUserTblFieldCount:", userFieldCount)
-		err := service.DropDatabase("translate_db")
+		err := DropDatabase("translate_db")
 		if err != nil {
 			log.Error(err)
 		}
 	}
-	count, err = service.QueryTableFieldCount("translate_db", "tbl_record")
+	count, err = QueryTableFieldCount("translate_db", "tbl_record")
 	if err != nil {
 		log.Error(err)
 	}
-	var record datamodels.Record
+	var record structs.Record
 	typeOfRecord := reflect.TypeOf(record)
 	recordFieldCount := typeOfRecord.NumField()
 	if count != recordFieldCount {
 		log.Info("OldRecordTblFieldCount:", count," NewRecordTblFieldCount:", recordFieldCount)
-		err := service.DropDatabase("translate_db")
+		err := DropDatabase("translate_db")
 		if err != nil {
 			log.Error(err)
 		}
@@ -134,17 +134,17 @@ func InitDb() {
 
 	}
 	// 重新建立一个链接，链接到translate_db数据库，就不需要切换操作了
-	dataSourceName = fmt.Sprintf("root:%s@tcp(%s:%s)/translate_db?charset=utf8&parseTime=True", datamodels.MysqlPassword, "127.0.0.1", hostPort)
+	dataSourceName = fmt.Sprintf("root:%s@tcp(%s:%s)/translate_db?charset=utf8&parseTime=True", structs.MysqlPassword, "127.0.0.1", hostPort)
 	db, err = sql.Open("mysql", dataSourceName)
 	if err != nil {
 		log.Error(err)
 		panic(err)
 	}
 
-	users, _ := service.QueryAdminUsers()
+	users, _ := QueryAdminUsers()
 	if users == nil {
-		password, _ := datamodels.GeneratePassword("admin")
-		service.InsertUser(datamodels.User{
+		password, _ := structs.GeneratePassword("admin")
+		InsertUser(structs.User{
 			Username:       fmt.Sprintf("admin"),
 			HashedPassword: password,
 			IsSuper:        true,

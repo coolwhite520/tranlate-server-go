@@ -6,10 +6,10 @@ import (
 	"log"
 	"strings"
 	"translate-server/datamodels"
-	"translate-server/services"
+	"translate-server/structs"
 )
 
-func IsInWhiteList(ip string, records []datamodels.IpTableRecord) bool {
+func IsInWhiteList(ip string, records []structs.IpTableRecord) bool {
 	isInWhiteFlag := false
 	for _, v := range records {
 		if v.Type == "white" {
@@ -33,7 +33,7 @@ func IsInWhiteList(ip string, records []datamodels.IpTableRecord) bool {
 	return isInWhiteFlag
 }
 
-func IsInBlackList(ip string, records []datamodels.IpTableRecord) bool {
+func IsInBlackList(ip string, records []structs.IpTableRecord) bool {
 	for _, v := range records {
 		if v.Type == "black" {
 			arr := strings.Split(v.Ip, "-")
@@ -56,8 +56,7 @@ func IsInBlackList(ip string, records []datamodels.IpTableRecord) bool {
 
 func IpAccessMiddleware(ctx iris.Context) {
 	ipAddr := exnet.ClientIP(ctx.Request())
-	service := services.NewIpTableService()
-	tableType, err := service.GetIpTableType()
+	tableType, err := datamodels.GetIpTableType()
 	if err != nil {
 		log.Println(err)
 		ctx.Next()
@@ -67,7 +66,7 @@ func IpAccessMiddleware(ctx iris.Context) {
 		ctx.Next()
 		return
 	}
-	records, err := service.QueryRecords()
+	records, err :=  datamodels.QueryIpTblRecords()
 	if err != nil {
 		log.Println(err)
 		ctx.Next()
@@ -77,8 +76,8 @@ func IpAccessMiddleware(ctx iris.Context) {
 		if IsInBlackList(ipAddr, records) {
 			ctx.JSON(
 				map[string]interface{}{
-					"code": datamodels.HttpForbiddenIp,
-					"msg":  datamodels.HttpForbiddenIp.String(),
+					"code": structs.HttpForbiddenIp,
+					"msg":  structs.HttpForbiddenIp.String(),
 				})
 			return
 		}
@@ -89,8 +88,8 @@ func IpAccessMiddleware(ctx iris.Context) {
 		} else {
 			ctx.JSON(
 				map[string]interface{}{
-					"code": datamodels.HttpForbiddenIp,
-					"msg":  datamodels.HttpForbiddenIp.String(),
+					"code": structs.HttpForbiddenIp,
+					"msg":  structs.HttpForbiddenIp.String(),
 				})
 			return
 		}

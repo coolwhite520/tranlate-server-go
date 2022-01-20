@@ -1,4 +1,4 @@
-package datamodels
+package structs
 
 import (
 	"github.com/Unknwon/goconfig"

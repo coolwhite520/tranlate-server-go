@@ -1,4 +1,4 @@
-package datamodels
+package structs
 
 //IpTableRecord 黑白名单记录
 type IpTableRecord struct {

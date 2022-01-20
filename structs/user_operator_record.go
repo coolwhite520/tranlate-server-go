@@ -1,4 +1,4 @@
-package datamodels
+package structs
 
 // UserOperatorRecord 记录用户登录 登出等操作
 type UserOperatorRecord struct {

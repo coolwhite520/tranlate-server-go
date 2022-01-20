@@ -1,4 +1,4 @@
-package datamodels
+package structs
 
 const SystemVersion = "5.3.16"
 const MysqlPassword = "NB2Ffj!lPTe&yOm5"
