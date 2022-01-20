@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"github.com/kataras/iris/v12"
+	"translate-server/constant"
 	"translate-server/docker"
-	"translate-server/structs"
 )
 
 func IsSystemAvailable(ctx iris.Context) {
@@ -15,24 +15,24 @@ func IsSystemAvailable(ctx iris.Context) {
 		if  docker.GetInstance().GetStatus() == docker.InitializingStatus {
 			ctx.JSON(
 				map[string]interface{}{
-					"code": structs.HttpDockerInitializing,
-					"msg": structs.HttpDockerInitializing.String(),
+					"code":    constant.HttpDockerInitializing,
+					"msg":     constant.HttpDockerInitializing.String(),
 					"percent": docker.GetInstance().GetPercent(),
 				})
 			return
 		} else if docker.GetInstance().GetStatus() == docker.RepairingStatus{
 			ctx.JSON(
 				map[string]interface{}{
-					"code": structs.HttpDockerRepairing,
-					"msg": structs.HttpDockerRepairing.String(),
+					"code":    constant.HttpDockerRepairing,
+					"msg":     constant.HttpDockerRepairing.String(),
 					"percent": docker.GetInstance().GetPercent(),
 				})
 			return
 		} else {
 			ctx.JSON(
 				map[string]interface{}{
-					"code": structs.HttpDockerServiceException,
-					"msg": structs.HttpDockerServiceException.String(),
+					"code": constant.HttpDockerServiceException,
+					"msg":  constant.HttpDockerServiceException.String(),
 				})
 			return
 		}

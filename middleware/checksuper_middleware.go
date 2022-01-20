@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"github.com/kataras/iris/v12"
+	"translate-server/constant"
 	"translate-server/structs"
 )
 
@@ -13,7 +14,7 @@ func CheckSuperMiddleware(Ctx iris.Context) {
 		return
 	}
 	Ctx.JSON(map[string]interface{}{
-		"code":  structs.HttpUserForbidden,
-		"msg": structs.HttpUserForbidden.String(),
+		"code": constant.HttpUserForbidden,
+		"msg":  constant.HttpUserForbidden.String(),
 	})
 }

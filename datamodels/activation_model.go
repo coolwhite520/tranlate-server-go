@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"sync"
 	"syscall"
+	"translate-server/constant"
 	"translate-server/structs"
 	"translate-server/utils"
 )
@@ -67,7 +68,7 @@ func (a *activation) isIn(target string, strArray []structs.SupportLang) bool {
 
 func (a *activation) IsSupportLang(srcLang, desLang string) (bool, []structs.SupportLang) {
 	file, state := a.ParseKeystoreFile()
-	if state != structs.HttpSuccess {
+	if state != constant.HttpSuccess {
 		return false, file.SupportLangList
 	}
 	if !a.isIn(srcLang, file.SupportLangList) {
@@ -79,147 +80,147 @@ func (a *activation) IsSupportLang(srcLang, desLang string) (bool, []structs.Sup
 	return true, file.SupportLangList
 }
 
-func (a activation) GenerateKeystoreContent(activationInfo structs.Activation) (string, structs.HttpStatusCode) {
+func (a activation) GenerateKeystoreContent(activationInfo structs.Activation) (string, constant.HttpStatusCode) {
 	data, err := json.Marshal(activationInfo)
 	if err != nil {
 		log.Errorln(err)
-		return "", structs.HttpActivationGenerateError
+		return "", constant.HttpActivationGenerateError
 	}
 	v := utils.Md5V(activationInfo.Sn + AppID)
 	encrypt, err := utils.AesEncrypt(data, []byte(v))
 	if err != nil {
 		log.Errorln(err)
-		return "", structs.HttpActivationAESError
+		return "", constant.HttpActivationAESError
 	}
 	toString := base64.StdEncoding.EncodeToString(encrypt)
-	return toString, structs.HttpSuccess
+	return toString, constant.HttpSuccess
 }
 
 
-func (a *activation) GenerateKeystoreFileByContent(content string) structs.HttpStatusCode {
+func (a *activation) GenerateKeystoreFileByContent(content string) constant.HttpStatusCode {
 	ioutil.WriteFile(KeyStorePath, []byte(content), 0666)
-	return structs.HttpSuccess
+	return constant.HttpSuccess
 }
 
-func (a *activation) ParseKeystoreContent(content string) (*structs.Activation, structs.HttpStatusCode) {
+func (a *activation) ParseKeystoreContent(content string) (*structs.Activation, constant.HttpStatusCode) {
 	v := utils.Md5V(a.currentMachineId + AppID)
 	base64Decode, err := base64.StdEncoding.DecodeString(content)
 	if err != nil {
-		return nil, structs.HttpActivationInvalidateError
+		return nil, constant.HttpActivationInvalidateError
 	}
 	decrypt, err := utils.AesDecrypt(base64Decode, []byte(v))
 	if err != nil {
 		log.Errorln(err)
-		return nil, structs.HttpActivationInvalidateError
+		return nil, constant.HttpActivationInvalidateError
 	}
 	var activationInfo structs.Activation
 	err = json.Unmarshal(decrypt, &activationInfo)
 	if err != nil {
 		log.Errorln(err)
-		return nil, structs.HttpActivationInvalidateError
+		return nil, constant.HttpActivationInvalidateError
 	}
 	if activationInfo.Sn != a.currentMachineId {
-		return nil, structs.HttpActivationInvalidateError
+		return nil, constant.HttpActivationInvalidateError
 	}
-	return &activationInfo, structs.HttpSuccess
+	return &activationInfo, constant.HttpSuccess
 }
 
-func (a *activation) ParseKeystoreFile() (*structs.Activation, structs.HttpStatusCode) {
+func (a *activation) ParseKeystoreFile() (*structs.Activation, constant.HttpStatusCode) {
 	if utils.PathExists(KeyStorePath){
 		data, err := ioutil.ReadFile(KeyStorePath)
 		if err != nil {
 			log.Errorln(err)
-			return nil, structs.HttpActivationReadFileError
+			return nil, constant.HttpActivationReadFileError
 		}
 		return a.ParseKeystoreContent(string(data))
 	}
-	return nil, structs.HttpActivationNotFound
+	return nil, constant.HttpActivationNotFound
 }
 
-func (a *activation) GenerateExpiredFile(keystoreExpired structs.KeystoreExpired) structs.HttpStatusCode {
+func (a *activation) GenerateExpiredFile(keystoreExpired structs.KeystoreExpired) constant.HttpStatusCode {
 	data, err := json.Marshal(keystoreExpired)
 	if err != nil {
-		return structs.HttpActivationGenerateError
+		return constant.HttpActivationGenerateError
 	}
 	v := utils.Md5V(keystoreExpired.Sn + AppID)
 	encrypt, err := utils.AesEncrypt(data, []byte(v))
 	if err != nil {
-		return structs.HttpActivationAESError
+		return constant.HttpActivationAESError
 	}
 	content := base64.StdEncoding.EncodeToString(encrypt)
 	f, err := os.Create(a.expiredFilePath)
 	if err != nil {
 		log.Errorln(err)
-		return structs.HttpActivationGenerateError
+		return constant.HttpActivationGenerateError
 	}
 	defer f.Close()
 	// 非阻塞模式下，加共享锁
 	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_SH | syscall.LOCK_NB); err != nil {
 		log.Errorln(err)
-		return structs.HttpActivationGenerateError
+		return constant.HttpActivationGenerateError
 	}
 	_, err = f.WriteString(content)
 	if err != nil {
 		log.Errorln(err)
-		return structs.HttpActivationGenerateError
+		return constant.HttpActivationGenerateError
 	}
 	// 解锁
 	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_UN); err != nil {
 		log.Errorln(err)
-		return structs.HttpActivationGenerateError
+		return constant.HttpActivationGenerateError
 	}
 
-	return structs.HttpSuccess
+	return constant.HttpSuccess
 }
 
-func (a *activation) ParseExpiredContent(content string) (*structs.KeystoreExpired, structs.HttpStatusCode) {
+func (a *activation) ParseExpiredContent(content string) (*structs.KeystoreExpired, constant.HttpStatusCode) {
 	v := utils.Md5V(a.currentMachineId + AppID)
 	base64Decode, err := base64.StdEncoding.DecodeString(content)
 	if err != nil {
 		log.Errorln(err)
-		return nil, structs.HttpActivationInvalidateError
+		return nil, constant.HttpActivationInvalidateError
 	}
 	decrypt, err := utils.AesDecrypt(base64Decode, []byte(v))
 	if err != nil {
 		log.Errorln(err)
-		return nil, structs.HttpActivationInvalidateError
+		return nil, constant.HttpActivationInvalidateError
 	}
 	var expired structs.KeystoreExpired
 	err = json.Unmarshal(decrypt, &expired)
 	if err != nil {
 		log.Errorln(err)
-		return nil, structs.HttpActivationInvalidateError
+		return nil, constant.HttpActivationInvalidateError
 	}
 	if expired.Sn != a.currentMachineId {
-		return nil, structs.HttpActivationInvalidateError
+		return nil, constant.HttpActivationInvalidateError
 	}
-	return &expired, structs.HttpSuccess
+	return &expired, constant.HttpSuccess
 }
 
-func (a *activation) ParseExpiredFile() (*structs.KeystoreExpired, structs.HttpStatusCode) {
+func (a *activation) ParseExpiredFile() (*structs.KeystoreExpired, constant.HttpStatusCode) {
 	if utils.PathExists(a.expiredFilePath){
 		f, err := os.Open(a.expiredFilePath)
 		if err != nil {
 			log.Errorln(err)
-			return nil, structs.HttpActivationReadFileError
+			return nil, constant.HttpActivationReadFileError
 		}
 		defer f.Close()
 		// 非阻塞模式下，加共享锁
 		if err := syscall.Flock(int(f.Fd()), syscall.LOCK_SH | syscall.LOCK_NB); err != nil {
 			log.Errorln(err)
-			return nil, structs.HttpActivationReadFileError
+			return nil, constant.HttpActivationReadFileError
 		}
 		all, err := ioutil.ReadAll(f)
 		if err != nil {
 			log.Errorln(err)
-			return nil, structs.HttpActivationReadFileError
+			return nil, constant.HttpActivationReadFileError
 		}
 		// 解锁
 		if err := syscall.Flock(int(f.Fd()), syscall.LOCK_UN); err != nil {
 			log.Errorln(err)
-			return nil, structs.HttpActivationReadFileError
+			return nil, constant.HttpActivationReadFileError
 		}
 		return a.ParseExpiredContent(string(all))
 	}
-	return nil, structs.HttpActivationNotFound
+	return nil, constant.HttpActivationNotFound
 }

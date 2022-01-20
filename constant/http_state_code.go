@@ -1,9 +1,9 @@
-package structs
+package constant
 
 type HttpStatusCode int64
 
 const (
-	HttpSuccess HttpStatusCode =  200
+	HttpSuccess            HttpStatusCode =  200
 	HttpDockerInitializing HttpStatusCode = -1000 - iota + 1
 	HttpDockerRepairing
 	HttpDockerServiceException

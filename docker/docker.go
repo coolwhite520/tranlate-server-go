@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"sync"
 	"translate-server/config"
+	"translate-server/constant"
 	"translate-server/datamodels"
 	"translate-server/structs"
 )
@@ -58,7 +59,7 @@ func (o *Operator) StartDockers() error {
 	}
 	o.percent = 0
 	for _,v := range compList {
-		if state == structs.HttpSuccess || v.DefaultRun {
+		if state == constant.HttpSuccess || v.DefaultRun {
 			err := o.LoadImage(v)
 			if err != nil {
 				o.status = ErrorStatus

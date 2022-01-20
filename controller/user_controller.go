@@ -15,31 +15,31 @@ type UserController struct {
 func (u *UserController) BeforeActivation(b mvc.BeforeActivation) {
 	//b.Router().Use(middleware.CheckActivationMiddleware, middleware.IsSystemAvailable)
 	// 只有登录以后，才可以进行密码修改
-	b.Handle("POST", "/password", "PostPassword", middleware.CheckLoginMiddleware)
-	b.Handle("POST", "/logoff", "PostLogoff", middleware.CheckLoginMiddleware)
-	b.Handle("GET", "/favor", "GetQueryUserFavor", middleware.CheckLoginMiddleware)
-	b.Handle("POST", "/favor", "PostAddUserFavor", middleware.CheckLoginMiddleware)
+	b.Handle("POST", "/password", "ModifyPassword", middleware.CheckLoginMiddleware)
+	b.Handle("POST", "/logoff", "Logoff", middleware.CheckLoginMiddleware)
+	b.Handle("GET", "/favor", "QueryUserFavor", middleware.CheckLoginMiddleware)
+	b.Handle("POST", "/favor", "AddUserFavor", middleware.CheckLoginMiddleware)
 }
 
-func (u *UserController) PostAddUserFavor() mvc.Result {
-	return u.UserService.PostAddUserFavor(u.Ctx)
+func (u *UserController) AddUserFavor() mvc.Result {
+	return u.UserService.AddUserFavor(u.Ctx)
 }
 
-func (u *UserController) GetQueryUserFavor() mvc.Result {
-	return u.UserService.GetQueryUserFavor(u.Ctx)
+func (u *UserController) QueryUserFavor() mvc.Result {
+	return u.UserService.QueryUserFavor(u.Ctx)
 }
 
-// PostPassword /api/user/password
-func (u *UserController) PostPassword() mvc.Result {
-	return u.UserService.PostPassword(u.Ctx)
+// ModifyPassword /api/user/password
+func (u *UserController) ModifyPassword() mvc.Result {
+	return u.UserService.ModifyPassword(u.Ctx)
 }
 
-func (u *UserController) PostLogoff() mvc.Result {
-	return u.UserService.PostLogoff(u.Ctx)
+func (u *UserController) Logoff() mvc.Result {
+	return u.UserService.Logoff(u.Ctx)
 }
 
-// PostLogin /api/user/login
-func (u *UserController) PostLogin() mvc.Result {
-	return u.UserService.PostLogin(u.Ctx)
+// Login /api/user/login
+func (u *UserController) Login() mvc.Result {
+	return u.UserService.Login(u.Ctx)
 }
 

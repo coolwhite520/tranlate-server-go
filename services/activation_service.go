@@ -5,6 +5,7 @@ import (
 	"github.com/kataras/iris/v12/mvc"
 	log "github.com/sirupsen/logrus"
 	"strings"
+	"translate-server/constant"
 	"translate-server/datamodels"
 	"translate-server/docker"
 	"translate-server/structs"
@@ -20,7 +21,6 @@ func NewActivationService() ActivationService {
 }
 
 type activationService struct {
-
 }
 
 func (a *activationService) Activation(ctx iris.Context) mvc.Result {
@@ -32,15 +32,15 @@ func (a *activationService) Activation(ctx iris.Context) mvc.Result {
 	if err  != nil{
 		return mvc.Response{
 			Object: map[string]interface{} {
-				"code": structs.HttpJsonParseError,
-				"msg": structs.HttpJsonParseError.String(),
+				"code": constant.HttpJsonParseError,
+				"msg":  constant.HttpJsonParseError.String(),
 			},
 		}
 	}
 	jsonObj.Keystore = strings.Trim(jsonObj.Keystore, " ")
 	model := datamodels.NewActivationModel()
 	activationInfo, state := model.ParseKeystoreContent(jsonObj.Keystore)
-	if state != structs.HttpSuccess {
+	if state != constant.HttpSuccess {
 		return mvc.Response{
 			Object: map[string]interface{} {
 				"code": state,
@@ -49,7 +49,7 @@ func (a *activationService) Activation(ctx iris.Context) mvc.Result {
 		}
 	}
 	state = model.GenerateKeystoreFileByContent(jsonObj.Keystore)
-	if state != structs.HttpSuccess {
+	if state != constant.HttpSuccess {
 		return mvc.Response{
 			Object: map[string]interface{} {
 				"code": state,
@@ -64,7 +64,7 @@ func (a *activationService) Activation(ctx iris.Context) mvc.Result {
 	expired.CreatedAt = activationInfo.CreatedAt
 
 	expiredInfo, state := model.ParseExpiredFile()
-	if state == structs.HttpActivationNotFound {
+	if state == constant.HttpActivationNotFound {
 		state = model.GenerateExpiredFile(expired)
 		return mvc.Response{
 			Object: map[string]interface{} {

@@ -1,4 +1,4 @@
-package structs
+package constant
 
 import (
 	"github.com/Unknwon/goconfig"

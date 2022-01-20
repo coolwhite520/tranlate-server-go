@@ -8,11 +8,11 @@ import (
 	"os"
 	"time"
 	"translate-server/config"
+	"translate-server/constant"
 	"translate-server/datamodels"
 	"translate-server/docker"
 	_ "translate-server/logext"
 	"translate-server/server"
-	"translate-server/structs"
 	_ "translate-server/structs"
 )
 
@@ -46,7 +46,7 @@ func main() {
 			// 每隔10分钟，减少一下剩余可用时间
 			time.Sleep(time.Minute * 10 )
 			expiredInfo, state:= model.ParseExpiredFile()
-			if state == structs.HttpSuccess {
+			if state == constant.HttpSuccess {
 				expiredInfo.LeftTimeSpan = expiredInfo.LeftTimeSpan - 10 * 60
 				model.GenerateExpiredFile(*expiredInfo)
 			}

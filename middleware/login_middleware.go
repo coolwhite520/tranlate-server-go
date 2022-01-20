@@ -5,6 +5,7 @@ import (
 	"github.com/kataras/iris/v12/middleware/jwt"
 	"strings"
 	"time"
+	"translate-server/constant"
 	"translate-server/structs"
 )
 
@@ -36,8 +37,8 @@ func CheckLoginMiddleware(ctx iris.Context) {
 	if len(split) < 2 {
 		ctx.JSON(
 			map[string]interface{}{
-				"code": structs.HttpUserNotLogin,
-				"msg": structs.HttpUserNotLogin.String(),
+				"code": constant.HttpUserNotLogin,
+				"msg":  constant.HttpUserNotLogin.String(),
 			})
 		return
 	}
@@ -47,8 +48,8 @@ func CheckLoginMiddleware(ctx iris.Context) {
 	if err != nil {
 		ctx.JSON(
 			map[string]interface{}{
-			"code": structs.HttpUserExpired,
-			"msg": structs.HttpUserExpired.String(),
+			"code": constant.HttpUserExpired,
+			"msg":  constant.HttpUserExpired.String(),
 		})
 		return
 	}

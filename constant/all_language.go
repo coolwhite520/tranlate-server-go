@@ -1,8 +1,9 @@
-package structs
+package constant
 
 import (
 	"github.com/Unknwon/goconfig"
 	log "github.com/sirupsen/logrus"
+	"translate-server/structs"
 )
 
 const contentAll = `
@@ -119,7 +120,7 @@ Yoruba=约鲁巴语
 Chinese=中文(简体)
 Zulu=祖鲁语
 `
-var AllLanguageList []SupportLang
+var AllLanguageList []structs.SupportLang
 
 func init() {
 	cfg, err := goconfig.LoadFromData([]byte(contentAll))
@@ -133,7 +134,7 @@ func init() {
 		panic(err)
 	}
 	for k, v := range section{
-		AllLanguageList = append(AllLanguageList, SupportLang{
+		AllLanguageList = append(AllLanguageList, structs.SupportLang{
 			EnName: k,
 			CnName: v,
 		})

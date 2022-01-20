@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"translate-server/config"
+	"translate-server/constant"
 	"translate-server/datamodels"
 	"translate-server/docker"
 	"translate-server/middleware"
@@ -56,15 +57,15 @@ func (a *adminService) GetAllTransRecords(ctx iris.Context) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  structs.HttpMysqlQueryError,
-				"msg": err.Error(),
+				"code": constant.HttpMysqlQueryError,
+				"msg":  err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code":  structs.HttpSuccess,
-			"msg": structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 			"data": map[string]interface{}{
 				"list": records,
 				"total": total,
@@ -79,15 +80,15 @@ func (a *adminService) Get() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  structs.HttpMysqlQueryError,
-				"msg": err.Error(),
+				"code": constant.HttpMysqlQueryError,
+				"msg":  err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code":  structs.HttpSuccess,
-			"msg": structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 			"data": users,
 		},
 	}
@@ -99,15 +100,15 @@ func (a *adminService) GetUserOperatorRecords(offset, count int) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  structs.HttpMysqlQueryError,
-				"msg": err.Error(),
+				"code": constant.HttpMysqlQueryError,
+				"msg":  err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code":  structs.HttpSuccess,
-			"msg": structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 			"data": map[string]interface{}{
 				"list": records,
 				"total": total,
@@ -122,15 +123,15 @@ func (a *adminService) DeleteUserOperatorById(Id int64) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  structs.HttpMysqlDelError,
-				"msg": err.Error(),
+				"code": constant.HttpMysqlDelError,
+				"msg":  err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code":  structs.HttpSuccess,
-			"msg": structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 		},
 	}
 }
@@ -141,15 +142,15 @@ func (a *adminService) DeleteAllUserOperator() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  structs.HttpMysqlDelError,
-				"msg": err.Error(),
+				"code": constant.HttpMysqlDelError,
+				"msg":  err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code":  structs.HttpSuccess,
-			"msg": structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 		},
 	}
 }
@@ -159,15 +160,15 @@ func (a *adminService) DeleteById(Id int64) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  structs.HttpMysqlDelError,
-				"msg": err.Error(),
+				"code": constant.HttpMysqlDelError,
+				"msg":  err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code":  structs.HttpSuccess,
-			"msg": structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 		},
 	}
 }
@@ -183,8 +184,8 @@ func (a *adminService) Post(ctx iris.Context) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  structs.HttpMysqlAddError,
-				"msg": err.Error(),
+				"code": constant.HttpMysqlAddError,
+				"msg":  err.Error(),
 			},
 		}
 	}
@@ -194,16 +195,16 @@ func (a *adminService) Post(ctx iris.Context) mvc.Result {
 	if len(newUserReq.Username) < 5 {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  structs.HttpMysqlAddError,
-				"msg": "用户名必须大于4位",
+				"code": constant.HttpMysqlAddError,
+				"msg":  "用户名必须大于4位",
 			},
 		}
 	}
 	if len(newUserReq.Password) < 5 {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  structs.HttpMysqlAddError,
-				"msg": "密码必须大于4位",
+				"code": constant.HttpMysqlAddError,
+				"msg":  "密码必须大于4位",
 			},
 		}
 	}
@@ -218,15 +219,15 @@ func (a *adminService) Post(ctx iris.Context) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  structs.HttpUsersExistSameUserNameError,
-				"msg": "存在相同的用户名",
+				"code": constant.HttpUsersExistSameUserNameError,
+				"msg":  "存在相同的用户名",
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code":  structs.HttpSuccess,
-			"msg": structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 		},
 	}
 }
@@ -241,8 +242,8 @@ func (a *adminService) PostMark(ctx iris.Context) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpJsonParseError,
-				"msg": structs.HttpJsonParseError.String(),
+				"code": constant.HttpJsonParseError,
+				"msg":  constant.HttpJsonParseError.String(),
 			},
 		}
 	}
@@ -253,15 +254,15 @@ func (a *adminService) PostMark(ctx iris.Context) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpUserUpdatePwdError,
+				"code": constant.HttpUserUpdatePwdError,
 				"msg":  err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": structs.HttpSuccess,
-			"msg":  structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 		},
 	}
 }
@@ -276,16 +277,16 @@ func (a *adminService) PostPassword(ctx iris.Context) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpJsonParseError,
-				"msg": structs.HttpJsonParseError.String(),
+				"code": constant.HttpJsonParseError,
+				"msg":  constant.HttpJsonParseError.String(),
 			},
 		}
 	}
 	if len(newUserReq.NewPassword) < 5 {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code":  structs.HttpMysqlAddError,
-				"msg": "密码必须大于4位",
+				"code": constant.HttpMysqlAddError,
+				"msg":  "密码必须大于4位",
 			},
 		}
 	}
@@ -296,15 +297,15 @@ func (a *adminService) PostPassword(ctx iris.Context) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpUserUpdatePwdError,
+				"code": constant.HttpUserUpdatePwdError,
 				"msg":  err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": structs.HttpSuccess,
-			"msg":  structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 		},
 	}
 }
@@ -317,16 +318,16 @@ func (a *adminService) PostRepair() mvc.Result{
 		docker.GetInstance().SetStatus(docker.NormalStatus)
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpDockerServiceException,
-				"msg":  structs.HttpDockerServiceException.String(),
+				"code": constant.HttpDockerServiceException,
+				"msg":  constant.HttpDockerServiceException.String(),
 			},
 		}
 	}
 	docker.GetInstance().SetStatus(docker.NormalStatus)
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": structs.HttpSuccess,
-			"msg":  structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 		},
 	}
 }
@@ -364,15 +365,15 @@ func (a *adminService) GetComponents() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpFileNotFoundError,
+				"code": constant.HttpFileNotFoundError,
 				"msg":  err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": structs.HttpSuccess,
-			"msg": structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 			"data": retList,
 		},
 	}
@@ -402,7 +403,7 @@ func (a *adminService) PostUploadUpgradeFile(ctx iris.Context) mvc.Result{
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpUploadFileError,
+				"code": constant.HttpUploadFileError,
 				"msg":  err.Error(),
 			},
 		}
@@ -412,7 +413,7 @@ func (a *adminService) PostUploadUpgradeFile(ctx iris.Context) mvc.Result{
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpUploadFileError,
+				"code": constant.HttpUploadFileError,
 				"msg":  err.Error(),
 			},
 		}
@@ -420,7 +421,7 @@ func (a *adminService) PostUploadUpgradeFile(ctx iris.Context) mvc.Result{
 	if fileMd5 != md5 {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpUploadFileError,
+				"code": constant.HttpUploadFileError,
 				"msg":  "md5不一致，请重新上传",
 			},
 		}
@@ -436,7 +437,7 @@ func (a *adminService) PostUploadUpgradeFile(ctx iris.Context) mvc.Result{
 			if err != nil {
 				return mvc.Response{
 					Object: map[string]interface{}{
-						"code": structs.HttpUploadFileError,
+						"code": constant.HttpUploadFileError,
 						"msg":  "系统错误，文件copy错误",
 					},
 				}
@@ -450,7 +451,7 @@ func (a *adminService) PostUploadUpgradeFile(ctx iris.Context) mvc.Result{
 		if err != nil {
 			return mvc.Response{
 				Object: map[string]interface{}{
-					"code": structs.HttpUploadFileError,
+					"code": constant.HttpUploadFileError,
 					"msg":  "系统错误，解压文件失败" + err.Error(),
 				},
 			}
@@ -471,7 +472,7 @@ func (a *adminService) PostUploadUpgradeFile(ctx iris.Context) mvc.Result{
 		if err != nil {
 			return mvc.Response{
 				Object: map[string]interface{}{
-					"code": structs.HttpUploadFileError,
+					"code": constant.HttpUploadFileError,
 					"msg":  "系统错误，解析配置失败",
 				},
 			}
@@ -483,7 +484,7 @@ func (a *adminService) PostUploadUpgradeFile(ctx iris.Context) mvc.Result{
 			if err != nil {
 				return mvc.Response{
 					Object: map[string]interface{}{
-						"code": structs.HttpUploadFileError,
+						"code": constant.HttpUploadFileError,
 						"msg":  "系统错误，删除已有组件失败",
 					},
 				}
@@ -493,23 +494,23 @@ func (a *adminService) PostUploadUpgradeFile(ctx iris.Context) mvc.Result{
 		if err != nil {
 			return mvc.Response{
 				Object: map[string]interface{}{
-					"code": structs.HttpUploadFileError,
+					"code": constant.HttpUploadFileError,
 					"msg":  "系统错误，移动目录失败",
 				},
 			}
 		}
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpSuccess,
-				"msg":  structs.HttpSuccess.String(),
+				"code": constant.HttpSuccess,
+				"msg":  constant.HttpSuccess.String(),
 				"data": compInfo,
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": structs.HttpSuccess,
-			"msg":  structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 		},
 	}
 }
@@ -526,8 +527,8 @@ func (a *adminService) PostUpgradeComponent(ctx iris.Context) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpJsonParseError,
-				"msg": structs.HttpJsonParseError.String(),
+				"code": constant.HttpJsonParseError,
+				"msg":  constant.HttpJsonParseError.String(),
 			},
 		}
 	}
@@ -537,8 +538,8 @@ func (a *adminService) PostUpgradeComponent(ctx iris.Context) mvc.Result {
 		log.Errorln(err)
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpDockerServiceException,
-				"msg": err.Error(),
+				"code": constant.HttpDockerServiceException,
+				"msg":  err.Error(),
 			},
 		}
 	}
@@ -548,8 +549,8 @@ func (a *adminService) PostUpgradeComponent(ctx iris.Context) mvc.Result {
 		log.Errorln(err)
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpDockerServiceException,
-				"msg": err.Error(),
+				"code": constant.HttpDockerServiceException,
+				"msg":  err.Error(),
 			},
 		}
 	}
@@ -560,8 +561,8 @@ func (a *adminService) PostUpgradeComponent(ctx iris.Context) mvc.Result {
 		log.Errorln(err)
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpFileOpenError,
-				"msg": err.Error(),
+				"code": constant.HttpFileOpenError,
+				"msg":  err.Error(),
 			},
 		}
 	}
@@ -571,8 +572,8 @@ func (a *adminService) PostUpgradeComponent(ctx iris.Context) mvc.Result {
 		log.Errorln(err)
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpDockerServiceException,
-				"msg": err.Error(),
+				"code": constant.HttpDockerServiceException,
+				"msg":  err.Error(),
 			},
 		}
 	}
@@ -582,8 +583,8 @@ func (a *adminService) PostUpgradeComponent(ctx iris.Context) mvc.Result {
 		log.Errorln(err)
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpDockerServiceException,
-				"msg": err.Error(),
+				"code": constant.HttpDockerServiceException,
+				"msg":  err.Error(),
 			},
 		}
 	}
@@ -600,8 +601,8 @@ func (a *adminService) PostUpgradeComponent(ctx iris.Context) mvc.Result {
 	// 可能需要手动重启，不知道为什么golang的cmd调用不好使
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": structs.HttpSuccess,
-			"msg": structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 		},
 	}
 }
@@ -612,8 +613,8 @@ func (a *adminService) PostAddIpTableRecord(ctx iris.Context) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpJsonParseError,
-				"msg": structs.HttpJsonParseError.String(),
+				"code": constant.HttpJsonParseError,
+				"msg":  constant.HttpJsonParseError.String(),
 			},
 		}
 	}
@@ -621,15 +622,15 @@ func (a *adminService) PostAddIpTableRecord(ctx iris.Context) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpMysqlAddError,
-				"msg": err.Error(),
+				"code": constant.HttpMysqlAddError,
+				"msg":  err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": structs.HttpSuccess,
-			"msg": structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 		},
 	}
 }
@@ -638,15 +639,15 @@ func (a *adminService) DeleteIpTableRecord(Id int64) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpMysqlDelError,
-				"msg": err.Error(),
+				"code": constant.HttpMysqlDelError,
+				"msg":  err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": structs.HttpSuccess,
-			"msg": structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 		},
 	}
 }
@@ -655,15 +656,15 @@ func (a *adminService) GetIpTableRecords() mvc.Result  {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpMysqlQueryError,
-				"msg": err.Error(),
+				"code": constant.HttpMysqlQueryError,
+				"msg":  err.Error(),
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": structs.HttpSuccess,
-			"msg": structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 			"data": records,
 		},
 	}
@@ -674,15 +675,15 @@ func (a *adminService) GetIpTableType() mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpJsonParseError,
-				"msg": err,
+				"code": constant.HttpJsonParseError,
+				"msg":  err,
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": structs.HttpSuccess,
-			"msg": structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 			"data": tableType,
 		},
 	}
@@ -696,8 +697,8 @@ func (a *adminService) PostSetIpTableType(ctx iris.Context) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpJsonParseError,
-				"msg": structs.HttpJsonParseError.String(),
+				"code": constant.HttpJsonParseError,
+				"msg":  constant.HttpJsonParseError.String(),
 			},
 		}
 	}
@@ -708,8 +709,8 @@ func (a *adminService) PostSetIpTableType(ctx iris.Context) mvc.Result {
 		if err != nil {
 			return mvc.Response{
 				Object: map[string]interface{}{
-					"code": structs.HttpMysqlQueryError,
-					"msg": err,
+					"code": constant.HttpMysqlQueryError,
+					"msg":  err,
 				},
 			}
 		}
@@ -721,8 +722,8 @@ func (a *adminService) PostSetIpTableType(ctx iris.Context) mvc.Result {
 			if err != nil {
 				return mvc.Response{
 					Object: map[string]interface{}{
-						"code": structs.HttpMysqlAddError,
-						"msg": err,
+						"code": constant.HttpMysqlAddError,
+						"msg":  err,
 					},
 				}
 			}
@@ -732,15 +733,15 @@ func (a *adminService) PostSetIpTableType(ctx iris.Context) mvc.Result {
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
-				"code": structs.HttpJsonParseError,
-				"msg": err,
+				"code": constant.HttpJsonParseError,
+				"msg":  err,
 			},
 		}
 	}
 	return mvc.Response{
 		Object: map[string]interface{}{
-			"code": structs.HttpSuccess,
-			"msg": structs.HttpSuccess.String(),
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
 		},
 	}
 }

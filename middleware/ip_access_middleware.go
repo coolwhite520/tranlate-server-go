@@ -5,6 +5,7 @@ import (
 	"github.com/thinkeridea/go-extend/exnet"
 	"log"
 	"strings"
+	"translate-server/constant"
 	"translate-server/datamodels"
 	"translate-server/structs"
 )
@@ -76,8 +77,8 @@ func IpAccessMiddleware(ctx iris.Context) {
 		if IsInBlackList(ipAddr, records) {
 			ctx.JSON(
 				map[string]interface{}{
-					"code": structs.HttpForbiddenIp,
-					"msg":  structs.HttpForbiddenIp.String(),
+					"code": constant.HttpForbiddenIp,
+					"msg":  constant.HttpForbiddenIp.String(),
 				})
 			return
 		}
@@ -88,8 +89,8 @@ func IpAccessMiddleware(ctx iris.Context) {
 		} else {
 			ctx.JSON(
 				map[string]interface{}{
-					"code": structs.HttpForbiddenIp,
-					"msg":  structs.HttpForbiddenIp.String(),
+					"code": constant.HttpForbiddenIp,
+					"msg":  constant.HttpForbiddenIp.String(),
 				})
 			return
 		}
