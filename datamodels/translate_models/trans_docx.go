@@ -20,7 +20,6 @@ func translateDocxFile(srcLang string, desLang string, record *structs.Record) {
 	record.State = structs.TransExtractSuccess
 	record.StateDescribe = structs.TransExtractSuccess.String()
 	datamodels.UpdateRecord(record)
-
 	doc, err := document.Open(srcFilePathName)
 	if err != nil {
 		log.Errorln(err)

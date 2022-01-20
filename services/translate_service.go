@@ -7,7 +7,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
+	"time"
 	"translate-server/constant"
 	"translate-server/datamodels"
 	"translate-server/datamodels/translate_models"
@@ -153,7 +155,66 @@ func (t *translateService) PostTranslateContent(ctx iris.Context) mvc.Result {
 
 
 func (t *translateService) PostUpload(ctx iris.Context) mvc.Result {
-	list, err := translate_models.ReceiveFiles(ctx)
+	var records []structs.Record
+	u := ctx.Values().Get("User")
+	user, _ := (u).(structs.User)
+	// 创建用户的子目录
+	nowUnixMicro := time.Now().UnixMicro()
+	DirRandId := fmt.Sprintf("%d", nowUnixMicro)
+	userUploadDir := fmt.Sprintf("%s/%d/%s", structs.UploadDir, user.Id, DirRandId)
+	if !utils.PathExists(userUploadDir) {
+		err := os.MkdirAll(userUploadDir, os.ModePerm)
+		if err != nil {
+			return mvc.Response{
+				Object: map[string]interface{}{
+					"code": constant.HttpUploadFileError,
+					"msg":  err.Error(),
+				},
+			}
+		}
+	}
+	files, _, err := ctx.UploadFormFiles(userUploadDir)
+	if err != nil {
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": constant.HttpUploadFileError,
+				"msg":  err.Error(),
+			},
+		}
+	}
+	for _, v := range files {
+		filePath := fmt.Sprintf("%s/%s", userUploadDir, v.Filename)
+		contentType, _ := utils.GetFileContentType(filePath)
+		fileExt := filepath.Ext(v.Filename)
+		fileName := v.Filename[0:len(v.Filename) - len(fileExt)]
+		var TransType int
+		var OutFileExt string
+		if strings.Contains(contentType, "image/") {
+			TransType = 1
+			OutFileExt = ".docx"
+		} else {
+			TransType = 2
+			OutFileExt = fileExt
+		}
+
+		record := structs.Record{
+			ContentType:   contentType,
+			TransType:     TransType,
+			FileName:      fileName,
+			FileExt:       fileExt,
+			DirRandId:     DirRandId,
+			CreateAt:      time.Now().Format("2006-01-02 15:04:05"),
+			State:         structs.TransNoRun,
+			StateDescribe: structs.TransNoRun.String(),
+			UserId:        user.Id,
+			OutFileExt:    OutFileExt,
+		}
+		err = datamodels.InsertRecord(&record)
+		if err != nil {
+			continue
+		}
+		records = append(records, record)
+	}
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
@@ -166,7 +227,7 @@ func (t *translateService) PostUpload(ctx iris.Context) mvc.Result {
 		Object: map[string]interface{}{
 			"code": constant.HttpSuccess,
 			"msg":  constant.HttpSuccess.String(),
-			"data": list,
+			"data": records,
 		},
 	}
 }
