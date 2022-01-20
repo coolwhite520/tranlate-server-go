@@ -22,23 +22,23 @@ import (
 
 type AdminService interface {
 	GetAllTransRecords(ctx iris.Context) mvc.Result
-	Get() mvc.Result
+	GetUserList() mvc.Result
 	GetUserOperatorRecords(offset, count int) mvc.Result
 	DeleteUserOperatorById(Id int64) mvc.Result
 	DeleteAllUserOperator() mvc.Result
 	DeleteById(Id int64) mvc.Result
-	Post(ctx iris.Context) mvc.Result
-	PostMark(ctx iris.Context) mvc.Result
-	PostPassword(ctx iris.Context) mvc.Result
-	PostRepair() mvc.Result
+	AddNewUser(ctx iris.Context) mvc.Result
+	ModifyMark(ctx iris.Context) mvc.Result
+	ModifyPassword(ctx iris.Context) mvc.Result
+	Repair() mvc.Result
 	GetComponents() mvc.Result
-	PostUploadUpgradeFile(ctx iris.Context) mvc.Result
-	PostUpgradeComponent(ctx iris.Context) mvc.Result
+	UploadUpgradeFile(ctx iris.Context) mvc.Result
+	UpgradeComponent(ctx iris.Context) mvc.Result
 	DeleteIpTableRecord(Id int64) mvc.Result
-	PostAddIpTableRecord(ctx iris.Context) mvc.Result
+	AddIpTableRecord(ctx iris.Context) mvc.Result
 	GetIpTableType() mvc.Result
 	GetIpTableRecords() mvc.Result
-	PostSetIpTableType(ctx iris.Context) mvc.Result
+	SetIpTableType(ctx iris.Context) mvc.Result
 }
 
 func  NewAdminService() AdminService {
@@ -74,8 +74,8 @@ func (a *adminService) GetAllTransRecords(ctx iris.Context) mvc.Result {
 	}
 }
 
-// Get 获取用户列表
-func (a *adminService) Get() mvc.Result {
+// GetUserList 获取用户列表
+func (a *adminService) GetUserList() mvc.Result {
 	users, err := datamodels.QueryAllUsers()
 	if err != nil {
 		return mvc.Response{
@@ -174,7 +174,7 @@ func (a *adminService) DeleteById(Id int64) mvc.Result {
 }
 
 // Post 新增用户
-func (a *adminService) Post(ctx iris.Context) mvc.Result {
+func (a *adminService) AddNewUser(ctx iris.Context) mvc.Result {
 	var newUserReq struct{
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -232,8 +232,8 @@ func (a *adminService) Post(ctx iris.Context) mvc.Result {
 	}
 }
 
-// PostMark 修改个人备注
-func (a *adminService) PostMark(ctx iris.Context) mvc.Result {
+// ModifyMark 修改个人备注
+func (a *adminService) ModifyMark(ctx iris.Context) mvc.Result {
 	var newUserReq struct {
 		Id    int64 `json:"id"`
 		Mark    string `json:"mark"`
@@ -268,7 +268,7 @@ func (a *adminService) PostMark(ctx iris.Context) mvc.Result {
 }
 
 // PostPassword 修改密码
-func (a *adminService) PostPassword(ctx iris.Context) mvc.Result {
+func (a *adminService) ModifyPassword(ctx iris.Context) mvc.Result {
 	var newUserReq struct {
 		Id    int64 `json:"id"`
 		NewPassword    string `json:"new_password"`
@@ -310,8 +310,8 @@ func (a *adminService) PostPassword(ctx iris.Context) mvc.Result {
 	}
 }
 
-//PostRepair 管理员调用系统修复
-func (a *adminService) PostRepair() mvc.Result{
+//Repair 管理员调用系统修复
+func (a *adminService) Repair() mvc.Result{
 	docker.GetInstance().SetStatus(docker.RepairingStatus)
 	err := docker.GetInstance().StartDockers()
 	if err != nil {
@@ -379,8 +379,8 @@ func (a *adminService) GetComponents() mvc.Result {
 	}
 }
 
-// PostUploadUpgradeFile 升级文件必须是zip格式，压缩包里面包含一个同名的 xxx.dat（记录升级文件的信息也就是ComponentInfo结构） 和一个xxx.tar 文件
-func (a *adminService) PostUploadUpgradeFile(ctx iris.Context) mvc.Result{
+// UploadUpgradeFile 升级文件必须是zip格式，压缩包里面包含一个同名的 xxx.dat（记录升级文件的信息也就是ComponentInfo结构） 和一个xxx.tar 文件
+func (a *adminService) UploadUpgradeFile(ctx iris.Context) mvc.Result{
 	fileName := ctx.FormValue("fileName")
 	fileMd5 := ctx.FormValue("fileMd5")
 	order, _ := strconv.Atoi(ctx.FormValue("order"))
@@ -516,8 +516,8 @@ func (a *adminService) PostUploadUpgradeFile(ctx iris.Context) mvc.Result{
 }
 
 
-// PostUpgradeComponent 进行组件的升级
-func (a *adminService) PostUpgradeComponent(ctx iris.Context) mvc.Result {
+// UpgradeComponent 进行组件的升级
+func (a *adminService) UpgradeComponent(ctx iris.Context) mvc.Result {
 	var newUserReq struct {
 		Name          string `json:"name"`
 		CurrentVersion string `json:"current_version"`
@@ -607,7 +607,7 @@ func (a *adminService) PostUpgradeComponent(ctx iris.Context) mvc.Result {
 	}
 }
 
-func (a *adminService) PostAddIpTableRecord(ctx iris.Context) mvc.Result {
+func (a *adminService) AddIpTableRecord(ctx iris.Context) mvc.Result {
 	var record structs.IpTableRecord
 	err := ctx.ReadJSON(&record)
 	if err != nil {
@@ -689,7 +689,7 @@ func (a *adminService) GetIpTableType() mvc.Result {
 	}
 }
 
-func (a *adminService) PostSetIpTableType(ctx iris.Context) mvc.Result {
+func (a *adminService) SetIpTableType(ctx iris.Context) mvc.Result {
 	var record struct{
 		Type string `json:"type"`
 	}

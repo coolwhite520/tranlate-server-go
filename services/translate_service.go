@@ -137,7 +137,7 @@ func (t *translateService) PostTranslateContent(ctx iris.Context) mvc.Result {
 	}
 	a := ctx.Values().Get("User")
 	user, _ := (a).(structs.User)
-	outputContent, err := t.TranslateContent(req.SrcLang, req.DesLang, content, user.Id)
+	outputContent, err := t.translateContent(req.SrcLang, req.DesLang, content, user.Id)
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
@@ -427,9 +427,8 @@ func (t *translateService) receiveFiles(Ctx iris.Context) ([]structs.Record, err
 	return records, nil
 }
 
-//?##################################//?##################################//?##################################//?##################################//?##################################//?##################################
 
-func (t *translateService) Translate(srcLang string, desLang string, content string) (string, string, error) {
+func (t *translateService) translate(srcLang string, desLang string, content string) (string, string, error) {
 	sha1 := utils.Sha1(fmt.Sprintf("%s&%s&%s", content, srcLang, desLang))
 	records, err := datamodels.QueryTranslateRecordsBySha1(sha1)
 	if err != nil {
@@ -454,8 +453,8 @@ func (t *translateService) Translate(srcLang string, desLang string, content str
 }
 
 // TranslateContent 同步翻译，用户界面卡住，直接返回翻译结果
-func (t *translateService) TranslateContent(srcLang string, desLang string, content string, userId int64) (string, error) {
-	transContent, sha1, err := t.Translate(srcLang, desLang, content)
+func (t *translateService) translateContent(srcLang string, desLang string, content string, userId int64) (string, error) {
+	transContent, sha1, err := t.translate(srcLang, desLang, content)
 	if err != nil {
 		return "", err
 	}
@@ -492,32 +491,8 @@ func (t *translateService) translateDocxFile(srcLang string, desLang string, rec
 	srcDir := fmt.Sprintf("%s/%d/%s", structs.UploadDir, record.UserId, record.DirRandId)
 	translatedDir := fmt.Sprintf("%s/%d/%s", structs.OutputDir, record.UserId, record.DirRandId)
 	srcFilePathName := fmt.Sprintf("%s/%s%s", srcDir, record.FileName, record.FileExt)
-	// 开始抽取数据
 	record.SrcLang = srcLang
 	record.DesLang = desLang
-	record.State = structs.TransBeginExtract
-	record.StateDescribe = structs.TransBeginExtract.String()
-	err := datamodels.UpdateRecord(record)
-	if err != nil {
-		return
-	}
-	content, err := t.extractContent(record.TransType, srcFilePathName, srcLang)
-	if err != nil {
-		record.State = structs.TransExtractFailed
-		record.StateDescribe = structs.TransExtractFailed.String()
-		record.Error = err.Error()
-		datamodels.UpdateRecord(record)
-		return
-	}
-	content = strings.Trim(content, " ")
-	// 抽取成功，但是是空数据，那么就退出了
-	if len(content) == 0 {
-		record.State = structs.TransExtractSuccessContentEmpty
-		record.StateDescribe = structs.TransExtractSuccessContentEmpty.String()
-		datamodels.UpdateRecord(record)
-		return
-	}
-	// 更新状态
 	record.State = structs.TransExtractSuccess
 	record.StateDescribe = structs.TransExtractSuccess.String()
 	datamodels.UpdateRecord(record)
@@ -538,7 +513,7 @@ func (t *translateService) translateDocxFile(srcLang string, desLang string, rec
 				p.RemoveRun(r)
 			}
 			run := p.AddRun()
-			transContent, _, _ := t.Translate(srcLang, desLang, content)
+			transContent, _, _ := t.translate(srcLang, desLang, content)
 			run.AddText(transContent)
 		}
 	}
@@ -554,7 +529,7 @@ func (t *translateService) translateDocxFile(srcLang string, desLang string, rec
 					p.RemoveRun(r)
 				}
 				run := p.AddRun()
-				transContent, _, _ := t.Translate(srcLang, desLang, content)
+				transContent, _, _ := t.translate(srcLang, desLang, content)
 				run.AddText(transContent)
 			}
 		}
@@ -573,7 +548,7 @@ func (t *translateService) translateDocxFile(srcLang string, desLang string, rec
 							p.RemoveRun(r)
 						}
 						run := p.AddRun()
-						transContent, _, _ := t.Translate(srcLang, desLang, content)
+						transContent, _, _ := t.translate(srcLang, desLang, content)
 						run.AddText(transContent)
 					}
 				}
@@ -594,7 +569,7 @@ func (t *translateService) translateDocxFile(srcLang string, desLang string, rec
 					p.RemoveRun(r)
 				}
 				run := p.AddRun()
-				transContent, _, _ := t.Translate(srcLang, desLang, content)
+				transContent, _, _ := t.translate(srcLang, desLang, content)
 				run.AddText(transContent)
 			}
 		}
@@ -629,7 +604,6 @@ func (t *translateService) translateCommonFile(srcLang string, desLang string, r
 	srcDir := fmt.Sprintf("%s/%d/%s", structs.UploadDir, record.UserId, record.DirRandId)
 	extractDir := fmt.Sprintf("%s/%d/%s", structs.ExtractDir, record.UserId, record.DirRandId)
 	translatedDir := fmt.Sprintf("%s/%d/%s", structs.OutputDir, record.UserId, record.DirRandId)
-
 	srcFilePathName := fmt.Sprintf("%s/%s%s", srcDir, record.FileName, record.FileExt)
 	// 开始抽取数据
 	record.SrcLang = srcLang
@@ -686,7 +660,7 @@ func (t *translateService) translateCommonFile(srcLang string, desLang string, r
 	if err != nil {
 		return
 	}
-	transContent, sha1, err := t.Translate(srcLang, desLang, content)
+	transContent, sha1, err := t.translate(srcLang, desLang, content)
 	if err != nil {
 		record.State = structs.TransTranslateFailed
 		record.StateDescribe = structs.TransTranslateFailed.String()
@@ -701,7 +675,16 @@ func (t *translateService) translateCommonFile(srcLang string, desLang string, r
 		}
 	}
 	desFile = fmt.Sprintf("%s/%s%s", translatedDir, record.FileName, record.OutFileExt)
-	err = ioutil.WriteFile(desFile, []byte(transContent), 0666)
+	doc := document.New()
+	paragraph := doc.AddParagraph()
+	run := paragraph.AddRun()
+	run.AddText(transContent)
+	err = doc.SaveToFile(desFile)
+	if err != nil {
+		log.Errorln(err)
+		return
+	}
+
 	if err != nil {
 		return
 	}
@@ -717,6 +700,7 @@ func (t *translateService) translateCommonFile(srcLang string, desLang string, r
 
 // translateFile 异步翻译，将结果写入到数据库中
 func (t *translateService) translateFile(srcLang string, desLang string, recordId int64, userId int64) {
+	// 先查找是否存在相同的翻译结果
 	record, _ := datamodels.QueryTranslateRecordByIdAndUserId(recordId, userId)
 	if record == nil {
 		log.Error("查询不到RecordId为", recordId, "的记录")
@@ -753,6 +737,8 @@ func (t *translateService) translateFile(srcLang string, desLang string, recordI
 			return
 		}
 		ioutil.WriteFile(desFile, all, 0666)
+		record.SrcLang = srcLang
+		record.DesLang = desLang
 		record.Sha1 = sha1
 		record.State = structs.TransTranslateSuccess
 		record.StateDescribe = structs.TransTranslateSuccess.String()
@@ -764,38 +750,13 @@ func (t *translateService) translateFile(srcLang string, desLang string, recordI
 		}
 		return
 	}
-
+	// 没有找到相同的文件和 srclang 、desLang的时候
 	ext := filepath.Ext(record.FileExt)
 	if strings.ToLower(ext) == ".docx" {
 		t.translateDocxFile(srcLang, desLang, record)
 	} else {
 		t.translateCommonFile(srcLang, desLang, record)
 	}
-}
-
-func (t *translateService) DeleteTranslateRecordById(id int64, userId int64, bDelFile bool) error {
-	byId, err2 := datamodels.QueryTranslateRecordByIdAndUserId(id, userId)
-	if err2 != nil {
-		return err2
-	}
-	if bDelFile && byId.ContentType != "" {
-		srcDir := fmt.Sprintf("%s/%d/%s", structs.UploadDir, userId, byId.DirRandId)
-		extractDir := fmt.Sprintf("%s/%d/%s", structs.ExtractDir, userId, byId.DirRandId)
-		translatedDir := fmt.Sprintf("%s/%d/%s", structs.OutputDir, userId, byId.DirRandId)
-		srcFilePathName := path.Join(srcDir, byId.FileName+byId.FileExt)
-		middleFilePathName := path.Join(extractDir, byId.FileName+byId.FileExt)
-		desFilePathName := path.Join(translatedDir, byId.FileName+byId.FileExt)
-		if utils.PathExists(srcFilePathName) {
-			os.Remove(srcFilePathName)
-		}
-		if utils.PathExists(middleFilePathName) {
-			os.Remove(middleFilePathName)
-		}
-		if utils.PathExists(desFilePathName) {
-			os.Remove(desFilePathName)
-		}
-	}
-	return datamodels.DeleteTranslateRecordById(id, userId)
 }
 
 func (t *translateService) ocrDetectedImage(filePath string, srcLang string) (string, error) {

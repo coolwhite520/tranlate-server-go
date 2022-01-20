@@ -8,8 +8,8 @@ import (
 )
 
 type TranslateController struct {
-	Ctx               iris.Context
-	TranslateService  services.TranslateService
+	Ctx              iris.Context
+	TranslateService services.TranslateService
 }
 
 func (t *TranslateController) BeforeActivation(b mvc.BeforeActivation) {
@@ -17,15 +17,15 @@ func (t *TranslateController) BeforeActivation(b mvc.BeforeActivation) {
 		middleware.CheckActivationMiddleware,
 		middleware.IsSystemAvailable,
 		middleware.FileLimiterMiddleware)
-	b.Handle("GET", "/lang", "GetLangList")              // 获取支持的语言列表
-	b.Handle("GET", "/allLang", "GetAllLangList")              // 获取支持的语言列表
-	b.Handle("GET", "/records", "GetAllRecords")         // 获取所有的翻译记录
-	b.Handle("GET", "/records/{type: uint64}/{offset: uint64}/{count: uint64}", "GetRecordsByType")         // 获取所有的翻译记录
-	b.Handle("POST", "/upload", "PostUpload")            // 文件上传
-	b.Handle("POST", "/content", "PostTranslateContent") // 文本翻译
-	b.Handle("POST", "/file", "PostTranslateFile")       // 执行文件翻译
-	b.Handle("POST", "/delete", "PostDeleteRecord")      // 删除某一条记录
-	b.Handle("POST", "/down", "PostDownFile")            // 下载文件
+	b.Handle("GET", "/lang", "GetLangList")                                                         // 获取支持的语言列表
+	b.Handle("GET", "/allLang", "GetAllLangList")                                                   // 获取支持的语言列表
+	b.Handle("GET", "/records", "GetAllRecords")                                                    // 获取所有的翻译记录
+	b.Handle("GET", "/records/{type: uint64}/{offset: uint64}/{count: uint64}", "GetRecordsByType") // 获取所有的翻译记录
+	b.Handle("POST", "/upload", "PostUpload")                                                       // 文件上传
+	b.Handle("POST", "/content", "PostTranslateContent")                                            // 文本翻译
+	b.Handle("POST", "/file", "PostTranslateFile")                                                  // 执行文件翻译
+	b.Handle("POST", "/delete", "PostDeleteRecord")                                                 // 删除某一条记录
+	b.Handle("POST", "/down", "PostDownFile")                                                       // 下载文件
 }
 
 // GetLangList 获取支持的语言
@@ -67,6 +67,7 @@ func (t *TranslateController) GetAllRecords() mvc.Result {
 func (t *TranslateController) GetRecordsByType() mvc.Result {
 	return t.TranslateService.GetRecordsByType(t.Ctx)
 }
+
 //PostDeleteRecord 删除翻译记录
 func (t *TranslateController) PostDeleteRecord() mvc.Result {
 	return t.TranslateService.PostDeleteRecord(t.Ctx)
