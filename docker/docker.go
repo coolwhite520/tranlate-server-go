@@ -234,6 +234,25 @@ func (o *Operator) StartContainer(img structs.ComponentInfo) error {
 			// 将mongodb中的数据挂载到本地
 			hostConfig.Binds = []string {b,b2}
 		}
+		if img.ImageName == "redis" {
+			dataDir, err := filepath.Abs("./redis_db/db")
+			if err != nil {
+				return err
+			}
+			dataConfigDir, err := filepath.Abs("./redis_db/conf.d")
+			if err != nil {
+				return err
+			}
+			containerDataDir := "/data"
+			containerConfigDir := "/usr/local/etc/redis"
+			config.Volumes = map[string]struct{}{
+				containerDataDir: {},
+				containerConfigDir: {},
+			}
+			b := fmt.Sprintf("%s:%s", dataDir, containerDataDir)
+			b2 := fmt.Sprintf("%s:%s", dataConfigDir, containerConfigDir)
+			hostConfig.Binds = []string {b, b2}
+		}
 		create, err := o.cli.ContainerCreate(context.Background(), config, hostConfig, &network.NetworkingConfig{}, nil, "")
 		if err != nil {
 			return err

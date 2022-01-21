@@ -1,16 +1,16 @@
 package translate_models
 
 import (
-	"baliance.com/gooxml/presentation"
+	"baliance.com/gooxml/spreadsheet"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"os"
+	"strings"
 	"translate-server/datamodels"
 	"translate-server/structs"
 	"translate-server/utils"
 )
 
-func translatePptxFile(srcLang string, desLang string, record *structs.Record) {
+func translateXlsxFile(srcLang string, desLang string, record *structs.Record) {
 	srcDir := fmt.Sprintf("%s/%d/%s", structs.UploadDir, record.UserId, record.DirRandId)
 	translatedDir := fmt.Sprintf("%s/%d/%s", structs.OutputDir, record.UserId, record.DirRandId)
 	srcFilePathName := fmt.Sprintf("%s/%s%s", srcDir, record.FileName, record.FileExt)
@@ -19,20 +19,29 @@ func translatePptxFile(srcLang string, desLang string, record *structs.Record) {
 	record.State = structs.TransExtractSuccess
 	record.StateDescribe = structs.TransExtractSuccess.String()
 	datamodels.UpdateRecord(record)
-	ppt, err := presentation.Open(srcFilePathName)
-	if err != nil {
-		log.Errorln(err)
-		return
-	}
-
+	xlsx, err := spreadsheet.Open(srcFilePathName)
 	if !utils.PathExists(translatedDir) {
 		err := os.MkdirAll(translatedDir, os.ModePerm)
 		if err != nil {
 			return
 		}
 	}
+	sheets := xlsx.Sheets()
+	for _, s := range sheets {
+		rows := s.Rows()
+		for _, r := range rows {
+			for _,c := range r.Cells(){
+				if !c.IsEmpty() {
+					content := c.GetString()
+					content = strings.Trim(content, " ")
+					transContent, _, _ := translate(srcLang, desLang, content)
+					c.SetString(transContent)
+				}
+			}
+		}
+	}
 	desFile := fmt.Sprintf("%s/%s%s", translatedDir, record.FileName, record.OutFileExt)
-	err = ppt.SaveToFile(desFile)
+	err = xlsx.SaveToFile(desFile)
 	if err != nil {
 		return
 	}
@@ -49,3 +58,4 @@ func translatePptxFile(srcLang string, desLang string, record *structs.Record) {
 	record.Error = ""
 	datamodels.UpdateRecord(record)
 }
+

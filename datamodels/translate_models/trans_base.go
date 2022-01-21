@@ -2,6 +2,8 @@ package translate_models
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
+	"time"
 	"translate-server/datamodels"
 	"translate-server/rpc"
 	"translate-server/utils"
@@ -9,24 +11,18 @@ import (
 
 func translate(srcLang string, desLang string, content string) (string, string, error) {
 	sha1 := utils.Sha1(fmt.Sprintf("%s&%s&%s", content, srcLang, desLang))
-	records, err := datamodels.QueryTranslateRecordsBySha1(sha1)
-	if err != nil {
-		return "", "", err
-	}
-	var transContent string
-	for _, v := range records {
-		if v.SrcLang == srcLang && v.DesLang == desLang {
-			if v.TransType == 0 {
-				transContent = v.OutputContent
-				break
-			}
-		}
+	transContent := datamodels.GetRedisString(sha1)
+	var err error
+	if len(transContent) > 0 {
+		return transContent, sha1, nil
 	}
 	if len(transContent) == 0 {
 		transContent, err = rpc.PyTranslate(srcLang, desLang, content)
 		if err != nil {
+			log.Errorln(err)
 			return "", "", err
 		}
+		datamodels.SetRedisString(sha1, transContent, time.Hour * 24)
 	}
 	return transContent, sha1, nil
 }

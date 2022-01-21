@@ -70,6 +70,8 @@ func TranslateFile(srcLang string, desLang string, recordId int64, userId int64)
 		translateDocxFile(srcLang, desLang, record)
 	}else if strings.ToLower(ext) == ".pptx" {
 		translatePptxFile(srcLang, desLang, record)
+	} else if strings.ToLower(ext) == ".xlsx" {
+		translateXlsxFile(srcLang, desLang, record)
 	} else {
 		translateCommonFile(srcLang, desLang, record)
 	}
