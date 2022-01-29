@@ -14,7 +14,8 @@ var instance *ConfigureLoader
 var once sync.Once
 
 //const proxyUrl = "127.0.0.1"
-const ProxyUrl = "192.168.3.32"   // 方便远程调试
+//const ProxyUrl = "192.168.3.32"   // 方便远程调试
+const ProxyUrl = "192.168.50.114"   // 方便远程调试
 
 
 type ConfigureLoader struct {

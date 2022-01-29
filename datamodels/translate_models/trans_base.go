@@ -4,8 +4,8 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"time"
+	"translate-server/apis"
 	"translate-server/datamodels"
-	"translate-server/rpc"
 	"translate-server/utils"
 )
 
@@ -17,7 +17,7 @@ func translate(srcLang string, desLang string, content string) (string, string, 
 		return transContent, sha1, nil
 	}
 	if len(transContent) == 0 {
-		transContent, err = rpc.PyTranslate(srcLang, desLang, content)
+		transContent, err = apis.PyTranslate(srcLang, desLang, content)
 		if err != nil {
 			log.Errorln(err)
 			return "", "", err

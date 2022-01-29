@@ -7,9 +7,9 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"translate-server/apis"
 	"translate-server/constant"
 	"translate-server/datamodels"
-	"translate-server/rpc"
 	"translate-server/structs"
 	"translate-server/utils"
 )
@@ -121,11 +121,11 @@ func ocrDetectedImage(filePath string, srcLang string) (string, error) {
 			break
 		}
 	}
-	return rpc.OcrParseFile(filePath, ocrType)
+	return apis.OcrParseFile(filePath, ocrType)
 }
 
 func tikaDetectedText(filePath string) (string, error) {
-	return rpc.TikaParseFile(filePath)
+	return apis.TikaParseFile(filePath)
 }
 
 func extractContent(TransType int, filePath string, srcLang string) (string, error) {

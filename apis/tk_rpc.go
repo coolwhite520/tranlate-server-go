@@ -1,12 +1,12 @@
-package rpc
+package apis
 
 import (
 	"context"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"translate-server/apis/mytika"
 	"translate-server/config"
-	"translate-server/rpc/mytika"
 )
 
 
