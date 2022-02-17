@@ -17,7 +17,7 @@ const (
 	RedisDb       = 0
 )
 
-func init() {
+func InitRedis() {
 	options := redis.Options{
 		Network:            RedisNetwork,
 		Addr:               fmt.Sprintf("%s:%s", RedisHost, RedisPort),

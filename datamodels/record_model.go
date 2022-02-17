@@ -19,11 +19,14 @@ var RecordTableFieldList = []string{
 	"FileName",
 	"FileExt",
 	"DirRandId",
+	"Progress",
 	"State",
 	"StateDescribe",
 	"Error",
 	"UserId",
 	"OutFileExt",
+	"StartAt",
+	"EndAt",
 }
 
 func DeleteTranslateRecordById(id int64, userId int64) error {
@@ -66,11 +69,14 @@ func QueryTranslateRecordsBySha1(sha1str string) ([]structs.Record, error) {
 			&record.FileName,
 			&record.FileExt,
 			&record.DirRandId,
+			&record.Progress,
 			&record.State,
 			&record.StateDescribe,
 			&record.Error,
 			&record.UserId,
 			&record.OutFileExt,
+			&record.StartAt,
+			&record.EndAt,
 			&tt)
 		if err != nil {
 			return nil, err
@@ -97,11 +103,14 @@ func QueryTranslateRecordById(id int64) (*structs.Record, error) {
 		&record.FileName,
 		&record.FileExt,
 		&record.DirRandId,
+		&record.Progress,
 		&record.State,
 		&record.StateDescribe,
 		&record.Error,
 		&record.UserId,
 		&record.OutFileExt,
+		&record.StartAt,
+		&record.EndAt,
 		&tt)
 	if err != nil {
 		return nil, err
@@ -126,11 +135,14 @@ func QueryTranslateRecordByIdAndUserId(id int64, userId int64) (*structs.Record,
 		&record.FileName,
 		&record.FileExt,
 		&record.DirRandId,
+		&record.Progress,
 		&record.State,
 		&record.StateDescribe,
 		&record.Error,
 		&record.UserId,
 		&record.OutFileExt,
+		&record.StartAt,
+		&record.EndAt,
 		&tt)
 	if err != nil {
 		return nil, err
@@ -147,7 +159,6 @@ func QueryTranslateRecordsByUserIdAndType(userId int64, transType int, offset in
 		log.Error(err)
 		return 0, nil, err
 	}
-
 	sql := fmt.Sprintf("SELECT * FROM tbl_record where UserId=? and TransType=? order by CreateAt DESC limit %d,%d", offset, count)
 	rows, err := db.Query(sql, userId, transType)
 	if err != nil {
@@ -170,11 +181,14 @@ func QueryTranslateRecordsByUserIdAndType(userId int64, transType int, offset in
 			&record.FileName,
 			&record.FileExt,
 			&record.DirRandId,
+			&record.Progress,
 			&record.State,
 			&record.StateDescribe,
 			&record.Error,
 			&record.UserId,
 			&record.OutFileExt,
+			&record.StartAt,
+			&record.EndAt,
 			&tt)
 		if err != nil {
 			return 0, nil, err
@@ -217,11 +231,14 @@ func QueryTranslateFileRecordsByUserId(userId int64, offset int, count int) (int
 			&record.FileName,
 			&record.FileExt,
 			&record.DirRandId,
+			&record.Progress,
 			&record.State,
 			&record.StateDescribe,
 			&record.Error,
 			&record.UserId,
 			&record.OutFileExt,
+			&record.StartAt,
+			&record.EndAt,
 			&tt)
 		if err != nil {
 			return 0, nil, err
@@ -263,11 +280,14 @@ func QueryTranslateRecords(offset int, count int) (int, []structs.RecordEx, erro
 			&record.FileName,
 			&record.FileExt,
 			&record.DirRandId,
+			&record.Progress,
 			&record.State,
 			&record.StateDescribe,
 			&record.Error,
 			&record.UserId,
 			&record.OutFileExt,
+			&record.StartAt,
+			&record.EndAt,
 			&tt,
 			&record.UserName,
 		)
@@ -275,7 +295,6 @@ func QueryTranslateRecords(offset int, count int) (int, []structs.RecordEx, erro
 			return 0, nil, err
 		}
 		record.CreateAt = tt.Local().Format("2006-01-02 15:04:05")
-
 		records = append(records, record)
 	}
 	return total, records, nil
@@ -304,11 +323,14 @@ func QueryTranslateRecordsByUserId(userId int64) ([]structs.Record, error) {
 			&record.FileName,
 			&record.FileExt,
 			&record.DirRandId,
+			&record.Progress,
 			&record.State,
 			&record.StateDescribe,
 			&record.Error,
 			&record.UserId,
 			&record.OutFileExt,
+			&record.StartAt,
+			&record.EndAt,
 			&tt)
 		if err != nil {
 			return nil, err
@@ -319,7 +341,28 @@ func QueryTranslateRecordsByUserId(userId int64) ([]structs.Record, error) {
 	return records, nil
 }
 
-func UpdateRecord(record *structs.Record) error {
+
+func UpdateRecordProgress(Id int64, Progress int) {
+	tx, _ := db.Begin()
+	sql := fmt.Sprintf("UPDATE tbl_record set Progress=? where Id=?;")
+	stmt, err := tx.Prepare(sql)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	_, err = stmt.Exec(
+		Progress,
+		Id,
+	)
+	tx.Commit()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	return
+}
+
+func UpdateRecord(record *structs.Record)  {
 	var q []string
 	for _, _ = range RecordTableFieldList {
 		q = append(q, "?")
@@ -331,7 +374,7 @@ func UpdateRecord(record *structs.Record) error {
 	stmt, err := tx.Prepare(sql)
 	if err != nil {
 		log.Error(err)
-		return err
+		return
 	}
 	_, err = stmt.Exec(
 		record.Id,
@@ -345,18 +388,21 @@ func UpdateRecord(record *structs.Record) error {
 		record.FileName,
 		record.FileExt,
 		record.DirRandId,
+		record.Progress,
 		record.State,
 		record.StateDescribe,
 		record.Error,
 		record.UserId,
 		record.OutFileExt,
+		record.StartAt,
+		record.EndAt,
 	)
 	tx.Commit()
 	if err != nil {
 		log.Error(err)
-		return err
+		return
 	}
-	return nil
+	return
 }
 
 func InsertRecord(record *structs.Record) error {
@@ -384,11 +430,14 @@ func InsertRecord(record *structs.Record) error {
 		record.FileName,
 		record.FileExt,
 		record.DirRandId,
+		record.Progress,
 		record.State,
 		record.StateDescribe,
 		record.Error,
 		record.UserId,
 		record.OutFileExt,
+		record.StartAt,
+		record.EndAt,
 	)
 	tx.Commit()
 	if err != nil {

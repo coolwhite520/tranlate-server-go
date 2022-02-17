@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 	"translate-server/datamodels"
 	"translate-server/structs"
 	"translate-server/utils"
@@ -56,23 +57,51 @@ func TranslateFile(srcLang string, desLang string, recordId int64, userId int64)
 		record.Sha1 = sha1
 		record.State = structs.TransTranslateSuccess
 		record.StateDescribe = structs.TransTranslateSuccess.String()
-		record.Error = ""
-		err = datamodels.UpdateRecord(record)
-		if err != nil {
-			log.Errorln(err)
-			return
-		}
+		record.Progress = 100
+		record.StartAt = time.Now().Format("2006-01-02 15:04:05")
+		record.EndAt = time.Now().Format("2006-01-02 15:04:05")
+		datamodels.UpdateRecord(record)
 		return
 	}
+	// 更新初始状态
+	record.State = structs.TransBeginTranslate
+	record.StateDescribe = structs.TransBeginTranslate.String()
+	record.SrcLang = srcLang
+	record.DesLang = desLang
+	record.Progress = 0
+	record.StartAt = time.Now().Format("2006-01-02 15:04:05")
+	datamodels.UpdateRecord(record)
+
 	// 没有找到相同的文件和 srclang 、desLang的时候
 	ext := filepath.Ext(record.FileExt)
 	if strings.ToLower(ext) == ".docx" {
-		translateDocxFile(srcLang, desLang, record)
+		err = translateDocxFile(srcLang, desLang, record)
 	}else if strings.ToLower(ext) == ".pptx" {
-		translatePptxFile(srcLang, desLang, record)
+		err = translatePptxFile(srcLang, desLang, record)
+	} else if strings.ToLower(ext) == ".pdf" {
+		err = translatePdfFile(srcLang, desLang, record)
 	} else if strings.ToLower(ext) == ".xlsx" {
-		translateXlsxFile(srcLang, desLang, record)
+		err = translateXlsxFile(srcLang, desLang, record)
 	} else {
 		translateCommonFile(srcLang, desLang, record)
 	}
+
+	// 更新结束时间
+	record.EndAt = time.Now().Format("2006-01-02 15:04:05")
+	datamodels.UpdateRecord(record)
+
+	// 统一处理err
+	if err != nil {
+		log.Errorln(err)
+		record.Error = err.Error()
+		record.State = structs.TransTranslateFailed
+		record.StateDescribe = structs.TransTranslateFailed.String()
+		datamodels.UpdateRecord(record)
+	} else {
+		record.State = structs.TransTranslateSuccess
+		record.StateDescribe = structs.TransTranslateSuccess.String()
+		record.Progress = 100
+		datamodels.UpdateRecord(record)
+	}
+
 }

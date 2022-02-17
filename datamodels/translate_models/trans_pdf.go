@@ -3,90 +3,31 @@ package translate_models
 import (
 	"baliance.com/gooxml/document"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"strings"
+	"translate-server/apis"
 	"translate-server/datamodels"
 	"translate-server/structs"
 	"translate-server/utils"
 )
 
-func calculateDocTotalProgress(srcFilePathName string) (int, error) {
-	sum := 0
-	doc, err := document.Open(srcFilePathName)
-	if err != nil {
-		log.Errorln(err)
-		return 0, err
-	}
-	paragraphs := doc.Paragraphs()
-	for _, p := range paragraphs {
-		var content string
-		for _, r := range p.Runs() {
-			content += r.Text()
-		}
-		if len(strings.Trim(content, " ")) > 0 {
-			for _, r := range p.Runs() {
-				p.RemoveRun(r)
-			}
-			sum ++
-		}
-	}
-	headers := doc.Headers()
-	for _, h := range headers {
-		for _, p := range h.Paragraphs() {
-			var content string
-			for _, r := range p.Runs() {
-				content += r.Text()
-			}
-			if len(strings.Trim(content, " ")) > 0 {
-				sum++
-			}
-		}
-	}
-	tables := doc.Tables()
-	for _, tal := range tables {
-		for _, r := range tal.Rows() {
-			for _, c := range r.Cells() {
-				for _, p := range c.Paragraphs() {
-					var content string
-					for _, r := range p.Runs() {
-						content += r.Text()
-					}
-					if len(strings.Trim(content, " ")) > 0 {
-						sum++
-					}
-				}
-
-			}
-		}
-	}
-	footers := doc.Footers()
-	for _, f := range footers {
-		for _, p := range f.Paragraphs() {
-			var content string
-			for _, r := range p.Runs() {
-				content += r.Text()
-			}
-			if len(strings.Trim(content, " ")) > 0 {
-				sum ++
-			}
-		}
-	}
-	return sum, nil
-}
-
-func translateDocxFile(srcLang string, desLang string, record *structs.Record) error {
+func translatePdfFile(srcLang string, desLang string, record *structs.Record) error {
 	srcDir := fmt.Sprintf("%s/%d/%s", structs.UploadDir, record.UserId, record.DirRandId)
 	translatedDir := fmt.Sprintf("%s/%d/%s", structs.OutputDir, record.UserId, record.DirRandId)
 	srcFilePathName := fmt.Sprintf("%s/%s%s", srcDir, record.FileName, record.FileExt)
-
-	totalProgress, err := calculateDocTotalProgress(srcFilePathName)
+	srcFilePathNameDocx := fmt.Sprintf("%s/%s%s", srcDir, record.FileName, ".docx")
+	// pdf转换为word
+	err := apis.PyConvertSpecialFile(srcFilePathName, srcFilePathNameDocx, "p2d")
+	if err != nil {
+		return err
+	}
+	totalProgress, err := calculateDocTotalProgress(srcFilePathNameDocx)
 	if err != nil {
 		return err
 	}
 	currentProgress := 0
 	percent := 0
-	doc, err := document.Open(srcFilePathName)
+	doc, err := document.Open(srcFilePathNameDocx)
 	if err != nil {
 		return err
 	}

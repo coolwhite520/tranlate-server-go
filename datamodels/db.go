@@ -37,11 +37,14 @@ var SqlArr = []string{
 	   FileName TEXT,
        FileExt TEXT,
 	   DirRandId TEXT,
+       Progress INTEGER,
 	   State INTEGER,
 	   StateDescribe TEXT,
 	   Error TEXT,
 	   UserId INTEGER,
        OutFileExt TEXT,
+       StartAt TEXT, 
+       EndAt TEXT,
 	   CreateAt DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
 	   INDEX(Sha1),
 	   PRIMARY KEY (Id)
@@ -68,7 +71,7 @@ var SqlArr = []string{
 	)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,
 }
 
-func InitDb() {
+func InitMysql() {
 	hostPort := "3310"
 	list, err := config.GetInstance().GetComponentList(false)
 	if err != nil {

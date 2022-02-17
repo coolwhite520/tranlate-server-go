@@ -32,7 +32,8 @@ func init()  {
 		panic(err)
 	}
 	docker.GetInstance().SetStatus(docker.NormalStatus)
-	datamodels.InitDb()
+	datamodels.InitMysql()
+	datamodels.InitRedis()
 	err = config.InitConfigIniFile()
 	if err != nil {
 		panic(err)

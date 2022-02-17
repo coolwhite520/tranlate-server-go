@@ -194,16 +194,25 @@ func (t *translateService) PostUpload(ctx iris.Context) mvc.Result {
 			OutFileExt = ".docx"
 		} else {
 			TransType = 2
-			OutFileExt = fileExt
+			//文档类别的文件仅仅保留格式的类型为docx 、pptx 、 xlsx 、 eml
+			if strings.ToLower(fileExt) == ".docx" {
+				OutFileExt = ".docx"
+			} else if strings.ToLower(fileExt) == ".pptx" {
+				OutFileExt = ".pptx"
+			} else if strings.ToLower(fileExt) == ".xlsx" {
+				OutFileExt = ".xlsx"
+			} else if strings.ToLower(fileExt) == ".eml" {
+				OutFileExt = ".eml"
+			} else {
+				OutFileExt = ".docx"
+			}
 		}
-
 		record := structs.Record{
 			ContentType:   contentType,
 			TransType:     TransType,
 			FileName:      fileName,
 			FileExt:       fileExt,
 			DirRandId:     DirRandId,
-			CreateAt:      time.Now().Format("2006-01-02 15:04:05"),
 			State:         structs.TransNoRun,
 			StateDescribe: structs.TransNoRun.String(),
 			UserId:        user.Id,

@@ -21,7 +21,7 @@ const (
 func (t TransStatus) String() string {
 	switch t {
 	case TransNoRun:
-		return "上传成功并未开启翻译"
+		return "上传成功未翻译"
 	case TransBeginExtract:
 		return "正在抽取文件内容"
 	case TransExtractFailed:
@@ -54,12 +54,15 @@ type Record struct {
 	FileName      string      `json:"file_name"`   // 去掉后缀名后的结果
 	FileExt       string      `json:"file_ext"`
 	DirRandId     string      `json:"dir_rand_id"`
+	Progress      int         `json:"progress"`
 	State         TransStatus `json:"state"`
 	StateDescribe string      `json:"state_describe"`
 	Error         string      `json:"error"`
 	UserId        int64       `json:"user_id"`
 	OutFileExt    string      `json:"out_file_ext"` // 输出文件扩展名
-	CreateAt      string      `json:"create_at"`
+	StartAt       string      `json:"start_at"`
+	EndAt         string      `json:"end_at"`
+	CreateAt      string      `json:"create_at"`   //
 }
 
 type RecordEx struct {

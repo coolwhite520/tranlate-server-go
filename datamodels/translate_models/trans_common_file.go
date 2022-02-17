@@ -24,10 +24,8 @@ func translateCommonFile(srcLang string, desLang string, record *structs.Record)
 	record.DesLang = desLang
 	record.State = structs.TransBeginExtract
 	record.StateDescribe = structs.TransBeginExtract.String()
-	err := datamodels.UpdateRecord(record)
-	if err != nil {
-		return
-	}
+	datamodels.UpdateRecord(record)
+
 	content, err := extractContent(record.TransType, srcFilePathName, srcLang)
 	if err != nil {
 		record.State = structs.TransExtractFailed
@@ -70,16 +68,14 @@ func translateCommonFile(srcLang string, desLang string, record *structs.Record)
 	// 更新为开始翻译状态
 	record.State = structs.TransBeginTranslate
 	record.StateDescribe = structs.TransBeginTranslate.String()
-	err = datamodels.UpdateRecord(record)
-	if err != nil {
-		return
-	}
+	datamodels.UpdateRecord(record)
+
 	transContent, sha1, err := translate(srcLang, desLang, content)
 	if err != nil {
 		record.State = structs.TransTranslateFailed
 		record.StateDescribe = structs.TransTranslateFailed.String()
 		record.Error = err.Error()
-		err = datamodels.UpdateRecord(record)
+		datamodels.UpdateRecord(record)
 		return
 	}
 	if !utils.PathExists(translatedDir) {
@@ -106,10 +102,8 @@ func translateCommonFile(srcLang string, desLang string, record *structs.Record)
 	record.State = structs.TransTranslateSuccess
 	record.StateDescribe = structs.TransTranslateSuccess.String()
 	record.Error = ""
-	err = datamodels.UpdateRecord(record)
-	if err != nil {
-		return
-	}
+	 datamodels.UpdateRecord(record)
+
 }
 
 
