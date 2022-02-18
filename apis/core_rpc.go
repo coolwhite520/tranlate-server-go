@@ -77,3 +77,60 @@ func PyTranslate(srcLang, desLang, content string) (string, error) {
 	}
 	return a.Data, nil
 }
+
+// PyTokenize 句子切分
+func PyTokenize(srcLang, content string) ([]string, error) {
+	compList, err := config.GetInstance().GetComponentList(false)
+	if err != nil {
+		return nil, err
+	}
+	port := "5000"
+	for _, v := range compList {
+		if v.ImageName == "core" {
+			port = v.HostPort
+			break
+		}
+	}
+	url := fmt.Sprintf("http://%s:%s/tokenize", config.ProxyUrl, port)
+	client := &http.Client{}
+	var req *http.Request
+
+	var bodyData struct {
+		SrcLang   string `json:"src_lang"`
+		Content   string `json:"content"`
+	}
+	bodyData.SrcLang = srcLang
+	bodyData.Content = content
+	data, _ := json.Marshal(bodyData)
+	req, err = http.NewRequest("POST", url, bytes.NewBuffer(data))
+	if err != nil {
+		log.Errorln(err)
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	var a struct {
+		Code int    `json:"code"`
+		List  []string `json:"list"`
+		Len int `json:"len"`
+		Msg string `json:"msg"`
+	}
+	err = json.Unmarshal(body, &a)
+	if err != nil {
+		return nil, err
+	}
+	if a.Code != 200 {
+		return nil, errors.New(a.Msg)
+	}
+	return a.List, nil
+}

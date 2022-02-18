@@ -159,7 +159,7 @@ func QueryTranslateRecordsByUserIdAndType(userId int64, transType int, offset in
 		log.Error(err)
 		return 0, nil, err
 	}
-	sql := fmt.Sprintf("SELECT * FROM tbl_record where UserId=? and TransType=? order by CreateAt DESC limit %d,%d", offset, count)
+	sql := fmt.Sprintf("SELECT * FROM tbl_record where UserId=? and TransType=? order by Id DESC limit %d,%d", offset, count)
 	rows, err := db.Query(sql, userId, transType)
 	if err != nil {
 		log.Error(err)
@@ -209,7 +209,7 @@ func QueryTranslateFileRecordsByUserId(userId int64, offset int, count int) (int
 		return 0, nil, err
 	}
 
-	sql := fmt.Sprintf("SELECT * FROM tbl_record where UserId=? and TransType != 0 order by CreateAt DESC limit %d,%d", offset, count)
+	sql := fmt.Sprintf("SELECT * FROM tbl_record where UserId=? and TransType != 0 order by Id DESC limit %d,%d", offset, count)
 	rows, err := db.Query(sql, userId)
 	if err != nil {
 		log.Error(err)
@@ -258,7 +258,7 @@ func QueryTranslateRecords(offset int, count int) (int, []structs.RecordEx, erro
 		log.Error(err)
 		return 0, nil, err
 	}
-	sql := fmt.Sprintf("SELECT a.*, b.Username as Username  FROM tbl_record a INNER JOIN tbl_user b ON a.UserId = b.Id order by CreateAt DESC limit %d,%d", offset, count)
+	sql := fmt.Sprintf("SELECT a.*, b.Username as Username  FROM tbl_record a INNER JOIN tbl_user b ON a.UserId = b.Id order by Id DESC limit %d,%d", offset, count)
 	rows, err := db.Query(sql)
 	if err != nil {
 		log.Error(err)
@@ -301,7 +301,7 @@ func QueryTranslateRecords(offset int, count int) (int, []structs.RecordEx, erro
 }
 
 func QueryTranslateRecordsByUserId(userId int64) ([]structs.Record, error) {
-	sql := fmt.Sprintf("SELECT * FROM tbl_record where UserId=? order by CreateAt DESC")
+	sql := fmt.Sprintf("SELECT * FROM tbl_record where UserId=? order by Id DESC")
 	rows, err := db.Query(sql, userId)
 	if err != nil {
 		log.Error(err)

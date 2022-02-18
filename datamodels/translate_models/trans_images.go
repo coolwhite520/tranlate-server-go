@@ -2,47 +2,36 @@ package translate_models
 
 import (
 	"baliance.com/gooxml/document"
-	"errors"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"strings"
 	"translate-server/apis"
+	"translate-server/constant"
 	"translate-server/datamodels"
 	"translate-server/structs"
 	"translate-server/utils"
 )
 
-func translateCommonFile(srcLang string, desLang string, record *structs.Record) error {
+func translateImagesFile(srcLang string, desLang string, record *structs.Record) error {
 	srcDir := fmt.Sprintf("%s/%d/%s", structs.UploadDir, record.UserId, record.DirRandId)
 	extractDir := fmt.Sprintf("%s/%d/%s", structs.ExtractDir, record.UserId, record.DirRandId)
 	translatedDir := fmt.Sprintf("%s/%d/%s", structs.OutputDir, record.UserId, record.DirRandId)
 	srcFilePathName := fmt.Sprintf("%s/%s%s", srcDir, record.FileName, record.FileExt)
-	// 开始抽取数据
-	record.SrcLang = srcLang
-	record.DesLang = desLang
-	record.State = structs.TransBeginExtract
-	record.StateDescribe = structs.TransBeginExtract.String()
-	datamodels.UpdateRecord(record)
 
-	content, err := apis.TikaParseFile(srcFilePathName)
+	content, err := ocrDetectedImage(srcFilePathName, srcLang)
 	if err != nil {
 		return err
 	}
+
+
+
 	content = strings.Trim(content, " ")
 	// 抽取成功，但是是空数据，那么就退出了
 	if len(content) == 0 {
-		return errors.New("content empty.")
-	}
-	tokenize, err := apis.PyTokenize(srcLang, content)
-	if err != nil {
 		return err
 	}
-	// 更新状态
-	record.State = structs.TransExtractSuccess
-	record.StateDescribe = structs.TransExtractSuccess.String()
-	datamodels.UpdateRecord(record)
 	if !utils.PathExists(extractDir) {
 		err := os.MkdirAll(extractDir, os.ModePerm)
 		if err != nil {
@@ -54,11 +43,6 @@ func translateCommonFile(srcLang string, desLang string, record *structs.Record)
 	if err != nil {
 		return err
 	}
-	// 更新为开始翻译状态
-	record.State = structs.TransBeginTranslate
-	record.StateDescribe = structs.TransBeginTranslate.String()
-	datamodels.UpdateRecord(record)
-
 	transContent, sha1, err := translate(srcLang, desLang, content)
 	if err != nil {
 		return err
@@ -88,4 +72,15 @@ func translateCommonFile(srcLang string, desLang string, record *structs.Record)
 	return nil
 }
 
+
+func ocrDetectedImage(filePath string, srcLang string) (string, error) {
+	var ocrType string
+	for k, v := range constant.LanguageOcrList {
+		if k == srcLang {
+			ocrType = v
+			break
+		}
+	}
+	return apis.OcrParseFile(filePath, ocrType)
+}
 

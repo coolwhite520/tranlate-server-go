@@ -73,19 +73,23 @@ func TranslateFile(srcLang string, desLang string, recordId int64, userId int64)
 	datamodels.UpdateRecord(record)
 
 	// 没有找到相同的文件和 srclang 、desLang的时候
-	ext := filepath.Ext(record.FileExt)
-	if strings.ToLower(ext) == ".docx" {
-		err = translateDocxFile(srcLang, desLang, record)
-	}else if strings.ToLower(ext) == ".pptx" {
-		err = translatePptxFile(srcLang, desLang, record)
-	} else if strings.ToLower(ext) == ".pdf" {
-		err = translatePdfFile(srcLang, desLang, record)
-	} else if strings.ToLower(ext) == ".xlsx" {
-		err = translateXlsxFile(srcLang, desLang, record)
+	if record.TransType == 1 {
+		err = translateImagesFile(srcLang, desLang, record)
 	} else {
-		translateCommonFile(srcLang, desLang, record)
-	}
+		ext := filepath.Ext(record.FileExt)
+		if strings.ToLower(ext) == ".docx" {
+			err = translateDocxFile(srcLang, desLang, record)
+		}else if strings.ToLower(ext) == ".pptx" {
+			err = translatePptxFile(srcLang, desLang, record)
+		} else if strings.ToLower(ext) == ".pdf" {
+			err = translatePdfFile(srcLang, desLang, record)
+		} else if strings.ToLower(ext) == ".xlsx" {
+			err = translateXlsxFile(srcLang, desLang, record)
+		} else {
+			err = translateCommonFile(srcLang, desLang, record)
+		}
 
+	}
 	// 更新结束时间
 	record.EndAt = time.Now().Format("2006-01-02 15:04:05")
 	datamodels.UpdateRecord(record)
