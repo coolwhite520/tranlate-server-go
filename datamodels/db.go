@@ -83,7 +83,7 @@ func InitMysql() {
 			break
 		}
 	}
-	dataSourceName := fmt.Sprintf("root:%s@tcp(%s:%s)/?charset=utf8&parseTime=True", structs.MysqlPassword, "127.0.0.1", hostPort)
+	dataSourceName := fmt.Sprintf("root:%s@tcp(%s:%s)/?charset=utf8&parseTime=True", structs.MysqlPassword, config.ProxyUrl, hostPort)
 	for i:=0; i < 100; i++ {
 		time.Sleep(1 * time.Second)
 		db, err = sql.Open("mysql", dataSourceName)
@@ -137,7 +137,7 @@ func InitMysql() {
 
 	}
 	// 重新建立一个链接，链接到translate_db数据库，就不需要切换操作了
-	dataSourceName = fmt.Sprintf("root:%s@tcp(%s:%s)/translate_db?charset=utf8&parseTime=True", structs.MysqlPassword, "127.0.0.1", hostPort)
+	dataSourceName = fmt.Sprintf("root:%s@tcp(%s:%s)/translate_db?charset=utf8&parseTime=True", structs.MysqlPassword, config.ProxyUrl, hostPort)
 	db, err = sql.Open("mysql", dataSourceName)
 	if err != nil {
 		log.Error(err)

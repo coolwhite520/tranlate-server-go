@@ -48,7 +48,12 @@ type Operator struct {
 	cli *client.Client
 	status Status   // 是否正在初始化
 	percent Percent
+	netId string
 }
+
+const ContainerPrefix = "trans_"
+const PrivateNetworkName = "trans_network"
+
 
 func (o *Operator) StartDockers() error {
 	service := datamodels.NewActivationModel()
@@ -58,6 +63,8 @@ func (o *Operator) StartDockers() error {
 		return err
 	}
 	o.percent = 0
+	totalProcedure := len(compList)
+	everyProcedure := 100 / totalProcedure
 	for _,v := range compList {
 		if state == constant.HttpSuccess || v.DefaultRun {
 			err := o.LoadImage(v)
@@ -65,13 +72,20 @@ func (o *Operator) StartDockers() error {
 				o.status = ErrorStatus
 				return err
 			}
-			o.percent += 10
-			err = o.StartContainer(v)
+			o.percent += Percent(everyProcedure / 2)
+			id, err := o.StartContainer(v)
 			if err != nil {
 				o.status = ErrorStatus
 				return err
 			}
-			o.percent += 10
+			// 不想大改了，所以就硬编码吧
+			if v.ImageName == "redis" || v.ImageName == "mysql" ||v.ImageName == "core" ||v.ImageName == "plugins"  {
+				err = o.JoinPrivateNetwork(id)
+				if err != nil {
+					return err
+				}
+			}
+			o.percent += Percent(everyProcedure / 2)
 		}
 	}
 	o.percent = 100
@@ -172,21 +186,33 @@ func (o *Operator) RemoveImage(imageName string, imageVersion string) error {
 }
 
 // StartContainer 启动容器 ,如果是 部署在linux下，那么当启动web镜像（nginx）的时候，需要添加--add-host=host.docker.internal:host-gateway参数
-func (o *Operator) StartContainer(img structs.ComponentInfo) error {
+func (o *Operator) StartContainer(img structs.ComponentInfo) (string, error) {
 	hasContainer, id, err := o.hasContainer(img.ImageName, img.ImageVersion)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if hasContainer {
 		running, err := o.isContainerRunning(img.ImageName, img.ImageVersion)
 		if err != nil {
-			return err
+			return "", err
 		}
-		if running {
-			return nil
-		} else {
-			return o.cli.ContainerStart(context.Background(), id, types.ContainerStartOptions{})
+		if !running {
+			err = o.cli.ContainerStart(context.Background(), id, types.ContainerStartOptions{})
+			if err != nil {
+				return "", err
+			}
 		}
+		name, err := o.getContainerNameById(id)
+		if err != nil {
+			return "", err
+		}
+		if name !=  ContainerPrefix + img.ImageName{
+			err = o.cli.ContainerRename(context.Background(), id,  ContainerPrefix + img.ImageName)
+			if err != nil {
+				return "", err
+			}
+		}
+		return id, nil
 	} else {
 		config := &container.Config{
 			Image: img.ImageName + ":" + img.ImageVersion,
@@ -216,11 +242,11 @@ func (o *Operator) StartContainer(img structs.ComponentInfo) error {
 		//	挂载卷本地目录
 			dataDir, err := filepath.Abs("./mysql_db/db")
 			if err != nil {
-				return err
+				return "", err
 			}
 			dataConfigDir, err := filepath.Abs("./mysql_db/conf.d")
 			if err != nil {
-				return err
+				return "", err
 			}
 			// 容器内部目录
 			containerDataDir := "/var/lib/mysql"
@@ -237,11 +263,11 @@ func (o *Operator) StartContainer(img structs.ComponentInfo) error {
 		if img.ImageName == "redis" {
 			dataDir, err := filepath.Abs("./redis_db/db")
 			if err != nil {
-				return err
+				return "", err
 			}
 			dataConfigDir, err := filepath.Abs("./redis_db/conf.d")
 			if err != nil {
-				return err
+				return "", err
 			}
 			containerDataDir := "/data"
 			containerConfigDir := "/usr/local/etc/redis"
@@ -253,12 +279,42 @@ func (o *Operator) StartContainer(img structs.ComponentInfo) error {
 			b2 := fmt.Sprintf("%s:%s", dataConfigDir, containerConfigDir)
 			hostConfig.Binds = []string {b, b2}
 		}
-		create, err := o.cli.ContainerCreate(context.Background(), config, hostConfig, &network.NetworkingConfig{}, nil, "")
-		if err != nil {
-			return err
+		if img.ImageName == "plugins" {
+			// 先进行路径的映射，以保证容器可以访问到主机的磁盘文件
+			dataDir, err := filepath.Abs("./data")
+			if err != nil {
+				return "", err
+			}
+			containerDataDir := dataDir
+			config.Volumes = map[string]struct{}{
+				containerDataDir: {},
+			}
+			b := fmt.Sprintf("%s:%s", dataDir, containerDataDir)
+			hostConfig.Binds = []string {b}
 		}
-		return o.cli.ContainerStart(context.Background(), create.ID, types.ContainerStartOptions{})
+		create, err := o.cli.ContainerCreate(context.Background(), config, hostConfig, &network.NetworkingConfig{}, nil, ContainerPrefix + img.ImageName)
+		if err != nil {
+			return "", err
+		}
+		err = o.cli.ContainerStart(context.Background(), create.ID, types.ContainerStartOptions{})
+		if err != nil {
+			return "", err
+		}
+		return create.ID, nil
 	}
+}
+
+func (o *Operator) getContainerNameById(id string) (string, error) {
+	containers, err := o.cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+	if err != nil {
+		return "", err
+	}
+	for _, v := range containers {
+		if v.ID == id {
+			return v.Names[0][1:], nil
+		}
+	}
+	return "", nil
 }
 
 // ExistImage 镜像是否存在
@@ -302,4 +358,37 @@ func (o *Operator) isContainerRunning(imageName string, imageTag string) (bool, 
 		}
 	}
 	return false, nil
+}
+
+// CreatePrivateNetwork 创建一个翻译系统的私有网络 名称由PrivateNetworkName变量设定
+func (o* Operator) CreatePrivateNetwork() error {
+	list, err := o.cli.NetworkList(context.Background(), types.NetworkListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, v := range list {
+		if  v.Name == PrivateNetworkName {
+			o.netId = v.ID
+			return nil
+		}
+	}
+	resp, err := o.cli.NetworkCreate(context.Background(), PrivateNetworkName, types.NetworkCreate{})
+	if err != nil {
+		return err
+	}
+	o.netId = resp.ID
+	return nil
+}
+
+func (o Operator) JoinPrivateNetwork(containerId string) error {
+	inspect, err := o.cli.NetworkInspect(context.Background(), o.netId, types.NetworkInspectOptions{})
+	if err != nil {
+		return err
+	}
+	for k, _ := range inspect.Containers{
+		if k == containerId {
+			return nil
+		}
+	}
+	return o.cli.NetworkConnect(context.Background(), o.netId, containerId, nil)
 }

@@ -578,7 +578,7 @@ func (a *adminService) UpgradeComponent(ctx iris.Context) mvc.Result {
 		}
 	}
 	// 启动容器
-	err = docker.GetInstance().StartContainer(*compInfo)
+	_, err = docker.GetInstance().StartContainer(*compInfo)
 	if err != nil {
 		log.Errorln(err)
 		return mvc.Response{

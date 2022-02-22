@@ -2,9 +2,9 @@ package translate_models
 
 import (
 	"baliance.com/gooxml/document"
+	"errors"
 	"fmt"
 	log "github.com/sirupsen/logrus"
-	"io/ioutil"
 	"os"
 	"strings"
 	"translate-server/apis"
@@ -16,7 +16,6 @@ import (
 
 func translateImagesFile(srcLang string, desLang string, record *structs.Record) error {
 	srcDir := fmt.Sprintf("%s/%d/%s", structs.UploadDir, record.UserId, record.DirRandId)
-	extractDir := fmt.Sprintf("%s/%d/%s", structs.ExtractDir, record.UserId, record.DirRandId)
 	translatedDir := fmt.Sprintf("%s/%d/%s", structs.OutputDir, record.UserId, record.DirRandId)
 	srcFilePathName := fmt.Sprintf("%s/%s%s", srcDir, record.FileName, record.FileExt)
 
@@ -24,49 +23,57 @@ func translateImagesFile(srcLang string, desLang string, record *structs.Record)
 	if err != nil {
 		return err
 	}
-
-
-
 	content = strings.Trim(content, " ")
 	// 抽取成功，但是是空数据，那么就退出了
 	if len(content) == 0 {
+		return errors.New("content empty.")
+	}
+	tokenize, err := apis.PyTokenize(srcLang, content)
+	if err != nil {
 		return err
 	}
-	if !utils.PathExists(extractDir) {
-		err := os.MkdirAll(extractDir, os.ModePerm)
-		if err != nil {
-			return err
+	totalProgress := 0
+	for _, p := range tokenize {
+		totalProgress += len(p)
+	}
+	currentProgress := 0
+	percent := 0
+
+	doc := document.New()
+
+	for _, p := range tokenize {
+		paragraph := doc.AddParagraph()
+		for _, r := range p {
+			transContent, _, _ := translate(srcLang, desLang, r)
+			run := paragraph.AddRun()
+			run.AddText(transContent)
+			currentProgress++
+			if percent != currentProgress * 100 /totalProgress{
+				percent = currentProgress * 100 /totalProgress
+				datamodels.UpdateRecordProgress(record.Id, percent)
+			}
 		}
 	}
-	desFile := fmt.Sprintf("%s/%s%s", extractDir, record.FileName, record.OutFileExt)
-	err = ioutil.WriteFile(desFile, []byte(content), 0666)
-	if err != nil {
-		return err
-	}
-	transContent, sha1, err := translate(srcLang, desLang, content)
-	if err != nil {
-		return err
-	}
+
 	if !utils.PathExists(translatedDir) {
 		err := os.MkdirAll(translatedDir, os.ModePerm)
 		if err != nil {
 			return err
 		}
 	}
-	desFile = fmt.Sprintf("%s/%s%s", translatedDir, record.FileName, record.OutFileExt)
-	doc := document.New()
-	paragraph := doc.AddParagraph()
-	run := paragraph.AddRun()
-	run.AddText(transContent)
+	desFile := fmt.Sprintf("%s/%s%s", translatedDir, record.FileName, record.OutFileExt)
 	err = doc.SaveToFile(desFile)
 	if err != nil {
 		log.Errorln(err)
 		return err
 	}
-
+	// 计算文件md5
+	md5, err := utils.GetFileMd5(srcFilePathName)
 	if err != nil {
 		return err
 	}
+	// 拼接sha1字符串
+	sha1 := utils.Sha1(fmt.Sprintf("%s&%s&%s", md5, srcLang, desLang))
 	record.Sha1 = sha1
 	datamodels.UpdateRecord(record)
 	return nil

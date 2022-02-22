@@ -25,9 +25,13 @@ var (
 func init()  {
 	//config.GetInstance().TestGenerateConfigFile()
 	//return
+	err := docker.GetInstance().CreatePrivateNetwork()
+	if err != nil {
+		panic(err)
+	}
 	docker.GetInstance().SetStatus(docker.RepairingStatus)
 	// StartDockers 内部会判断是否已经是激活的状态
-	err := docker.GetInstance().StartDockers()
+	err = docker.GetInstance().StartDockers()
 	if err != nil {
 		panic(err)
 	}

@@ -26,7 +26,7 @@ func PyTransSpecialFile(rowId int64, srcFile, desFile, srcLang, desLang string) 
 			break
 		}
 	}
-	url := fmt.Sprintf("http://%s:%s/trans_file", "127.0.0.1", port)
+	url := fmt.Sprintf("http://%s:%s/trans_file", config.ProxyUrl, port)
 	client := &http.Client{}
 	var req *http.Request
 
@@ -89,7 +89,7 @@ func PyConvertSpecialFile(srcFile, desFile, convertType string) error {
 			break
 		}
 	}
-	url := fmt.Sprintf("http://%s:%s/convert_file", "127.0.0.1", port)
+	url := fmt.Sprintf("http://%s:%s/convert_file", config.ProxyUrl, port)
 	client := &http.Client{}
 	var req *http.Request
 

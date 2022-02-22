@@ -17,13 +17,6 @@ func translateCommonFile(srcLang string, desLang string, record *structs.Record)
 	srcDir := fmt.Sprintf("%s/%d/%s", structs.UploadDir, record.UserId, record.DirRandId)
 	translatedDir := fmt.Sprintf("%s/%d/%s", structs.OutputDir, record.UserId, record.DirRandId)
 	srcFilePathName := fmt.Sprintf("%s/%s%s", srcDir, record.FileName, record.FileExt)
-	// 开始抽取数据
-	record.SrcLang = srcLang
-	record.DesLang = desLang
-	record.State = structs.TransBeginExtract
-	record.StateDescribe = structs.TransBeginExtract.String()
-	datamodels.UpdateRecord(record)
-
 	content, err := apis.TikaParseFile(srcFilePathName)
 	if err != nil {
 		return err
@@ -37,20 +30,27 @@ func translateCommonFile(srcLang string, desLang string, record *structs.Record)
 	if err != nil {
 		return err
 	}
-	totalProgress := len(tokenize)
+	totalProgress := 0
+	for _, p := range tokenize {
+		totalProgress += len(p)
+	}
+
 	currentProgress := 0
 	percent := 0
 
 	doc := document.New()
-	paragraph := doc.AddParagraph()
-	for _, v := range tokenize {
-		transContent, _, _ := translate(srcLang, desLang, v)
-		run := paragraph.AddRun()
-		run.AddText(transContent)
-		currentProgress++
-		if percent != currentProgress * 100 /totalProgress{
-			percent = currentProgress * 100 /totalProgress
-			datamodels.UpdateRecordProgress(record.Id, percent)
+
+	for _, p := range tokenize {
+		paragraph := doc.AddParagraph()
+		for _, r := range p {
+			transContent, _, _ := translate(srcLang, desLang, r)
+			run := paragraph.AddRun()
+			run.AddText(transContent)
+			currentProgress++
+			if percent != currentProgress * 100 /totalProgress{
+				percent = currentProgress * 100 /totalProgress
+				datamodels.UpdateRecordProgress(record.Id, percent)
+			}
 		}
 	}
 

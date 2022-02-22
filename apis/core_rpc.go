@@ -78,8 +78,8 @@ func PyTranslate(srcLang, desLang, content string) (string, error) {
 	return a.Data, nil
 }
 
-// PyTokenize 句子切分
-func PyTokenize(srcLang, content string) ([]string, error) {
+// PyTokenize 句子切分 段落--》子句
+func PyTokenize(srcLang, content string) ([][]string, error) {
 	compList, err := config.GetInstance().GetComponentList(false)
 	if err != nil {
 		return nil, err
@@ -121,7 +121,7 @@ func PyTokenize(srcLang, content string) ([]string, error) {
 	}
 	var a struct {
 		Code int    `json:"code"`
-		List  []string `json:"list"`
+		List  [][]string `json:"list"`
 		Len int `json:"len"`
 		Msg string `json:"msg"`
 	}
