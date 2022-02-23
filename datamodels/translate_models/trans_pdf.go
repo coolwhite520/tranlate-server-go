@@ -17,7 +17,7 @@ func translatePdfFile(srcLang string, desLang string, record *structs.Record) er
 	srcFilePathName := fmt.Sprintf("%s/%s%s", srcDir, record.FileName, record.FileExt)
 	srcFilePathNameDocx := fmt.Sprintf("%s/%s%s", srcDir, record.FileName, ".docx")
 	// pdf转换为word
-	err := apis.PyConvertSpecialFile(srcFilePathName, "p2d")
+	err := apis.PyConvertSpecialFile(srcFilePathName, "p2dx")
 	if err != nil {
 		return err
 	}

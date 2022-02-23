@@ -83,7 +83,7 @@ func translateDocxFile(srcLang string, desLang string, record *structs.Record) e
 	srcFilePathName := fmt.Sprintf("%s/%s%s", srcDir, record.FileName, record.FileExt)
 	ext := filepath.Ext(record.FileExt)
 	if strings.ToLower(ext) == ".doc" {
-		err := apis.PyConvertSpecialFile(srcFilePathName, "d2d")
+		err := apis.PyConvertSpecialFile(srcFilePathName, "d2dx")
 		if err != nil {
 			return err
 		}
