@@ -77,18 +77,19 @@ func TranslateFile(srcLang string, desLang string, recordId int64, userId int64)
 		err = translateImagesFile(srcLang, desLang, record)
 	} else {
 		ext := filepath.Ext(record.FileExt)
-		if strings.ToLower(ext) == ".docx" {
+		if strings.ToLower(ext) == ".docx" || strings.ToLower(ext) == ".doc"{
 			err = translateDocxFile(srcLang, desLang, record)
-		}else if strings.ToLower(ext) == ".pptx" {
+		} else if strings.ToLower(ext) == ".pptx" || strings.ToLower(ext) == ".ppt"{
 			err = translatePptxFile(srcLang, desLang, record)
+		} else if strings.ToLower(ext) == ".xlsx" || strings.ToLower(ext) == ".xls"{
+			err = translateXlsxFile(srcLang, desLang, record)
 		} else if strings.ToLower(ext) == ".pdf" {
 			err = translatePdfFile(srcLang, desLang, record)
-		} else if strings.ToLower(ext) == ".xlsx" {
-			err = translateXlsxFile(srcLang, desLang, record)
+		} else if strings.ToLower(ext) == ".eml" {
+			err = translateEmlFile(srcLang, desLang, record)
 		} else {
 			err = translateCommonFile(srcLang, desLang, record)
 		}
-
 	}
 	// 更新结束时间
 	record.EndAt = time.Now().Format("2006-01-02 15:04:05")

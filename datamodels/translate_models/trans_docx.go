@@ -5,7 +5,9 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"path/filepath"
 	"strings"
+	"translate-server/apis"
 	"translate-server/datamodels"
 	"translate-server/structs"
 	"translate-server/utils"
@@ -79,7 +81,14 @@ func translateDocxFile(srcLang string, desLang string, record *structs.Record) e
 	srcDir := fmt.Sprintf("%s/%d/%s", structs.UploadDir, record.UserId, record.DirRandId)
 	translatedDir := fmt.Sprintf("%s/%d/%s", structs.OutputDir, record.UserId, record.DirRandId)
 	srcFilePathName := fmt.Sprintf("%s/%s%s", srcDir, record.FileName, record.FileExt)
-
+	ext := filepath.Ext(record.FileExt)
+	if strings.ToLower(ext) == ".doc" {
+		err := apis.PyConvertSpecialFile(srcFilePathName, srcFilePathName+"x", "d2d")
+		if err != nil {
+			return err
+		}
+		srcFilePathName = srcFilePathName + "x"
+	}
 	totalProgress, err := calculateDocTotalProgress(srcFilePathName)
 	if err != nil {
 		return err

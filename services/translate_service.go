@@ -195,11 +195,11 @@ func (t *translateService) PostUpload(ctx iris.Context) mvc.Result {
 		} else {
 			TransType = 2
 			//文档类别的文件仅仅保留格式的类型为docx 、pptx 、 xlsx 、 eml
-			if strings.ToLower(fileExt) == ".docx" {
+			if strings.ToLower(fileExt) == ".docx" || strings.ToLower(fileExt) == ".doc" {
 				OutFileExt = ".docx"
-			} else if strings.ToLower(fileExt) == ".pptx" {
+			} else if strings.ToLower(fileExt) == ".pptx" || strings.ToLower(fileExt) == ".ppt" {
 				OutFileExt = ".pptx"
-			} else if strings.ToLower(fileExt) == ".xlsx" {
+			} else if strings.ToLower(fileExt) == ".xlsx"|| strings.ToLower(fileExt) == ".xls" {
 				OutFileExt = ".xlsx"
 			} else if strings.ToLower(fileExt) == ".eml" {
 				OutFileExt = ".eml"

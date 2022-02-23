@@ -73,7 +73,7 @@ func (o *Operator) StartDockers() error {
 				return err
 			}
 			o.percent += Percent(everyProcedure / 2)
-			id, err := o.StartContainer(v)
+			id, err := o.CreateAndStartContainer(v)
 			if err != nil {
 				o.status = ErrorStatus
 				return err
@@ -185,8 +185,8 @@ func (o *Operator) RemoveImage(imageName string, imageVersion string) error {
 	return nil
 }
 
-// StartContainer 启动容器 ,如果是 部署在linux下，那么当启动web镜像（nginx）的时候，需要添加--add-host=host.docker.internal:host-gateway参数
-func (o *Operator) StartContainer(img structs.ComponentInfo) (string, error) {
+// CreateAndStartContainer 启动容器 ,如果是 部署在linux下，那么当启动web镜像（nginx）的时候，需要添加--add-host=host.docker.internal:host-gateway参数
+func (o *Operator) CreateAndStartContainer(img structs.ComponentInfo) (string, error) {
 	hasContainer, id, err := o.hasContainer(img.ImageName, img.ImageVersion)
 	if err != nil {
 		return "", err
@@ -239,7 +239,7 @@ func (o *Operator) StartContainer(img structs.ComponentInfo) (string, error) {
 		if img.ImageName == "mysql" {
 			mysqlPasswdEnv := fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", structs.MysqlPassword)
 			config.Env = []string{mysqlPasswdEnv}
-		//	挂载卷本地目录
+			//	挂载卷本地目录
 			dataDir, err := filepath.Abs("./mysql_db/db")
 			if err != nil {
 				return "", err

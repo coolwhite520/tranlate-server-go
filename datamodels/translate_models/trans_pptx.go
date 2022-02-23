@@ -2,6 +2,8 @@ package translate_models
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
 	"translate-server/apis"
 	"translate-server/datamodels"
 	"translate-server/structs"
@@ -12,12 +14,15 @@ func translatePptxFile(srcLang string, desLang string, record *structs.Record) e
 	srcDir := fmt.Sprintf("%s/%d/%s", structs.UploadDir, record.UserId, record.DirRandId)
 	translatedDir := fmt.Sprintf("%s/%d/%s", structs.OutputDir, record.UserId, record.DirRandId)
 	srcFilePathName := fmt.Sprintf("%s/%s%s", srcDir, record.FileName, record.FileExt)
-	record.SrcLang = srcLang
-	record.DesLang = desLang
-	record.State = structs.TransExtractSuccess
-	record.StateDescribe = structs.TransExtractSuccess.String()
-	datamodels.UpdateRecord(record)
 	desFile := fmt.Sprintf("%s/%s%s", translatedDir, record.FileName, record.OutFileExt)
+	ext := filepath.Ext(record.FileExt)
+	if strings.ToLower(ext) == ".ppt" {
+		err := apis.PyConvertSpecialFile(srcFilePathName, srcFilePathName+"x", "p2p")
+		if err != nil {
+			return err
+		}
+		srcFilePathName = srcFilePathName + "x"
+	}
 	err := apis.PyTransSpecialFile(record.Id, srcFilePathName, desFile, srcLang, desLang)
 	if err != nil {
 		return err

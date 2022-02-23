@@ -19,7 +19,7 @@ func PyTransSpecialFile(rowId int64, srcFile, desFile, srcLang, desLang string) 
 	if err != nil {
 		return err
 	}
-	port := "5555"
+	port := "5001"
 	for _, v := range compList {
 		if v.ImageName == "plugins" {
 			port = v.HostPort
@@ -82,7 +82,7 @@ func PyConvertSpecialFile(srcFile, desFile, convertType string) error {
 	if err != nil {
 		return err
 	}
-	port := "5555"
+	port := "5001"
 	for _, v := range compList {
 		if v.ImageName == "plugins" {
 			port = v.HostPort
