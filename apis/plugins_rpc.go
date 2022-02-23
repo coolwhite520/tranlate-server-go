@@ -77,7 +77,7 @@ func PyTransSpecialFile(rowId int64, srcFile, desFile, srcLang, desLang string) 
 }
 
 
-func PyConvertSpecialFile(srcFile, desFile, convertType string) error {
+func PyConvertSpecialFile(srcFile, convertType string) error {
 	compList, err := config.GetInstance().GetComponentList(false)
 	if err != nil {
 		return err
@@ -99,7 +99,6 @@ func PyConvertSpecialFile(srcFile, desFile, convertType string) error {
 		ConvertType      string `json:"convert_type"`
 	}
 	bodyData.SrcFile, _ = filepath.Abs(srcFile)
-	bodyData.DesFile, _ = filepath.Abs(desFile)
 	bodyData.ConvertType = convertType
 
 	data, _ := json.Marshal(bodyData)

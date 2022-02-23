@@ -17,7 +17,7 @@ func translatePptxFile(srcLang string, desLang string, record *structs.Record) e
 	desFile := fmt.Sprintf("%s/%s%s", translatedDir, record.FileName, record.OutFileExt)
 	ext := filepath.Ext(record.FileExt)
 	if strings.ToLower(ext) == ".ppt" {
-		err := apis.PyConvertSpecialFile(srcFilePathName, srcFilePathName+"x", "p2p")
+		err := apis.PyConvertSpecialFile(srcFilePathName, "p2p")
 		if err != nil {
 			return err
 		}
