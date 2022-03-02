@@ -78,8 +78,7 @@ func (o *Operator) StartDockers() error {
 				o.status = ErrorStatus
 				return err
 			}
-			// 不想大改了，所以就硬编码吧
-			if v.ImageName == "redis" || v.ImageName == "mysql" ||v.ImageName == "core" ||v.ImageName == "plugins"  {
+			if v.ImageName != "web" {
 				err = o.JoinPrivateNetwork(id)
 				if err != nil {
 					return err
@@ -279,7 +278,7 @@ func (o *Operator) CreateAndStartContainer(img structs.ComponentInfo) (string, e
 			b2 := fmt.Sprintf("%s:%s", dataConfigDir, containerConfigDir)
 			hostConfig.Binds = []string {b, b2}
 		}
-		if img.ImageName == "plugins" {
+		if img.ImageName == "plugins" || img.ImageName == "ocr" || img.ImageName == "file" {
 			// 先进行路径的映射，以保证容器可以访问到主机的磁盘文件
 			dataDir, err := filepath.Abs("./data")
 			if err != nil {
@@ -292,6 +291,7 @@ func (o *Operator) CreateAndStartContainer(img structs.ComponentInfo) (string, e
 			b := fmt.Sprintf("%s:%s", dataDir, containerDataDir)
 			hostConfig.Binds = []string {b}
 		}
+
 		create, err := o.cli.ContainerCreate(context.Background(), config, hostConfig, &network.NetworkingConfig{}, nil, ContainerPrefix + img.ImageName)
 		if err != nil {
 			return "", err
@@ -380,7 +380,7 @@ func (o* Operator) CreatePrivateNetwork() error {
 	return nil
 }
 
-func (o Operator) JoinPrivateNetwork(containerId string) error {
+func (o *Operator) JoinPrivateNetwork(containerId string) error {
 	inspect, err := o.cli.NetworkInspect(context.Background(), o.netId, types.NetworkInspectOptions{})
 	if err != nil {
 		return err

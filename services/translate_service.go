@@ -20,7 +20,7 @@ import (
 type TranslateService interface {
 	GetLangList() mvc.Result
 	GetAllLangList() mvc.Result
-    PostTranslateFile(ctx iris.Context) mvc.Result
+	PostTranslateFile(ctx iris.Context) mvc.Result
 	PostTranslateContent(ctx iris.Context) mvc.Result
 	PostUpload(ctx iris.Context) mvc.Result
 	PostDownFile(ctx iris.Context)
@@ -64,7 +64,6 @@ func (t *translateService) GetAllLangList() mvc.Result {
 	}
 }
 
-
 func (t *translateService) PostTranslateFile(ctx iris.Context) mvc.Result {
 	var req struct {
 		SrcLang  string `json:"src_lang"`
@@ -80,7 +79,7 @@ func (t *translateService) PostTranslateFile(ctx iris.Context) mvc.Result {
 			},
 		}
 	}
-	if b, list :=  datamodels.NewActivationModel().IsSupportLang(req.DesLang, req.SrcLang); !b {
+	if b, list := datamodels.NewActivationModel().IsSupportLang(req.DesLang, req.SrcLang); !b {
 		return mvc.Response{
 			Object: map[string]interface{}{
 				"code": constant.HttpLanguageNotSupport,
@@ -116,7 +115,7 @@ func (t *translateService) PostTranslateContent(ctx iris.Context) mvc.Result {
 		}
 	}
 	// 判断是否为空
-	content:= strings.Trim(req.Content, " ")
+	content := strings.Trim(req.Content, " ")
 	if len(content) == 0 {
 		return mvc.Response{
 			Object: map[string]interface{}{
@@ -153,7 +152,6 @@ func (t *translateService) PostTranslateContent(ctx iris.Context) mvc.Result {
 	}
 }
 
-
 func (t *translateService) PostUpload(ctx iris.Context) mvc.Result {
 	var records []structs.Record
 	u := ctx.Values().Get("User")
@@ -186,7 +184,7 @@ func (t *translateService) PostUpload(ctx iris.Context) mvc.Result {
 		filePath := fmt.Sprintf("%s/%s", userUploadDir, v.Filename)
 		contentType, _ := utils.GetFileContentType(filePath)
 		fileExt := filepath.Ext(v.Filename)
-		fileName := v.Filename[0:len(v.Filename) - len(fileExt)]
+		fileName := v.Filename[0 : len(v.Filename)-len(fileExt)]
 		var TransType int
 		var OutFileExt string
 		if strings.Contains(contentType, "image/") {
@@ -197,10 +195,14 @@ func (t *translateService) PostUpload(ctx iris.Context) mvc.Result {
 			//文档类别的文件仅仅保留格式的类型为docx 、pptx 、 xlsx 、 eml
 			if strings.ToLower(fileExt) == ".docx" || strings.ToLower(fileExt) == ".doc" {
 				OutFileExt = ".docx"
-			} else if strings.ToLower(fileExt) == ".pptx" || strings.ToLower(fileExt) == ".ppt" {
+			} else if strings.ToLower(fileExt) == ".pptx" {
 				OutFileExt = ".pptx"
-			} else if strings.ToLower(fileExt) == ".xlsx"|| strings.ToLower(fileExt) == ".xls" {
+			} else if strings.ToLower(fileExt) == ".ppt" {
+				OutFileExt = ".ppt"
+			} else if strings.ToLower(fileExt) == ".xlsx" {
 				OutFileExt = ".xlsx"
+			} else if strings.ToLower(fileExt) == ".xls" {
+				OutFileExt = ".xls"
 			} else if strings.ToLower(fileExt) == ".eml" {
 				OutFileExt = ".eml"
 			} else {
@@ -292,7 +294,7 @@ func (t *translateService) PostDownFile(ctx iris.Context) {
 	if req.Type == 0 {
 		filePathName = fmt.Sprintf("%s/%s%s", srcDir, record.FileName, record.FileExt)
 	} else if req.Type == 1 {
-		filePathName = fmt.Sprintf("%s/%s%s", extractDir, record.FileName,record.OutFileExt)
+		filePathName = fmt.Sprintf("%s/%s%s", extractDir, record.FileName, record.OutFileExt)
 	} else if req.Type == 2 {
 		filePathName = fmt.Sprintf("%s/%s%s", translatedDir, record.FileName, record.OutFileExt)
 	} else {
@@ -324,7 +326,6 @@ func (t *translateService) PostDownFile(ctx iris.Context) {
 	}
 	ctx.ResponseWriter().Write(bytes)
 }
-
 
 func (t *translateService) GetAllRecords(ctx iris.Context) mvc.Result {
 	a := ctx.Values().Get("User")
@@ -374,7 +375,7 @@ func (t *translateService) GetRecordsByType(ctx iris.Context) mvc.Result {
 			"code": constant.HttpSuccess,
 			"msg":  constant.HttpSuccess.String(),
 			"data": map[string]interface{}{
-				"list": records,
+				"list":  records,
 				"total": total,
 			},
 		},
@@ -438,4 +439,3 @@ func (t *translateService) PostDeleteRecord(ctx iris.Context) mvc.Result {
 		},
 	}
 }
-

@@ -578,8 +578,19 @@ func (a *adminService) UpgradeComponent(ctx iris.Context) mvc.Result {
 		}
 	}
 	// 启动容器
-	_, err = docker.GetInstance().CreateAndStartContainer(*compInfo)
+	id, err := docker.GetInstance().CreateAndStartContainer(*compInfo)
 	if err != nil {
+		log.Errorln(err)
+		return mvc.Response{
+			Object: map[string]interface{}{
+				"code": constant.HttpDockerServiceException,
+				"msg":  err.Error(),
+			},
+		}
+	}
+	//添加到networking里面
+	if compInfo.ImageName != "web" {
+		err = docker.GetInstance().JoinPrivateNetwork(id)
 		log.Errorln(err)
 		return mvc.Response{
 			Object: map[string]interface{}{

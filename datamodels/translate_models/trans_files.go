@@ -5,9 +5,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
-	"path/filepath"
-	"strings"
 	"time"
+	"translate-server/apis"
 	"translate-server/datamodels"
 	"translate-server/structs"
 	"translate-server/utils"
@@ -72,25 +71,10 @@ func TranslateFile(srcLang string, desLang string, recordId int64, userId int64)
 	record.StartAt = time.Now().Format("2006-01-02 15:04:05")
 	datamodels.UpdateRecord(record)
 
-	// 没有找到相同的文件和 srclang 、desLang的时候
-	if record.TransType == 1 {
-		err = translateImagesFile(srcLang, desLang, record)
-	} else {
-		ext := filepath.Ext(record.FileExt)
-		if strings.ToLower(ext) == ".docx" || strings.ToLower(ext) == ".doc"{
-			err = translateDocxFile(srcLang, desLang, record)
-		} else if strings.ToLower(ext) == ".pptx" || strings.ToLower(ext) == ".ppt"{
-			err = translatePptxFile(srcLang, desLang, record)
-		} else if strings.ToLower(ext) == ".xlsx" || strings.ToLower(ext) == ".xls"{
-			err = translateXlsxFile(srcLang, desLang, record)
-		} else if strings.ToLower(ext) == ".pdf" {
-			err = translatePdfFile(srcLang, desLang, record)
-		} else if strings.ToLower(ext) == ".eml" {
-			err = translateEmlFile(srcLang, desLang, record)
-		} else {
-			err = translateCommonFile(srcLang, desLang, record)
-		}
-	}
+	// 让file容器接管并处理
+	desFile := fmt.Sprintf("%s/%s%s", translatedDir, record.FileName, record.OutFileExt)
+	err = apis.PyTransFile(recordId, srcFilePathName, desFile, srcLang, desLang)
+
 	// 更新结束时间
 	record.EndAt = time.Now().Format("2006-01-02 15:04:05")
 	datamodels.UpdateRecord(record)
@@ -103,6 +87,8 @@ func TranslateFile(srcLang string, desLang string, recordId int64, userId int64)
 		record.StateDescribe = structs.TransTranslateFailed.String()
 		datamodels.UpdateRecord(record)
 	} else {
+		// 翻译成功的时候写入sha1，便于后续翻译的命中
+		record.Sha1 = sha1
 		record.State = structs.TransTranslateSuccess
 		record.StateDescribe = structs.TransTranslateSuccess.String()
 		record.Progress = 100
