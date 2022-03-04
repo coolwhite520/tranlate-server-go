@@ -61,7 +61,7 @@ func PyTransFile(rowId int64, srcFile, desFile, srcLang, desLang string) error {
 	}
 	var a struct {
 		Code int    `json:"code"`
-		Msg  string `json:"msg"`
+		Message  string `json:"message"`
 		Data string `json:"data"`
 	}
 	err = json.Unmarshal(body, &a)
@@ -69,7 +69,7 @@ func PyTransFile(rowId int64, srcFile, desFile, srcLang, desLang string) error {
 		return err
 	}
 	if a.Code != 200 {
-		return errors.New(a.Msg)
+		return errors.New(a.Message)
 	}
 	return nil
 }

@@ -286,9 +286,9 @@ func (t *translateService) PostDownFile(ctx iris.Context) {
 		return
 	}
 	//
-	srcDir := fmt.Sprintf("%s/%d/%s", structs.UploadDir, user.Id, record.DirRandId)
-	extractDir := fmt.Sprintf("%s/%d/%s", structs.ExtractDir, user.Id, record.DirRandId)
-	translatedDir := fmt.Sprintf("%s/%d/%s", structs.OutputDir, user.Id, record.DirRandId)
+	srcDir := fmt.Sprintf("%s/%d/%s", structs.UploadDir, record.Id, record.DirRandId)
+	extractDir := fmt.Sprintf("%s/%d/%s", structs.ExtractDir, record.Id, record.DirRandId)
+	translatedDir := fmt.Sprintf("%s/%d/%s", structs.OutputDir, record.Id, record.DirRandId)
 
 	var filePathName string
 	if req.Type == 0 {
