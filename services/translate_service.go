@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"path"
@@ -306,6 +307,7 @@ func (t *translateService) PostDownFile(ctx iris.Context) {
 		return
 	}
 	if !utils.PathExists(filePathName) {
+		log.Errorln(fmt.Sprintf("文件不存在：%s", filePathName))
 		ctx.JSON(
 			map[string]interface{}{
 				"code": constant.HttpFileNotFoundError,
@@ -316,6 +318,7 @@ func (t *translateService) PostDownFile(ctx iris.Context) {
 	}
 	bytes, err := ioutil.ReadFile(filePathName)
 	if err != nil {
+		log.Errorln(fmt.Sprintf("文件不存在：%s", err.Error()))
 		ctx.JSON(
 			map[string]interface{}{
 				"code": constant.HttpFileOpenError,
