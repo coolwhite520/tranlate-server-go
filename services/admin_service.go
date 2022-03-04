@@ -39,6 +39,7 @@ type AdminService interface {
 	GetIpTableType() mvc.Result
 	GetIpTableRecords() mvc.Result
 	SetIpTableType(ctx iris.Context) mvc.Result
+	GetSysInfo(ctx iris.Context) mvc.Result
 }
 
 func  NewAdminService() AdminService {
@@ -753,6 +754,25 @@ func (a *adminService) SetIpTableType(ctx iris.Context) mvc.Result {
 		Object: map[string]interface{}{
 			"code": constant.HttpSuccess,
 			"msg":  constant.HttpSuccess.String(),
+		},
+	}
+}
+
+func (a *adminService) GetSysInfo(ctx iris.Context) mvc.Result {
+	newActivation := datamodels.NewActivationModel()
+	activationInfo, state := newActivation.ParseKeystoreFile()
+	if state != constant.HttpSuccess {
+		ctx.JSON(
+			map[string]interface{}{
+				"code":      state,
+				"msg":       state.String(),
+			})
+	}
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
+			"data": activationInfo,
 		},
 	}
 }

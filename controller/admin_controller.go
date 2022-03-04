@@ -16,6 +16,7 @@ func (a *AdminController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Router().Use(middleware.CheckLoginMiddleware, middleware.CheckSuperMiddleware, middleware.CheckActivationMiddleware) //  middleware.IsSystemAvailable
 	b.Handle("DELETE", "/{id: int64}", "DeleteById")
 	b.Handle("GET", "/ops/{offset: int}/{count: int}", "GetUserOperatorRecords")
+	b.Handle("GET", "/sysinfo", "GetSysInfo")
 	b.Handle("DELETE", "/ops/{id: int64}", "DeleteUserOperatorById")
 	b.Handle("DELETE", "/ops", "DeleteAllUserOperator")
 	b.Handle("POST", "/upload", "UploadUpgradeFile")
@@ -27,6 +28,10 @@ func (a *AdminController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle("GET", "/ip_table_type", "GetIpTableType")
 	b.Handle("GET", "/all_records/{offset: uint64}/{count: uint64}", "GetAllTransRecords")
 
+}
+//GetSysInfo 获取系统信息
+func (a *AdminController) GetSysInfo() mvc.Result {
+	return a.AdminService.GetSysInfo(a.Ctx)
 }
 
 // GetAllTransRecords 获取所有用户的翻译记录
