@@ -400,8 +400,29 @@ func (t *translateService) PostDeleteRecord(ctx iris.Context) mvc.Result {
 	}
 	a := ctx.Values().Get("User")
 	user, _ := (a).(structs.User)
-	byId, err2 := datamodels.QueryTranslateRecordByIdAndUserId(req.RecordId, user.Id)
-	if err2 != nil {
+	var byId *structs.Record
+	if user.IsSuper {
+		byId, err = datamodels.QueryTranslateRecordById(req.RecordId)
+		if err != nil {
+			return mvc.Response{
+				Object: map[string]interface{}{
+					"code": constant.HttpMysqlQueryError,
+					"msg":  constant.HttpMysqlQueryError.String(),
+				},
+			}
+		}
+	} else {
+		byId, err = datamodels.QueryTranslateRecordByIdAndUserId(req.RecordId, user.Id)
+		if err != nil {
+			return mvc.Response{
+				Object: map[string]interface{}{
+					"code": constant.HttpMysqlQueryError,
+					"msg":  constant.HttpMysqlQueryError.String(),
+				},
+			}
+		}
+	}
+	if byId == nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
 				"code": constant.HttpMysqlQueryError,
@@ -409,10 +430,11 @@ func (t *translateService) PostDeleteRecord(ctx iris.Context) mvc.Result {
 			},
 		}
 	}
-	if byId.ContentType != "" {
-		srcDir := fmt.Sprintf("%s/%d/%s", structs.UploadDir, user.Id, byId.DirRandId)
-		extractDir := fmt.Sprintf("%s/%d/%s", structs.ExtractDir, user.Id, byId.DirRandId)
-		translatedDir := fmt.Sprintf("%s/%d/%s", structs.OutputDir, user.Id, byId.DirRandId)
+
+	if byId.TransType != 0 {
+		srcDir := fmt.Sprintf("%s/%d/%s", structs.UploadDir, byId.UserId, byId.DirRandId)
+		extractDir := fmt.Sprintf("%s/%d/%s", structs.ExtractDir, byId.UserId, byId.DirRandId)
+		translatedDir := fmt.Sprintf("%s/%d/%s", structs.OutputDir, byId.UserId, byId.DirRandId)
 		srcFilePathName := path.Join(srcDir, byId.FileName+byId.FileExt)
 		middleFilePathName := path.Join(extractDir, byId.FileName+byId.FileExt)
 		desFilePathName := path.Join(translatedDir, byId.FileName+byId.FileExt)
@@ -426,7 +448,13 @@ func (t *translateService) PostDeleteRecord(ctx iris.Context) mvc.Result {
 			os.Remove(desFilePathName)
 		}
 	}
-	err = datamodels.DeleteTranslateRecordById(req.RecordId, user.Id)
+
+	if user.IsSuper {
+		datamodels.DeleteTranslateRecordById(req.RecordId)
+	} else {
+		err = datamodels.DeleteTranslateRecordByIdAndUserId(req.RecordId, user.Id)
+	}
+
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{

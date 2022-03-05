@@ -27,6 +27,7 @@ func PyTranslate(srcLang, desLang, content string) (string, error) {
 		}
 	}
 	url := fmt.Sprintf("http://%s:%s/translate", config.ProxyUrl, port)
+	//url := fmt.Sprintf("http://%s:%s/translate", "127.0.0.1", port)
 	client := &http.Client{}
 	var req *http.Request
 

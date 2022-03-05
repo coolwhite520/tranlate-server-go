@@ -29,7 +29,7 @@ var RecordTableFieldList = []string{
 	"EndAt",
 }
 
-func DeleteTranslateRecordById(id int64, userId int64) error {
+func DeleteTranslateRecordByIdAndUserId(id int64, userId int64) error {
 	tx, _ := db.Begin()
 	sql := fmt.Sprintf("DELETE FROM tbl_record where Id=? and UserId=?")
 	stmt, err := tx.Prepare(sql)
@@ -38,6 +38,23 @@ func DeleteTranslateRecordById(id int64, userId int64) error {
 		return err
 	}
 	_, err = stmt.Exec(id, userId)
+	tx.Commit()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
+}
+
+func DeleteTranslateRecordById(id int64) error {
+	tx, _ := db.Begin()
+	sql := fmt.Sprintf("DELETE FROM tbl_record where Id=?")
+	stmt, err := tx.Prepare(sql)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	_, err = stmt.Exec(id)
 	tx.Commit()
 	if err != nil {
 		log.Error(err)
