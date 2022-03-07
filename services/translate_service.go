@@ -186,6 +186,13 @@ func (t *translateService) PostUpload(ctx iris.Context) mvc.Result {
 		contentType, _ := utils.GetFileContentType(filePath)
 		fileExt := filepath.Ext(v.Filename)
 		fileName := v.Filename[0 : len(v.Filename)-len(fileExt)]
+		if strings.Contains(fileName, " ") {
+			fileName = strings.ReplaceAll(fileName, " ", "")
+			oldFileName := path.Join(userUploadDir, v.Filename)
+			newFileName := path.Join(userUploadDir, fileName + fileExt)
+			os.Rename(oldFileName, newFileName)
+		}
+
 		var TransType int
 		var OutFileExt string
 		if strings.Contains(contentType, "image/") {
