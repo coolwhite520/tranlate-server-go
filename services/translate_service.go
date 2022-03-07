@@ -187,10 +187,18 @@ func (t *translateService) PostUpload(ctx iris.Context) mvc.Result {
 		fileExt := filepath.Ext(v.Filename)
 		fileName := v.Filename[0 : len(v.Filename)-len(fileExt)]
 		if strings.Contains(fileName, " ") {
-			fileName = strings.ReplaceAll(fileName, " ", "")
+			fileName = strings.ReplaceAll(fileName, " ", "_")
 			oldFileName := path.Join(userUploadDir, v.Filename)
 			newFileName := path.Join(userUploadDir, fileName + fileExt)
-			os.Rename(oldFileName, newFileName)
+			err := os.Rename(oldFileName, newFileName)
+			if err != nil {
+				return mvc.Response{
+					Object: map[string]interface{}{
+						"code": constant.HttpUploadFileError,
+						"msg":  "重命名文件失败：" + err.Error(),
+					},
+				}
+			}
 		}
 
 		var TransType int
