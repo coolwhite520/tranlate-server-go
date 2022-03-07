@@ -13,7 +13,7 @@ import (
 var instance *ConfigureLoader
 var once sync.Once
 
-const version = "6.1.1"
+const version = "6.1.2"
 
 // proxyUrl 本机调试
 const ProxyUrl = "127.0.0.1"
