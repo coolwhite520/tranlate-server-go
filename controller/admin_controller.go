@@ -27,7 +27,6 @@ func (a *AdminController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle("POST", "/ip_table_type", "SetIpTableType")
 	b.Handle("GET", "/ip_table_type", "GetIpTableType")
 	b.Handle("GET", "/all_records/{offset: uint64}/{count: uint64}", "GetAllTransRecords")
-
 }
 //GetSysInfo 获取系统信息
 func (a *AdminController) GetSysInfo() mvc.Result {
