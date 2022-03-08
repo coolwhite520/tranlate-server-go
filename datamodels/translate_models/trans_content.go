@@ -20,6 +20,7 @@ func TranslateContent(srcLang string, desLang string, content string, userId int
 	record.TransType = 0
 	record.UserId = userId
 	record.Sha1 = sha1
+	record.Progress = 100
 	record.OutputContent = transContent
 	record.State = structs.TransTranslateSuccess
 	record.StateDescribe = structs.TransTranslateSuccess.String()
