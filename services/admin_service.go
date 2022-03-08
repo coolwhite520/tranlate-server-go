@@ -600,17 +600,18 @@ func (a *adminService) UpgradeComponent(ctx iris.Context) mvc.Result {
 			},
 		}
 	}
-	// 如果是mysql 、 redis 模块升级，那么需要重新初始化数据库,因为之前的连接已经断开了
-	if compInfo.ImageName == "mysql" {
-		datamodels.InitMysql()
-	}
-	if compInfo.ImageName == "redis" {
-		datamodels.InitRedis()
-	}
 
 	// 修改versions.ini
 	config.GetInstance().SetSectionKeyValue("components", newUserReq.Name, newUserReq.UpVersion)
 	config.GetInstance().GetComponentList(true)
+
+	// 如果是mysql 、 redis 模块升级，那么需要重新初始化数据库,因为之前的连接已经断开了
+	//if compInfo.ImageName == "mysql" {
+	//	datamodels.InitMysql()
+	//}
+	//if compInfo.ImageName == "redis" {
+	//	datamodels.InitRedis()
+	//}
 
 	//重启dockerd防止由于firewalld导致的dockerd链条缺失的问题
 	// 可能需要手动重启，不知道为什么golang的cmd调用不好使
