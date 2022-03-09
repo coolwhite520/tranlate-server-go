@@ -183,14 +183,22 @@ func (t *translateService) PostUpload(ctx iris.Context) mvc.Result {
 	}
 	for _, v := range files {
 		filePath := fmt.Sprintf("%s/%s", userUploadDir, v.Filename)
+		if !utils.PathExists(filePath) {
+			return mvc.Response{
+				Object: map[string]interface{}{
+					"code": constant.HttpSuccess,
+					"msg":  constant.HttpSuccess.String(),
+					"data": records,
+				},
+			}
+		}
 		contentType, _ := utils.GetFileContentType(filePath)
 		fileExt := filepath.Ext(v.Filename)
 		fileName := v.Filename[0 : len(v.Filename)-len(fileExt)]
 		if strings.Contains(fileName, " ") {
 			fileName = strings.ReplaceAll(fileName, " ", "_")
-			oldFileName := path.Join(userUploadDir, v.Filename)
 			newFileName := path.Join(userUploadDir, fileName + fileExt)
-			err := os.Rename(oldFileName, newFileName)
+			err := os.Rename(filePath, newFileName)
 			if err != nil {
 				return mvc.Response{
 					Object: map[string]interface{}{
@@ -200,7 +208,6 @@ func (t *translateService) PostUpload(ctx iris.Context) mvc.Result {
 				}
 			}
 		}
-
 		var TransType int
 		var OutFileExt string
 		if strings.Contains(contentType, "image/") {
