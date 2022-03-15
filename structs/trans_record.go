@@ -4,15 +4,10 @@ type TransStatus int64
 
 
 const UploadDir = "./data/uploads"
-const ExtractDir = "./data/extracts"
 const OutputDir = "./data/outputs"
 
 const (
 	TransNoRun TransStatus = iota
-	TransBeginExtract
-	TransExtractFailed
-	TransExtractSuccessContentEmpty
-	TransExtractSuccess
 	TransBeginTranslate
 	TransTranslateFailed
 	TransTranslateSuccess
@@ -22,14 +17,6 @@ func (t TransStatus) String() string {
 	switch t {
 	case TransNoRun:
 		return "上传成功未翻译"
-	case TransBeginExtract:
-		return "正在抽取文件内容"
-	case TransExtractFailed:
-		return "抽取文件内容失败"
-	case TransExtractSuccessContentEmpty:
-		return "抽取成功、内容为空"
-	case TransExtractSuccess:
-		return "抽取文件内容成功"
 	case TransBeginTranslate:
 		return "正在进行翻译"
 	case TransTranslateFailed:

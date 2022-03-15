@@ -8,11 +8,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
-	"path/filepath"
 	"translate-server/config"
 )
 
-func PyTransFile(rowId int64, srcFile, desFile, srcLang, desLang string) error {
+func RpcTransFile(rowId int64, dataAbsPath string) error {
 	compList, err := config.GetInstance().GetComponentList(false)
 	if err != nil {
 		return err
@@ -29,17 +28,12 @@ func PyTransFile(rowId int64, srcFile, desFile, srcLang, desLang string) error {
 	var req *http.Request
 
 	var bodyData struct {
-		RowId     int64  `json:"row_id"`
-		SrcFile   string `json:"src_file"`
-		DesFile   string `json:"des_file"`
-		SrcLang   string `json:"src_lang"`
-		DesLang   string `json:"des_lang"`
+		Id     int64  `json:"id"`
+		DataAbsPath string `json:"dataAbsPath"`
 	}
-	bodyData.RowId = rowId
-	bodyData.SrcLang = srcLang
-	bodyData.DesLang = desLang
-	bodyData.SrcFile, _ = filepath.Abs(srcFile)
-	bodyData.DesFile, _ = filepath.Abs(desFile)
+	bodyData.Id = rowId
+	bodyData.DataAbsPath = dataAbsPath
+
 
 	data, _ := json.Marshal(bodyData)
 	req, err = http.NewRequest("POST", url, bytes.NewBuffer(data))

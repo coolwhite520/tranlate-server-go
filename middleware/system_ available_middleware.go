@@ -28,7 +28,7 @@ func IsSystemAvailable(ctx iris.Context) {
 					"percent": docker.GetInstance().GetPercent(),
 				})
 			return
-		} else {
+		} else if docker.GetInstance().GetStatus() == docker.ErrorStatus {
 			ctx.JSON(
 				map[string]interface{}{
 					"code": constant.HttpDockerServiceException,

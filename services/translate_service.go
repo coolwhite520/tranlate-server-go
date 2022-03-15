@@ -209,28 +209,10 @@ func (t *translateService) PostUpload(ctx iris.Context) mvc.Result {
 			}
 		}
 		var TransType int
-		var OutFileExt string
 		if strings.Contains(contentType, "image/") {
 			TransType = 1
-			OutFileExt = ".docx"
 		} else {
 			TransType = 2
-			//文档类别的文件仅仅保留格式的类型为docx 、pptx 、 xlsx 、 eml
-			if strings.ToLower(fileExt) == ".docx" || strings.ToLower(fileExt) == ".doc" {
-				OutFileExt = ".docx"
-			} else if strings.ToLower(fileExt) == ".pptx" {
-				OutFileExt = ".pptx"
-			} else if strings.ToLower(fileExt) == ".ppt" {
-				OutFileExt = ".ppt"
-			} else if strings.ToLower(fileExt) == ".xlsx" {
-				OutFileExt = ".xlsx"
-			} else if strings.ToLower(fileExt) == ".xls" {
-				OutFileExt = ".xls"
-			} else if strings.ToLower(fileExt) == ".eml" {
-				OutFileExt = ".eml"
-			} else {
-				OutFileExt = ".docx"
-			}
 		}
 		record := structs.Record{
 			ContentType:   contentType,
@@ -241,7 +223,6 @@ func (t *translateService) PostUpload(ctx iris.Context) mvc.Result {
 			State:         structs.TransNoRun,
 			StateDescribe: structs.TransNoRun.String(),
 			UserId:        user.Id,
-			OutFileExt:    OutFileExt,
 		}
 		err = datamodels.InsertRecord(&record)
 		if err != nil {
@@ -310,14 +291,11 @@ func (t *translateService) PostDownFile(ctx iris.Context) {
 	}
 	//
 	srcDir := fmt.Sprintf("%s/%d/%s", structs.UploadDir, record.UserId, record.DirRandId)
-	extractDir := fmt.Sprintf("%s/%d/%s", structs.ExtractDir, record.UserId, record.DirRandId)
 	translatedDir := fmt.Sprintf("%s/%d/%s", structs.OutputDir, record.UserId, record.DirRandId)
 
 	var filePathName string
 	if req.Type == 0 {
 		filePathName = fmt.Sprintf("%s/%s%s", srcDir, record.FileName, record.FileExt)
-	} else if req.Type == 1 {
-		filePathName = fmt.Sprintf("%s/%s%s", extractDir, record.FileName, record.OutFileExt)
 	} else if req.Type == 2 {
 		filePathName = fmt.Sprintf("%s/%s%s", translatedDir, record.FileName, record.OutFileExt)
 	} else {
@@ -455,16 +433,11 @@ func (t *translateService) PostDeleteRecord(ctx iris.Context) mvc.Result {
 
 	if byId.TransType != 0 {
 		srcDir := fmt.Sprintf("%s/%d/%s", structs.UploadDir, byId.UserId, byId.DirRandId)
-		extractDir := fmt.Sprintf("%s/%d/%s", structs.ExtractDir, byId.UserId, byId.DirRandId)
 		translatedDir := fmt.Sprintf("%s/%d/%s", structs.OutputDir, byId.UserId, byId.DirRandId)
 		srcFilePathName := path.Join(srcDir, byId.FileName+byId.FileExt)
-		middleFilePathName := path.Join(extractDir, byId.FileName+byId.FileExt)
 		desFilePathName := path.Join(translatedDir, byId.FileName+byId.FileExt)
 		if utils.PathExists(srcFilePathName) {
 			os.Remove(srcFilePathName)
-		}
-		if utils.PathExists(middleFilePathName) {
-			os.Remove(middleFilePathName)
 		}
 		if utils.PathExists(desFilePathName) {
 			os.Remove(desFilePathName)

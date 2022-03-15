@@ -81,6 +81,7 @@ func (o *Operator) StartDockers() error {
 			if v.ImageName != "web" {
 				err = o.JoinPrivateNetwork(id)
 				if err != nil {
+					o.status = ErrorStatus
 					return err
 				}
 			}
