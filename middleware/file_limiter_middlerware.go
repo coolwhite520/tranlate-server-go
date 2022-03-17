@@ -6,7 +6,7 @@ import (
 	"translate-server/constant"
 )
 
-const MaxNumber = 8
+const MaxNumber = 30
 const maxSize = MaxNumber * iris.MB
 
 // FileLimiterMiddleware 上传文件大小检测的中间件
