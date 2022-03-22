@@ -13,7 +13,8 @@ import (
 var instance *ConfigureLoader
 var once sync.Once
 
-const version = "6.1.3"
+// 修复web组件在使用cdn的时候不联网打不开首页的bug
+const version = "6.1.4"
 
 // proxyUrl 本机调试
 const ProxyUrl = "127.0.0.1"
