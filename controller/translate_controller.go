@@ -33,7 +33,7 @@ func (t *TranslateController) GetLangList() mvc.Result {
 	return t.TranslateService.GetLangList()
 }
 
-// GetAllLangList 获取支持的语言
+// GetAllLangList 获取所有的语言
 func (t *TranslateController) GetAllLangList() mvc.Result {
 	return t.TranslateService.GetAllLangList()
 }

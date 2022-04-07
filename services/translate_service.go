@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 	"translate-server/constant"
@@ -47,6 +48,7 @@ func (t *translateService) GetLangList() mvc.Result {
 			},
 		}
 	}
+	sort.Sort(file.SupportLangList)
 	return mvc.Response{
 		Object: map[string]interface{}{
 			"code": constant.HttpSuccess,

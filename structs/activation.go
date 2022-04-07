@@ -1,14 +1,41 @@
 package structs
 
+import (
+	"github.com/mozillazg/go-pinyin"
+)
+
 type SupportLang struct {
 	EnName string `json:"en_name"`
 	CnName string `json:"cn_name"`
 }
 
+
+func Hans2Pinyin(hans string) string  {
+	args := pinyin.NewArgs()
+	rows:= pinyin.Pinyin(hans, args)
+
+	strResult:=""
+	for _, v := range rows {
+		for _, item := range v {
+			strResult += item
+		}
+	}
+	return strResult
+}
+
+
+type LangList []SupportLang
+func (a LangList) Len() int           { return len(a) }
+func (a LangList) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a LangList) Less(i, j int) bool {
+	return Hans2Pinyin(a[i].CnName) < Hans2Pinyin(a[j].CnName)
+}
+
+
 type Activation struct {
 	UserName        string        `json:"user_name"`
 	Sn              string        `json:"sn"`
-	SupportLangList []SupportLang `json:"support_lang_list"` // 英文简称列表
+	SupportLangList LangList `json:"support_lang_list"` // 英文简称列表
 	CreatedAt       int64         `json:"created_at"`        // 这个时间代表激活码的生成时间，授权人员生成激活码的时候决定了
 	UseTimeSpan     int64         `json:"use_time_span"`     // 可以使用的时间，是一个时间段，以秒为单位 比如一年：1 * 365 * 24 * 60 * 60
 	Mark            string        `json:"mark"`

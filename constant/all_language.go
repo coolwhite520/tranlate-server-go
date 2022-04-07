@@ -3,6 +3,7 @@ package constant
 import (
 	"github.com/Unknwon/goconfig"
 	log "github.com/sirupsen/logrus"
+	"sort"
 	"translate-server/structs"
 )
 
@@ -120,7 +121,8 @@ Yoruba=约鲁巴语
 Chinese=中文(简体)
 Zulu=祖鲁语
 `
-var AllLanguageList []structs.SupportLang
+
+var AllLanguageList structs.LangList
 
 func init() {
 	cfg, err := goconfig.LoadFromData([]byte(contentAll))
@@ -139,4 +141,5 @@ func init() {
 			CnName: v,
 		})
 	}
+	sort.Sort(AllLanguageList)
 }
