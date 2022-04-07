@@ -260,7 +260,6 @@ func QueryUserFavorById(userId int64) (string, error) {
 	var favor string
 	err := ret.Scan(&favor)
 	if err != nil {
-		log.Error(err)
 		return "", nil
 	}
 	return favor, nil

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
@@ -9,14 +10,17 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"translate-server/config"
 	"translate-server/constant"
 	"translate-server/datamodels"
 	"translate-server/docker"
 	"translate-server/middleware"
 	"translate-server/structs"
+	"translate-server/systeminfo"
 	"translate-server/utils"
 )
 
@@ -39,7 +43,9 @@ type AdminService interface {
 	GetIpTableType() mvc.Result
 	GetIpTableRecords() mvc.Result
 	SetIpTableType(ctx iris.Context) mvc.Result
+	GetSystemCpuMemDiskDetail() mvc.Result
 	GetSysInfo(ctx iris.Context) mvc.Result
+	LookupContainerLogs(ctx iris.Context)
 }
 
 func  NewAdminService() AdminService {
@@ -313,8 +319,9 @@ func (a *adminService) ModifyPassword(ctx iris.Context) mvc.Result {
 
 //Repair 管理员调用系统修复
 func (a *adminService) Repair() mvc.Result{
+	err := docker.GetInstance().CreatePrivateNetwork()
 	docker.GetInstance().SetStatus(docker.RepairingStatus)
-	err := docker.GetInstance().StartDockers()
+	err = docker.GetInstance().StartDockers()
 	if err != nil {
 		docker.GetInstance().SetStatus(docker.NormalStatus)
 		return mvc.Response{
@@ -344,14 +351,41 @@ func Filter(comment string, list []string) [] string  {
 	return newList
 }
 
+type ContainerState int64
+const (
+	ContainerAllGood ContainerState =  iota
+	ContainerNotRun
+	ContainerNotInPrivateNet
+)
+
+func (h ContainerState) String() string {
+	switch h {
+	case ContainerAllGood:
+		return "运行良好"
+	case ContainerNotRun:
+		return "已停止"
+	case ContainerNotInPrivateNet:
+		return "网络错误"
+	default:
+		return ""
+	}
+}
+
+type resultData struct{
+	Name string `json:"name"`
+	CurrentVersion string `json:"current_version"`
+	Versions []string `json:"versions"`
+	CompsState ContainerState `json:"comps_state"`
+	CompsStateDescribe string `json:"comps_state_describe"`
+}
+type ResultDataList []resultData
+
+func (r ResultDataList) Len() int           { return len(r) }
+func (r ResultDataList) Swap(i, j int)      { r[i], r[j] = r[j], r[i] }
+func (r ResultDataList) Less(i, j int) bool { return r[i].Name < r[j].Name }
+
 //GetComponents 获取组件列表
 func (a *adminService) GetComponents() mvc.Result {
-	type resultData struct{
-		Name string `json:"name"`
-		CurrentVersion string `json:"current_version"`
-		Versions []string `json:"versions"`
-	}
-	type ResultDataList []resultData
 	var retList ResultDataList
 	list, err := config.GetInstance().GetComponentList(false)
 	for _, v := range list {
@@ -360,9 +394,19 @@ func (a *adminService) GetComponents() mvc.Result {
 		item.Versions = versions
 		item.Name = v.ImageName
 		item.CurrentVersion = v.ImageVersion
+		running, _ := docker.GetInstance().IsContainerRunning(v.ImageName, v.ImageVersion)
+		net, _ := docker.GetInstance().IsInPrivateNet(v.ImageName)
+		if running && net {
+			item.CompsState = ContainerAllGood
+		} else if running && !net {
+			item.CompsState = ContainerNotInPrivateNet
+		} else {
+			item.CompsState = ContainerNotRun
+		}
+		item.CompsStateDescribe = item.CompsState.String()
 		retList = append(retList, item)
 	}
-
+	sort.Sort(retList)
 	if err != nil {
 		return mvc.Response{
 			Object: map[string]interface{}{
@@ -378,6 +422,84 @@ func (a *adminService) GetComponents() mvc.Result {
 			"data": retList,
 		},
 	}
+}
+
+func (a *adminService) GetSystemCpuMemDiskDetail() mvc.Result {
+	info := systeminfo.GetSystemInfo()
+	return mvc.Response{
+		Object: map[string]interface{}{
+			"code": constant.HttpSuccess,
+			"msg":  constant.HttpSuccess.String(),
+			"data": info,
+		},
+	}
+}
+
+func (a *adminService) LookupContainerLogs(ctx iris.Context) {
+	var newUserReq struct {
+		Name          string `json:"name"`
+	}
+	err := ctx.ReadJSON(&newUserReq)
+	if err != nil {
+		ctx.JSON(
+			map[string]interface{}{
+				"code": constant.HttpJsonParseError,
+				"msg":  err.Error(),
+			},
+		)
+		return
+	}
+	name := newUserReq.Name
+	logs, err := docker.GetInstance().LogsContainer(name)
+	if err != nil {
+		ctx.JSON(
+			map[string]interface{}{
+				"code": constant.HttpFileOpenError,
+				"msg":  err.Error(),
+			},
+		)
+		return
+	}
+	logStr := base64.StdEncoding.EncodeToString(logs)
+	now := time.Now().Format("2006_01_02_15_04_05")
+	tempDir := os.TempDir()
+	dir := fmt.Sprintf("%s%s/%s", tempDir, name, now)
+	if !utils.PathExists(dir) {
+		os.MkdirAll(dir, os.ModePerm)
+	}
+	fileName := fmt.Sprintf("%s/%s.txt", dir, name)
+	desFileName := fmt.Sprintf("%s/%s.zip", dir, name)
+	err = ioutil.WriteFile(fileName, []byte(logStr), os.ModePerm)
+	if err != nil {
+		ctx.JSON(
+			map[string]interface{}{
+				"code": constant.HttpFileOpenError,
+				"msg":  err.Error(),
+			},
+		)
+		return
+	}
+	err = utils.ZipFile(fileName, desFileName)
+	if err != nil {
+		ctx.JSON(
+			map[string]interface{}{
+				"code": constant.HttpFileOpenError,
+				"msg":  err.Error(),
+			},
+		)
+		return
+	}
+	bytes, err := ioutil.ReadFile(desFileName)
+	if err != nil {
+		ctx.JSON(
+			map[string]interface{}{
+				"code": constant.HttpFileOpenError,
+				"msg":  err.Error(),
+			},
+		)
+		return
+	}
+	ctx.ResponseWriter().Write(bytes)
 }
 
 // UploadUpgradeFile 升级文件必须是zip格式，压缩包里面包含一个同名的 xxx.dat（记录升级文件的信息也就是ComponentInfo结构） 和一个xxx.tar 文件
