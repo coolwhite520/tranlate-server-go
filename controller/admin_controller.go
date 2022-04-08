@@ -19,6 +19,7 @@ func (a *AdminController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle("GET", "/sysinfo", "GetSysInfo")
 	b.Handle("GET", "/cpu_mem_disk", "GetSystemCpuMemDiskDetail")
 	b.Handle("POST", "/container_logs", "PostContainerLogs")
+	b.Handle("POST", "/sys_logs", "PostSystemLogs")
 	b.Handle("DELETE", "/ops/{id: int64}", "DeleteUserOperatorById")
 	b.Handle("DELETE", "/ops", "DeleteAllUserOperator")
 	b.Handle("POST", "/upload", "UploadUpgradeFile")
@@ -99,6 +100,11 @@ func (a *AdminController) GetSystemCpuMemDiskDetail() mvc.Result {
 func (a *AdminController) PostContainerLogs()  {
 	a.AdminService.LookupContainerLogs(a.Ctx)
 }
+//PostSystemLogs 下载组件日志
+func (a *AdminController) PostSystemLogs()  {
+	a.AdminService.LookupSystemLogs(a.Ctx)
+}
+
 
 // UploadUpgradeFile 升级文件必须是zip格式，压缩包里面包含一个同名的 xxx.dat（记录升级文件的信息也就是ComponentInfo结构） 和一个xxx.tar 文件
 func (a *AdminController) UploadUpgradeFile() mvc.Result {

@@ -46,6 +46,7 @@ type AdminService interface {
 	GetSystemCpuMemDiskDetail() mvc.Result
 	GetSysInfo(ctx iris.Context) mvc.Result
 	LookupContainerLogs(ctx iris.Context)
+	LookupSystemLogs(ctx iris.Context)
 }
 
 func  NewAdminService() AdminService {
@@ -435,6 +436,25 @@ func (a *adminService) GetSystemCpuMemDiskDetail() mvc.Result {
 	}
 }
 
+func (a *adminService) LookupSystemLogs(ctx iris.Context) {
+	srcFileName := "./logs"
+	now := time.Now().Format("2006_01_02_15_04_05")
+	fileName := fmt.Sprintf("trans_logs_%s.zip", now)
+	desFileName := fmt.Sprintf("%s/%s", os.TempDir(), fileName)
+	err := utils.ZipFile(srcFileName, desFileName)
+	if err != nil {
+		ctx.JSON(
+			map[string]interface{}{
+				"code": constant.HttpFileOpenError,
+				"msg":  err.Error(),
+			},
+		)
+		return
+	}
+	ctx.SendFile(desFileName, fileName)
+
+}
+
 func (a *adminService) LookupContainerLogs(ctx iris.Context) {
 	var newUserReq struct {
 		Name          string `json:"name"`
@@ -463,7 +483,7 @@ func (a *adminService) LookupContainerLogs(ctx iris.Context) {
 	logStr := base64.StdEncoding.EncodeToString(logs)
 	now := time.Now().Format("2006_01_02_15_04_05")
 	tempDir := os.TempDir()
-	dir := fmt.Sprintf("%s%s/%s", tempDir, name, now)
+	dir := fmt.Sprintf("%s/%s/%s", tempDir, name, now)
 	if !utils.PathExists(dir) {
 		os.MkdirAll(dir, os.ModePerm)
 	}
@@ -489,17 +509,18 @@ func (a *adminService) LookupContainerLogs(ctx iris.Context) {
 		)
 		return
 	}
-	bytes, err := ioutil.ReadFile(desFileName)
-	if err != nil {
-		ctx.JSON(
-			map[string]interface{}{
-				"code": constant.HttpFileOpenError,
-				"msg":  err.Error(),
-			},
-		)
-		return
-	}
-	ctx.ResponseWriter().Write(bytes)
+	//bytes, err := ioutil.ReadFile(desFileName)
+	//if err != nil {
+	//	ctx.JSON(
+	//		map[string]interface{}{
+	//			"code": constant.HttpFileOpenError,
+	//			"msg":  err.Error(),
+	//		},
+	//	)
+	//	return
+	//}
+	//ctx.ResponseWriter().Write(bytes)
+	ctx.SendFile(desFileName, name + ".zip")
 }
 
 // UploadUpgradeFile 升级文件必须是zip格式，压缩包里面包含一个同名的 xxx.dat（记录升级文件的信息也就是ComponentInfo结构） 和一个xxx.tar 文件
