@@ -397,13 +397,22 @@ func (a *adminService) GetComponents() mvc.Result {
 		item.CurrentVersion = v.ImageVersion
 		running, _ := docker.GetInstance().IsContainerRunning(v.ImageName, v.ImageVersion)
 		net, _ := docker.GetInstance().IsInPrivateNet(v.ImageName)
-		if running && net {
-			item.CompsState = ContainerAllGood
-		} else if running && !net {
-			item.CompsState = ContainerNotInPrivateNet
+		if v.ImageName == "web" {
+			if !running {
+				item.CompsState = ContainerNotRun
+			} else {
+				item.CompsState = ContainerAllGood
+			}
 		} else {
-			item.CompsState = ContainerNotRun
+			if running && net {
+				item.CompsState = ContainerAllGood
+			} else if running && !net {
+				item.CompsState = ContainerNotInPrivateNet
+			} else {
+				item.CompsState = ContainerNotRun
+			}
 		}
+
 		item.CompsStateDescribe = item.CompsState.String()
 		retList = append(retList, item)
 	}
