@@ -8,6 +8,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -360,20 +361,38 @@ func (o *Operator) IsContainerRunning(imageName string, imageTag string) (bool, 
 	return false, nil
 }
 
+func (o *Operator) getContainerIdByName(containerName string) (string, error) {
+	containers, err := o.cli.ContainerList(context.Background(), types.ContainerListOptions{})
+	if err != nil {
+		return "", err
+	}
+	for _, v := range containers {
+		name := v.Names[0][1:]
+		if name ==  containerName {
+			return v.ID, nil
+		}
+	}
+	return "", nil
+}
+
 func (o *Operator) LogsContainer(imageName string) ([]byte, error) {
 	containerName := ContainerPrefix + imageName
-	logs, err := o.cli.ContainerLogs(context.Background(), containerName,
-		types.ContainerLogsOptions{ShowStderr: true, ShowStdout: true},
+	id, err := o.getContainerIdByName(containerName)
+	if err != nil {
+		return nil, err
+	}
+
+	logs, err := o.cli.ContainerLogs(context.Background(), id,
+		types.ContainerLogsOptions{ShowStderr: true, ShowStdout: true, Details: true},
 	)
 	if err != nil {
 		return nil, err
 	}
-	var bytes []byte
-	_, err = logs.Read(bytes)
+	logContent, err := ioutil.ReadAll(logs)
 	if err != nil {
 		return nil, err
 	}
-	return bytes, nil
+	return logContent, nil
 }
 
 // CreatePrivateNetwork 创建一个翻译系统的私有网络 名称由PrivateNetworkName变量设定

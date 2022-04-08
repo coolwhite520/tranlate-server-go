@@ -509,17 +509,6 @@ func (a *adminService) LookupContainerLogs(ctx iris.Context) {
 		)
 		return
 	}
-	//bytes, err := ioutil.ReadFile(desFileName)
-	//if err != nil {
-	//	ctx.JSON(
-	//		map[string]interface{}{
-	//			"code": constant.HttpFileOpenError,
-	//			"msg":  err.Error(),
-	//		},
-	//	)
-	//	return
-	//}
-	//ctx.ResponseWriter().Write(bytes)
 	ctx.SendFile(desFileName, name + ".zip")
 }
 
