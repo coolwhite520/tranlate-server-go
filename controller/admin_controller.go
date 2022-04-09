@@ -17,7 +17,7 @@ func (a *AdminController) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle("DELETE", "/{id: int64}", "DeleteById")
 	b.Handle("GET", "/ops/{offset: int}/{count: int}", "GetUserOperatorRecords")
 	b.Handle("GET", "/sysinfo", "GetSysInfo")
-	b.Handle("GET", "/cpu_mem_disk", "GetSystemCpuMemDiskDetail")
+	b.Handle("GET", "/cpu_mem_io", "GetSystemCpuMemIoDetail")
 	b.Handle("POST", "/container_logs", "PostContainerLogs")
 	b.Handle("POST", "/sys_logs", "PostSystemLogs")
 	b.Handle("DELETE", "/ops/{id: int64}", "DeleteUserOperatorById")
@@ -91,9 +91,9 @@ func (a *AdminController) GetComponents() mvc.Result {
 	return a.AdminService.GetComponents()
 }
 
-//GetSystemCpuMemDiskDetail 获取系统cpu、mem、disk的占用情况
-func (a *AdminController) GetSystemCpuMemDiskDetail() mvc.Result {
-	return a.AdminService.GetSystemCpuMemDiskDetail()
+//GetSystemCpuMemIoDetail 获取系统cpu、mem、disk的占用情况
+func (a *AdminController) GetSystemCpuMemIoDetail() mvc.Result {
+	return a.AdminService.GetSystemCpuMemIoDetail()
 }
 
 //PostContainerLogs 下载组件日志

@@ -43,7 +43,7 @@ type AdminService interface {
 	GetIpTableType() mvc.Result
 	GetIpTableRecords() mvc.Result
 	SetIpTableType(ctx iris.Context) mvc.Result
-	GetSystemCpuMemDiskDetail() mvc.Result
+	GetSystemCpuMemIoDetail() mvc.Result
 	GetSysInfo(ctx iris.Context) mvc.Result
 	LookupContainerLogs(ctx iris.Context)
 	LookupSystemLogs(ctx iris.Context)
@@ -434,7 +434,7 @@ func (a *adminService) GetComponents() mvc.Result {
 	}
 }
 
-func (a *adminService) GetSystemCpuMemDiskDetail() mvc.Result {
+func (a *adminService) GetSystemCpuMemIoDetail() mvc.Result {
 	info := systeminfo.GetSystemInfo()
 	return mvc.Response{
 		Object: map[string]interface{}{
