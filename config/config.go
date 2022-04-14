@@ -14,7 +14,7 @@ var instance *ConfigureLoader
 var once sync.Once
 
 // 修复web组件在使用cdn的时候不联网打不开首页的bug
-const version = "6.1.6"
+const version = "6.1.7"
 
 // proxyUrl 本机调试
 const ProxyUrl = "127.0.0.1"

@@ -125,7 +125,7 @@ func (o *Operator) IsALlRunningStatus() (bool, error) {
 
 // LoadImage 从文件加载镜像
 func (o *Operator) LoadImage(img structs.ComponentInfo) error {
-	b, err := o.existImage(img.ImageName, img.ImageVersion)
+	b, err := o.ExistImage(img.ImageName, img.ImageVersion)
 	if err != nil {
 		return err
 	}
@@ -319,7 +319,7 @@ func (o *Operator) getContainerNameById(id string) (string, error) {
 }
 
 // ExistImage 镜像是否存在
-func (o *Operator) existImage(imageName string, imageTag string) (bool, error) {
+func (o *Operator) ExistImage(imageName string, imageTag string) (bool, error) {
 	images, err := o.cli.ImageList(context.Background(), types.ImageListOptions{})
 	if err != nil {
 		return false, err

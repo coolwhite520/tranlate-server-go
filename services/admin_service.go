@@ -357,6 +357,7 @@ const (
 	ContainerAllGood ContainerState =  iota
 	ContainerNotRun
 	ContainerNotInPrivateNet
+	ImageNotImport
 )
 
 func (h ContainerState) String() string {
@@ -367,6 +368,8 @@ func (h ContainerState) String() string {
 		return "已停止"
 	case ContainerNotInPrivateNet:
 		return "网络错误"
+	case ImageNotImport:
+		return "镜像未导入"
 	default:
 		return ""
 	}
@@ -395,6 +398,7 @@ func (a *adminService) GetComponents() mvc.Result {
 		item.Versions = versions
 		item.Name = v.ImageName
 		item.CurrentVersion = v.ImageVersion
+		imageExist, _ := docker.GetInstance().ExistImage(v.ImageName, v.ImageVersion)
 		running, _ := docker.GetInstance().IsContainerRunning(v.ImageName, v.ImageVersion)
 		net, _ := docker.GetInstance().IsInPrivateNet(v.ImageName)
 		if v.ImageName == "web" {
@@ -404,12 +408,16 @@ func (a *adminService) GetComponents() mvc.Result {
 				item.CompsState = ContainerAllGood
 			}
 		} else {
-			if running && net {
-				item.CompsState = ContainerAllGood
-			} else if running && !net {
-				item.CompsState = ContainerNotInPrivateNet
+			if imageExist {
+				if running && net {
+					item.CompsState = ContainerAllGood
+				} else if running && !net {
+					item.CompsState = ContainerNotInPrivateNet
+				} else {
+					item.CompsState = ContainerNotRun
+				}
 			} else {
-				item.CompsState = ContainerNotRun
+				item.CompsState = ImageNotImport
 			}
 		}
 
