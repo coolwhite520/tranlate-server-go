@@ -21,6 +21,24 @@ func CheckActivationMiddleware(ctx iris.Context) {
 			})
 		return
 	}
+
+	// 是否被永久失效了
+	bannedInfo, _ := newActivation.ParseBannedFile()
+	if bannedInfo != nil {
+		for _, v := range bannedInfo.Ids {
+			if v == activationInfo.CreatedAt {
+				ctx.JSON(
+					map[string]interface{}{
+						"code": constant.HttpActivationInvalidateError,
+						"sn":   sn,
+						"msg":  constant.HttpActivationInvalidateError.String(),
+					})
+				return
+			}
+		}
+	}
+
+	// 是否过期了
 	expiredInfo, state := newActivation.ParseExpiredFile()
 	// 用户失误或故意删除了/usr/bin/${machineID}的文件，我们再替他生成回来
 	if state == constant.HttpActivationNotFound {

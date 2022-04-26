@@ -58,3 +58,14 @@ type KeystoreExpired struct {
 	CreatedAt    int64   `json:"created_at"`
 	LeftTimeSpan int64  `json:"left_time_span"`   // 初始化为UseTimeSpan
 }
+
+// BannedKeystoreInfo 失效的授权id(CreatedAt)列表
+type BannedKeystoreInfo struct {
+	Ids []int64 `json:"ids"`
+}
+
+// KeystoreProof 凭证
+type KeystoreProof struct {
+	Sn  string  `json:"sn"`    // 机器码
+	State int `json:"state"`   // 授权状态
+}

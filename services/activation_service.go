@@ -1,6 +1,8 @@
 package services
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	log "github.com/sirupsen/logrus"
@@ -9,11 +11,15 @@ import (
 	"translate-server/datamodels"
 	"translate-server/docker"
 	"translate-server/structs"
+	"translate-server/utils"
 )
 
+const AesProofKey = "ecf274d323fab23667a2ccd7904803c8"
 
 type ActivationService interface {
 	Activation(ctx iris.Context) mvc.Result
+	AddBan() mvc.Result
+	PostActivationProof(ctx iris.Context)
 }
 
 func NewActivationService() ActivationService {
@@ -21,6 +27,75 @@ func NewActivationService() ActivationService {
 }
 
 type activationService struct {
+}
+
+// PostActivationProof 获取授权凭证状态：0。状态良好 1。未激活 2。过期 3。强制失效
+func (a *activationService) PostActivationProof(ctx iris.Context) {
+	var proof structs.KeystoreProof
+	model := datamodels.NewActivationModel()
+	expiredInfo, _ := model.ParseExpiredFile()
+	banInfo, _ := model.ParseBannedFile()
+	if expiredInfo == nil {
+		// 1 未激活的判定
+		proof.Sn = model.GetMachineId()
+		proof.State = 1
+	} else if expiredInfo.LeftTimeSpan <= 0 {
+		// 2 过期的判定
+		proof.Sn = model.GetMachineId()
+		proof.State = 2
+	} else if banInfo != nil {
+		// 3 强制失效的判定，用户替换授权
+		isBaned := false
+		for _, v := range banInfo.Ids {
+			if v == expiredInfo.CreatedAt {
+				isBaned = true
+				break
+			}
+		}
+		if isBaned {
+			proof.Sn = model.GetMachineId()
+			proof.State = 3
+		} else {
+			proof.Sn = model.GetMachineId()
+			proof.State = 0
+		}
+	} else {
+		proof.Sn = model.GetMachineId()
+		proof.State = 0
+	}
+	var resultStr string
+	bytes, _ := json.Marshal(&proof)
+	encrypt, err := utils.AesEncrypt(bytes, []byte(AesProofKey))
+	if err == nil {
+		resultStr = base64.StdEncoding.EncodeToString(bytes)
+	} else {
+		resultStr = base64.StdEncoding.EncodeToString(encrypt)
+	}
+	ctx.ResponseWriter().Write([]byte(resultStr))
+}
+
+func (a *activationService) AddBan() mvc.Result {
+	model := datamodels.NewActivationModel()
+	activationInfo, state := model.ParseKeystoreFile()
+	if state != constant.HttpSuccess {
+		return mvc.Response{
+			Object: map[string]interface{} {
+				"code": state,
+				"msg": state.String(),
+			},
+		}
+	}
+	code := model.AddId2BannedFile(activationInfo.CreatedAt)
+	return mvc.Response{
+		Object: map[string]interface{} {
+			"code": code,
+			"msg":  code.String(),
+			"data": map[string]interface{} {
+				"id": activationInfo.CreatedAt,
+				"sn": activationInfo.Sn,
+			},
+		},
+	}
 }
 
 func (a *activationService) Activation(ctx iris.Context) mvc.Result {
@@ -48,6 +123,46 @@ func (a *activationService) Activation(ctx iris.Context) mvc.Result {
 			},
 		}
 	}
+	// 是否永久失效的授权
+	bannedInfo, _ := model.ParseBannedFile()
+	if bannedInfo != nil {
+		for _, v := range bannedInfo.Ids {
+			if v == activationInfo.CreatedAt {
+				return mvc.Response{
+					Object: map[string]interface{} {
+						"code": constant.HttpActivationInvalidateError,
+						"msg":  "输入了已经失效的授权。",
+					},
+				}
+			}
+		}
+	}
+	// 判断授权是否是已经过期的
+	expiredInfo, state := model.ParseExpiredFile()
+	if expiredInfo != nil && expiredInfo.CreatedAt == activationInfo.CreatedAt && expiredInfo.LeftTimeSpan <= 0 {
+		return mvc.Response {
+			Object: map[string]interface{}{
+				"code": constant.HttpActivationExpiredError,
+				"msg":  constant.HttpActivationExpiredError.String(),
+			},
+		}
+	}
+	// 判断是否存在老的授权
+	oldKeystore, _ := model.ParseKeystoreFile()
+	if oldKeystore != nil {
+		if oldKeystore.CreatedAt == activationInfo.CreatedAt {
+			return mvc.Response {
+				Object: map[string]interface{}{
+					"code": constant.HttpActivationInvalidateError,
+					"msg":  "导入的授权已存在。",
+				},
+			}
+		}
+		// 将老的授权CreateAt加入到ban列表中
+		model.AddId2BannedFile(oldKeystore.CreatedAt)
+	}
+
+	// 生成授权文件
 	state = model.GenerateKeystoreFileByContent(jsonObj.Keystore)
 	if state != constant.HttpSuccess {
 		return mvc.Response{
@@ -57,25 +172,18 @@ func (a *activationService) Activation(ctx iris.Context) mvc.Result {
 			},
 		}
 	}
-	// 判断是否需要重新写入一个新的过期判定文件
+	// 生成过期文件
 	var expired structs.KeystoreExpired
 	expired.LeftTimeSpan = activationInfo.UseTimeSpan
 	expired.Sn = activationInfo.Sn
 	expired.CreatedAt = activationInfo.CreatedAt
-
-	expiredInfo, state := model.ParseExpiredFile()
-	if state == constant.HttpActivationNotFound {
-		state = model.GenerateExpiredFile(expired)
+	state = model.GenerateExpiredFile(expired)
+	if state != constant.HttpSuccess {
 		return mvc.Response{
 			Object: map[string]interface{} {
 				"code": state,
 				"msg": state.String(),
 			},
-		}
-	} else {
-		// 当时间不同的时候, 需要替换授权
-		if expiredInfo.CreatedAt != activationInfo.CreatedAt {
-			model.GenerateExpiredFile(expired)
 		}
 	}
 	go func() {
@@ -92,8 +200,8 @@ func (a *activationService) Activation(ctx iris.Context) mvc.Result {
 	}()
 	return mvc.Response{
 		Object: map[string]interface{} {
-			"code": state,
-			"msg": state.String(),
+			"code": constant.HttpSuccess,
+			"msg": constant.HttpSuccess.String(),
 		},
 	}
 }
