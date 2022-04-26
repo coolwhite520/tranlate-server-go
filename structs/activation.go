@@ -63,9 +63,34 @@ type BannedKeystoreInfo struct {
 	Ids []int64 `json:"ids"`
 }
 
+type ProofStatusCode int
+
+const (
+	ProofStateOk ProofStatusCode = iota
+	ProofStateNotActivation
+	ProofStateExpired
+	ProofStateForceBanned
+)
+
+func (p ProofStatusCode) String() string {
+	switch p {
+	case ProofStateOk:
+		return "正在使用中"
+	case ProofStateForceBanned:
+		return "强制失效"
+	case ProofStateExpired:
+		return "已经过期"
+	case ProofStateNotActivation:
+		return "首次激活"
+	default:
+		return ""
+	}
+}
+
 // KeystoreProof 凭证
 type KeystoreProof struct {
-	Sn    string `json:"sn"`    // 机器码
-	State int    `json:"state"` // 授权状态
-	Now   int64  `json:"now"`   // 时间以便每次生成都不同
+	Sn            string          `json:"sn"`    // 机器码
+	State         ProofStatusCode `json:"state"` // 授权状态 0。状态良好 1。未激活 2。过期 3。强制失效
+	StateDescribe string          `json:"state_describe"`
+	Now           int64           `json:"now"` // 时间以便每次生成都不同
 }

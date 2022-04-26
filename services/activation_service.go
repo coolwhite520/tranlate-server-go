@@ -39,11 +39,13 @@ func (a *activationService) PostActivationProof(ctx iris.Context) {
 	if expiredInfo == nil {
 		// 1 未激活的判定
 		proof.Sn = model.GetMachineId()
-		proof.State = 1
+		proof.State = structs.ProofStateNotActivation
+		proof.StateDescribe = proof.State.String()
 	} else if expiredInfo.LeftTimeSpan <= 0 {
 		// 2 过期的判定
 		proof.Sn = model.GetMachineId()
-		proof.State = 2
+		proof.State = structs.ProofStateExpired
+		proof.StateDescribe = proof.State.String()
 	} else if banInfo != nil {
 		// 3 强制失效的判定，用户替换授权
 		isBaned := false
@@ -55,14 +57,17 @@ func (a *activationService) PostActivationProof(ctx iris.Context) {
 		}
 		if isBaned {
 			proof.Sn = model.GetMachineId()
-			proof.State = 3
+			proof.State = structs.ProofStateForceBanned
+			proof.StateDescribe = proof.State.String()
 		} else {
 			proof.Sn = model.GetMachineId()
-			proof.State = 0
+			proof.State = structs.ProofStateOk
+			proof.StateDescribe = proof.State.String()
 		}
 	} else {
 		proof.Sn = model.GetMachineId()
-		proof.State = 0
+		proof.State = structs.ProofStateOk
+		proof.StateDescribe = proof.State.String()
 	}
 	proof.Now = time.Now().Unix()
 	var resultStr string
