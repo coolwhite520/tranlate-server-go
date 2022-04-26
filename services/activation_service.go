@@ -7,6 +7,7 @@ import (
 	"github.com/kataras/iris/v12/mvc"
 	log "github.com/sirupsen/logrus"
 	"strings"
+	"time"
 	"translate-server/constant"
 	"translate-server/datamodels"
 	"translate-server/docker"
@@ -14,7 +15,7 @@ import (
 	"translate-server/utils"
 )
 
-const AesProofKey = "ecf274d323fab23667a2ccd7904803c8"
+const AesProofKey = "c64df51f4aba41edbaf024cbf73e9234"
 
 type ActivationService interface {
 	Activation(ctx iris.Context) mvc.Result
@@ -63,10 +64,11 @@ func (a *activationService) PostActivationProof(ctx iris.Context) {
 		proof.Sn = model.GetMachineId()
 		proof.State = 0
 	}
+	proof.Now = time.Now().Unix()
 	var resultStr string
 	bytes, _ := json.Marshal(&proof)
 	encrypt, err := utils.AesEncrypt(bytes, []byte(AesProofKey))
-	if err == nil {
+	if err != nil {
 		resultStr = base64.StdEncoding.EncodeToString(bytes)
 	} else {
 		resultStr = base64.StdEncoding.EncodeToString(encrypt)

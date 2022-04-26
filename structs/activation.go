@@ -9,12 +9,11 @@ type SupportLang struct {
 	CnName string `json:"cn_name"`
 }
 
-
-func Hans2Pinyin(hans string) string  {
+func Hans2Pinyin(hans string) string {
 	args := pinyin.NewArgs()
-	rows:= pinyin.Pinyin(hans, args)
+	rows := pinyin.Pinyin(hans, args)
 
-	strResult:=""
+	strResult := ""
 	for _, v := range rows {
 		for _, item := range v {
 			strResult += item
@@ -23,23 +22,23 @@ func Hans2Pinyin(hans string) string  {
 	return strResult
 }
 
-
 type LangList []SupportLang
-func (a LangList) Len() int           { return len(a) }
-func (a LangList) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+
+func (a LangList) Len() int      { return len(a) }
+func (a LangList) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 func (a LangList) Less(i, j int) bool {
 	return Hans2Pinyin(a[i].CnName) < Hans2Pinyin(a[j].CnName)
 }
 
-
 type Activation struct {
-	UserName        string        `json:"user_name"`
-	Sn              string        `json:"sn"`
+	UserName        string   `json:"user_name"`
+	Sn              string   `json:"sn"`
 	SupportLangList LangList `json:"support_lang_list"` // 英文简称列表
-	CreatedAt       int64         `json:"created_at"`        // 这个时间代表激活码的生成时间，授权人员生成激活码的时候决定了
-	UseTimeSpan     int64         `json:"use_time_span"`     // 可以使用的时间，是一个时间段，以秒为单位 比如一年：1 * 365 * 24 * 60 * 60
-	Mark            string        `json:"mark"`
+	CreatedAt       int64    `json:"created_at"`        // 这个时间代表激活码的生成时间，授权人员生成激活码的时候决定了
+	UseTimeSpan     int64    `json:"use_time_span"`     // 可以使用的时间，是一个时间段，以秒为单位 比如一年：1 * 365 * 24 * 60 * 60
+	Mark            string   `json:"mark"`
 }
+
 // KeystoreLeftTime
 // 验证流程：
 // 1。不存在安装路径下的keystore和/usr/bin/${machineID} 两个文件
@@ -54,9 +53,9 @@ type Activation struct {
 //    /usr/bin/${machineID}文件，然后 LeftTimeSpan= UseTimeSpan - （当前时间 - CreatedAt）
 
 type KeystoreExpired struct {
-	Sn           string  `json:"sn"`
-	CreatedAt    int64   `json:"created_at"`
-	LeftTimeSpan int64  `json:"left_time_span"`   // 初始化为UseTimeSpan
+	Sn           string `json:"sn"`
+	CreatedAt    int64  `json:"created_at"`
+	LeftTimeSpan int64  `json:"left_time_span"` // 初始化为UseTimeSpan
 }
 
 // BannedKeystoreInfo 失效的授权id(CreatedAt)列表
@@ -66,6 +65,7 @@ type BannedKeystoreInfo struct {
 
 // KeystoreProof 凭证
 type KeystoreProof struct {
-	Sn  string  `json:"sn"`    // 机器码
-	State int `json:"state"`   // 授权状态
+	Sn    string `json:"sn"`    // 机器码
+	State int    `json:"state"` // 授权状态
+	Now   int64  `json:"now"`   // 时间以便每次生成都不同
 }
