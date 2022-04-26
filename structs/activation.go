@@ -75,7 +75,7 @@ const (
 func (p ProofStatusCode) String() string {
 	switch p {
 	case ProofStateOk:
-		return "正在使用中"
+		return "使用中"
 	case ProofStateForceBanned:
 		return "强制失效"
 	case ProofStateExpired:
@@ -90,7 +90,7 @@ func (p ProofStatusCode) String() string {
 // KeystoreProof 凭证
 type KeystoreProof struct {
 	Sn            string          `json:"sn"`    // 机器码
-	State         ProofStatusCode `json:"state"` // 授权状态 0。状态良好 1。未激活 2。过期 3。强制失效
+	State         ProofStatusCode `json:"state"` // 授权状态 0。使用中 1。未激活 2。过期 3。强制失效
 	StateDescribe string          `json:"state_describe"`
 	Now           int64           `json:"now"` // 时间以便每次生成都不同
 }
