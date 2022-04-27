@@ -229,7 +229,7 @@ func (a *activation) ParseExpiredFile() (*structs.KeystoreExpired, constant.Http
 }
 
 
-func (a *activation) ParseBannedContent(content string) (*structs.BannedKeystoreInfo, constant.HttpStatusCode) {
+func (a *activation) ParseBannedContent(content string) (structs.BannedList, constant.HttpStatusCode) {
 	v := utils.Md5V(a.currentMachineId + AppID)
 	base64Decode, err := base64.StdEncoding.DecodeString(content)
 	if err != nil {
@@ -241,22 +241,28 @@ func (a *activation) ParseBannedContent(content string) (*structs.BannedKeystore
 		log.Errorln(err)
 		return nil, constant.HttpActivationInvalidateError
 	}
-	var bannedList structs.BannedKeystoreInfo
+	var bannedList structs.BannedList
 	err = json.Unmarshal(decrypt, &bannedList)
 	if err != nil {
 		log.Errorln(err)
 		return nil, constant.HttpActivationInvalidateError
 	}
-	return &bannedList, constant.HttpSuccess
+	return bannedList, constant.HttpSuccess
 }
 
-func (a *activation) AddId2BannedFile(banId int64) constant.HttpStatusCode {
-	bannedInfo, code := a.ParseBannedFile()
+func (a *activation) AddId2BannedFile(bannedInfo structs.BannedInfo) constant.HttpStatusCode {
+	bannedList, code := a.ParseBannedFile()
 	if code == constant.HttpActivationNotFound {
-		bannedInfo = new(structs.BannedKeystoreInfo)
+		bannedList = structs.BannedList{}
 	}
-	bannedInfo.Ids = append(bannedInfo.Ids, banId)
-	data, err := json.Marshal(bannedInfo)
+	// 如果已经存在了这个ID就不重复添加了
+	for _, v := range bannedList {
+		if v.Id == bannedInfo.Id {
+			return constant.HttpSuccess
+		}
+	}
+	bannedList = append(bannedList, bannedInfo)
+	data, err := json.Marshal(bannedList)
 	if err != nil {
 		return constant.HttpActivationGenerateError
 	}
@@ -292,7 +298,7 @@ func (a *activation) AddId2BannedFile(banId int64) constant.HttpStatusCode {
 }
 
 
-func (a *activation) ParseBannedFile() (*structs.BannedKeystoreInfo, constant.HttpStatusCode) {
+func (a *activation) ParseBannedFile() (structs.BannedList, constant.HttpStatusCode) {
 	if utils.PathExists(a.bannedFilePath){
 		f, err := os.Open(a.bannedFilePath)
 		if err != nil {

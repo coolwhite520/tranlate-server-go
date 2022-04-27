@@ -54,14 +54,20 @@ type Activation struct {
 
 type KeystoreExpired struct {
 	Sn           string `json:"sn"`
-	CreatedAt    int64  `json:"created_at"`
+	CreatedAt    int64  `json:"created_at"`     // 与序列号中的createAt相同，相当于关联信息
 	LeftTimeSpan int64  `json:"left_time_span"` // 初始化为UseTimeSpan
+	ActivationAt int64  `json:"activation_at"`  // 激活日期
 }
 
-// BannedKeystoreInfo 失效的授权id(CreatedAt)列表
-type BannedKeystoreInfo struct {
-	Ids []int64 `json:"ids"`
+// BannedInfo 失效的信息
+type BannedInfo struct {
+	Id            int64           `json:"id"`
+	State         ProofStatusCode `json:"state"`
+	StateDescribe string          `json:"state_describe"`
 }
+
+type BannedList []BannedInfo
+
 
 type ProofStatusCode int
 
@@ -77,9 +83,9 @@ func (p ProofStatusCode) String() string {
 	case ProofStateOk:
 		return "使用中"
 	case ProofStateForceBanned:
-		return "强制失效"
+		return "已失效"
 	case ProofStateExpired:
-		return "已经过期"
+		return "已过期"
 	case ProofStateNotActivation:
 		return "首次激活"
 	default:

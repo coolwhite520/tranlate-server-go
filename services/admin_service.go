@@ -923,6 +923,15 @@ func (a *adminService) GetSysInfo(ctx iris.Context) mvc.Result {
 				"msg":       state.String(),
 			})
 	}
+	expiredInfo, state := newActivation.ParseExpiredFile()
+	if state != constant.HttpSuccess {
+		ctx.JSON(
+			map[string]interface{}{
+				"code":      state,
+				"msg":       state.String(),
+			})
+	}
+	activationInfo.CreatedAt = expiredInfo.ActivationAt
 	return mvc.Response{
 		Object: map[string]interface{}{
 			"code": constant.HttpSuccess,

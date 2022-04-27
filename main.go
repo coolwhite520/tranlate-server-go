@@ -13,6 +13,7 @@ import (
 	"translate-server/docker"
 	_ "translate-server/logext"
 	"translate-server/server"
+	"translate-server/structs"
 	_ "translate-server/structs"
 )
 
@@ -48,12 +49,22 @@ func main() {
 	go func() {
 		model := datamodels.NewActivationModel()
 		for  {
-			// 每隔10分钟，减少一下剩余可用时间
-			time.Sleep(time.Minute * 10 )
+			// 每隔1分钟，减少一下剩余可用时间
+			time.Sleep(time.Minute)
 			expiredInfo, state:= model.ParseExpiredFile()
 			if state == constant.HttpSuccess {
-				expiredInfo.LeftTimeSpan = expiredInfo.LeftTimeSpan - 10 * 60
+				expiredInfo.LeftTimeSpan = expiredInfo.LeftTimeSpan -  60
+				if expiredInfo.ActivationAt == 0 {
+					expiredInfo.ActivationAt = expiredInfo.CreatedAt
+				}
 				model.GenerateExpiredFile(*expiredInfo)
+				if expiredInfo.LeftTimeSpan <= 0 {
+					var bannedInfo structs.BannedInfo
+					bannedInfo.Id = expiredInfo.CreatedAt
+					bannedInfo.State = structs.ProofStateExpired
+					bannedInfo.StateDescribe = bannedInfo.State.String()
+					model.AddId2BannedFile(bannedInfo)
+				}
 			}
 		}
 	}()

@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"github.com/kataras/iris/v12"
-	"time"
 	"translate-server/constant"
 	"translate-server/datamodels"
 	"translate-server/structs"
@@ -21,12 +20,11 @@ func CheckActivationMiddleware(ctx iris.Context) {
 			})
 		return
 	}
-
-	// 是否被永久失效了
-	bannedInfo, _ := newActivation.ParseBannedFile()
-	if bannedInfo != nil {
-		for _, v := range bannedInfo.Ids {
-			if v == activationInfo.CreatedAt {
+	// 是否被永久失效 或 已经过期
+	bannedList, _ := newActivation.ParseBannedFile()
+	if bannedList != nil {
+		for _, v := range bannedList {
+			if v.Id == activationInfo.CreatedAt && v.State == structs.ProofStateForceBanned {
 				ctx.JSON(
 					map[string]interface{}{
 						"code": constant.HttpActivationInvalidateError,
@@ -35,45 +33,17 @@ func CheckActivationMiddleware(ctx iris.Context) {
 					})
 				return
 			}
+			if v.Id == activationInfo.CreatedAt && v.State == structs.ProofStateExpired {
+				ctx.JSON(
+					map[string]interface{}{
+						"code": constant.HttpActivationExpiredError,
+						"sn":   sn,
+						"msg":  constant.HttpActivationExpiredError.String(),
+					})
+				return
+			}
 		}
 	}
 
-	// 是否过期了
-	expiredInfo, state := newActivation.ParseExpiredFile()
-	// 用户失误或故意删除了/usr/bin/${machineID}的文件，我们再替他生成回来
-	if state == constant.HttpActivationNotFound {
-		expiredInfo = new(structs.KeystoreExpired)
-		expiredInfo.Sn = activationInfo.Sn
-		expiredInfo.CreatedAt = activationInfo.CreatedAt
-		expiredInfo.LeftTimeSpan = activationInfo.UseTimeSpan - (time.Now().Unix() - activationInfo.CreatedAt)
-		if expiredInfo.LeftTimeSpan <= 0 {
-			ctx.JSON(
-				map[string]interface{}{
-					"code": constant.HttpActivationExpiredError,
-					"sn":   sn,
-					"msg":  constant.HttpActivationExpiredError.String(),
-				})
-			return
-		}
-		newActivation.GenerateExpiredFile(*expiredInfo)
-	} else if state == constant.HttpSuccess {
-		if expiredInfo.LeftTimeSpan <= 0 {
-			ctx.JSON(
-				map[string]interface{}{
-					"code": constant.HttpActivationExpiredError,
-					"sn":   sn,
-					"msg":  constant.HttpActivationExpiredError.String(),
-				})
-			return
-		}
-	} else {
-		ctx.JSON(
-			map[string]interface{}{
-				"code":      state,
-				"sn":        sn,
-				"msg":       state.String(),
-			})
-		return
-	}
 	ctx.Next()
 }
