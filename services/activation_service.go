@@ -41,6 +41,7 @@ func (a *activationService) PostActivationProof(ctx iris.Context) {
 		proof.Sn = model.GetMachineId()
 		proof.State = structs.ProofStateNotActivation
 		proof.StateDescribe = proof.State.String()
+		proof.Id = 0
 	} else if bannedList != nil {
 		// 2 过期和 失效的判断
 		for _, v := range bannedList {
@@ -48,12 +49,14 @@ func (a *activationService) PostActivationProof(ctx iris.Context) {
 				proof.Sn = model.GetMachineId()
 				proof.State = structs.ProofStateForceBanned
 				proof.StateDescribe = proof.State.String()
+				proof.Id = expiredInfo.CreatedAt
 				break
 			}
 			if v.Id == expiredInfo.CreatedAt && v.State == structs.ProofStateExpired{
 				proof.Sn = model.GetMachineId()
 				proof.State = structs.ProofStateExpired
 				proof.StateDescribe = proof.State.String()
+				proof.Id = expiredInfo.CreatedAt
 				break
 			}
 		}
@@ -61,8 +64,9 @@ func (a *activationService) PostActivationProof(ctx iris.Context) {
 		proof.Sn = model.GetMachineId()
 		proof.State = structs.ProofStateOk
 		proof.StateDescribe = proof.State.String()
+		proof.Id = expiredInfo.CreatedAt
 	}
-	proof.Now = time.Now().Unix()
+
 	var resultStr string
 	bytes, _ := json.Marshal(&proof)
 	encrypt, err := utils.AesEncrypt(bytes, []byte(AesProofKey))

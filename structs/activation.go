@@ -61,13 +61,12 @@ type KeystoreExpired struct {
 
 // BannedInfo 失效的信息
 type BannedInfo struct {
-	Id            int64           `json:"id"`
+	Id            int64           `json:"id"` // 就是createAt的值
 	State         ProofStatusCode `json:"state"`
 	StateDescribe string          `json:"state_describe"`
 }
 
 type BannedList []BannedInfo
-
 
 type ProofStatusCode int
 
@@ -95,8 +94,9 @@ func (p ProofStatusCode) String() string {
 
 // KeystoreProof 凭证
 type KeystoreProof struct {
+	Id            int64           `json:"id"`    // 如果是没有激活的情况那么ID为0，否则过期或者强制失效的为CreateAt的值
 	Sn            string          `json:"sn"`    // 机器码
 	State         ProofStatusCode `json:"state"` // 授权状态 0。使用中 1。未激活 2。过期 3。强制失效
 	StateDescribe string          `json:"state_describe"`
-	Now           int64           `json:"now"` // 时间以便每次生成都不同
+	//Now           int64           `json:"now"` // 时间以便每次生成都不同
 }
