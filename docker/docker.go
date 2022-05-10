@@ -112,7 +112,7 @@ func (o *Operator) IsALlRunningStatus() (bool, error) {
 		return false, err
 	}
 	for _, v := range compList {
-		running, err := o.IsContainerRunning(v.ImageName, v.ImageVersion)
+		running, _, err := o.IsContainerRunning(v.ImageName, v.ImageVersion)
 		if err != nil {
 			return false, err
 		}
@@ -187,12 +187,12 @@ func (o *Operator) RemoveImage(imageName string, imageVersion string) error {
 
 // CreateAndStartContainer 启动容器 ,如果是 部署在linux下，那么当启动web镜像（nginx）的时候，需要添加--add-host=host.docker.internal:host-gateway参数
 func (o *Operator) CreateAndStartContainer(img structs.ComponentInfo) (string, error) {
-	hasContainer, id, err := o.hasContainer(img.ImageName, img.ImageVersion)
+	hasContainer, err := o.hasContainer(img.ImageName, img.ImageVersion)
 	if err != nil {
 		return "", err
 	}
 	if hasContainer {
-		running, err := o.IsContainerRunning(img.ImageName, img.ImageVersion)
+		running, id, err := o.IsContainerRunning(img.ImageName, img.ImageVersion)
 		if err != nil {
 			return "", err
 		}
@@ -334,8 +334,22 @@ func (o *Operator) ExistImage(imageName string, imageTag string) (bool, error) {
 }
 
 // HasContainer 是否存在某个容器 容器的名称默认不指定的时候就是随机的，所以通过遍历ContainerList获取的containers中的每一个容器的镜像名称进行判断即可，【镜像生成容器】
-func (o *Operator) hasContainer(imageName string, imageTag string) (bool, string, error) {
+func (o *Operator) hasContainer(imageName string, imageTag string) (bool, error) {
 	containers, err := o.cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+	if err != nil {
+		return false,  err
+	}
+	for _, v := range containers {
+		if v.Image == imageName+":"+imageTag {
+			return true, nil
+		}
+	}
+	return false,  nil
+}
+
+// IsContainerRunning 某个容器是否正在运行
+func (o *Operator) IsContainerRunning(imageName string, imageTag string) (bool, string, error) {
+	containers, err := o.cli.ContainerList(context.Background(), types.ContainerListOptions{})
 	if err != nil {
 		return false, "", err
 	}
@@ -345,20 +359,6 @@ func (o *Operator) hasContainer(imageName string, imageTag string) (bool, string
 		}
 	}
 	return false, "", nil
-}
-
-// IsContainerRunning 某个容器是否正在运行
-func (o *Operator) IsContainerRunning(imageName string, imageTag string) (bool, error) {
-	containers, err := o.cli.ContainerList(context.Background(), types.ContainerListOptions{})
-	if err != nil {
-		return false, err
-	}
-	for _, v := range containers {
-		if v.Image == imageName+":"+imageTag {
-			return true, nil
-		}
-	}
-	return false, nil
 }
 
 func (o *Operator) getContainerIdByName(containerName string) (string, error) {

@@ -399,7 +399,7 @@ func (a *adminService) GetComponents() mvc.Result {
 		item.Name = v.ImageName
 		item.CurrentVersion = v.ImageVersion
 		imageExist, _ := docker.GetInstance().ExistImage(v.ImageName, v.ImageVersion)
-		running, _ := docker.GetInstance().IsContainerRunning(v.ImageName, v.ImageVersion)
+		running, _ , _:= docker.GetInstance().IsContainerRunning(v.ImageName, v.ImageVersion)
 		net, _ := docker.GetInstance().IsInPrivateNet(v.ImageName)
 		if v.ImageName == "web" {
 			if !running {
